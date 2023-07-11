@@ -1,152 +1,157 @@
-import json
 import argparse
+from textwrap import dedent
 
-class Edge:
-    def __init__(self, id: int, op: str, start: int, end: int):
-        self.id = id
-        self.op = op
-        self.start = start
-        self.end = end
+from parse_pattern import PatternGraph
+from parse_oRels import DependencyGpraph
 
-class Node:
-    def __init__(self, id: int, type: str):
-        self.id = id
-        self.type = type
+def gen_header(g: PatternGraph) -> str:
+    """
+    Generate stream and table definitions
+    """
 
-
-def parse_graph(node_file: str, edge_file: str) -> tuple[dict[int, Node], list[Edge]]:
-    '''
-    Parse the input json file into internal structure
-    '''
-    node_raw = open(node_file).readlines()
-    edge_raw = open(edge_file).readlines()
-    nodes = {}
-    edges = []
-    
-    for line in node_raw:
-        root = json.loads(line)
-        id = int(root['node']['id'])
-        nodes[id] = Node(id, root['node']['properties']['type'])
-
-    for line in edge_raw:
-        root = json.loads(line)
-        id = int(root['edge']['id'])
-        op = root['edge']['properties']['operation']
-        start = int(root['edge']['start']['id'])
-        end = int(root['edge']['end']['id'])
-        edges.append(Edge(id, op, start, end))
-    
-    return nodes, edges
-
-
-def gen_header(num_node: int, num_edge: int) -> str:
-    '''
-    Generate stream and table definition
-    '''
     header = '@App:name("SiddhiApp")\n'
     header += 'define Stream InputStream (eid string, op string, start_id string, start_type string, end_id string, end_type string);\n'
 
-    param = '('
+    fields = '('
     output_condition = ''
-    for i in range(0, num_node):
-        param += 'n{}_id string, '.format(i)
+    for i in range(len(g.nodes)):
+        fields += f'n{i}_id string, '
         output_condition += f'n{i}_id != "null" and '
 
-    for i in range(0, num_edge):
-        param += f'e{i}_id string'
+    for i in range(len(g.edges)):
+        fields += f'e{i}_id string'
         output_condition += f'e{i}_id != "null"'
-        if i != num_edge - 1:
-            param += ', '
+        if i != len(g.edges) - 1:
+            fields += ', '
             output_condition += ' and '
         else:
-            param += ');\n'
+            fields += ')'
     
-    header += 'define Stream CandidateStream ' + param
-    header += 'define Table CandidateTable ' + param
-    header += '@sink(type="log")\ndefine Stream OutputStream ' + param
-    header += f'''
-from CandidateStream
-select *
-insert into CandidateTable;
+    return dedent(f'''
+                  @App:name("SiddhiApp")
+                  define Stream InputStream (eid string, op string, start_id string, start_type string, end_id string, end_type string);
 
-from CandidateStream[{output_condition}]
-select *
-insert into OutputStream;
-'''
-    return header
+                  define Stream CandidateStream {fields};
+                  define Table CandidateTable {fields};
+
+                  @sink(type="log")
+                  define Stream OutputStream {fields};
+
+                  from CandidateStream
+                  select *
+                  insert into CandidateTable;
+
+                  from CandidateStream[{output_condition}]
+                  select *
+                  insert into OutputStream;
+                  ''')
 
 
-def gen_edge_rules(nodes: dict[int, Node], edges: list[Edge]) -> str:
-    '''
-    Generate rule for every edge
-    '''
-    node_field = {}
-    for _, nd in nodes.items():
-        ith = len(node_field)
-        node_field[nd.id] = 'n{}_id'.format(ith)
+def gen_select_expr(g: PatternGraph, eid: int, fmt_node: tuple[str, str, str], fmt_edge: tuple[str, str]) -> str:
+    """
+    Generate the "select" exptrssion in siddhi query. The selection result will have the same fields as
+    the CandidateTable, i.e. (n0_id, n1_id, ..., e0_id, e1_id, ...).
 
-    rule = ''
+    This function takes 5 format strings to format the output on different scenarios:
+    1. The current field is <start node>_id
+    2. The current field is <end node>_id
+    3. The other nodes
+    4. The current field is e<eid>_id
+    5. The other edges
 
-    for ith, edge in enumerate(edges):
-        edge_condition = 'op == "{}" and start_type == "{}" and end_type == "{}"'.format(
-            edge.op,
-            nodes[edge.start].type,
-            nodes[edge.end].type,
+    Each format string will be given a named index: field_name. For example, if we want the select expression
+    be "start_id as n0_id" when n0 is the start node of the given edge, we can use the following format
+    string: "start_id as {field_name}"
+
+    Args:
+        g: The pattern graph
+        eid: The id of the edge we currently processing
+        fmt_node: format strings for the first 3 scenarios
+        fmt_edge: format strings for the last 2 scenarios
+    Returns:
+        complete select expression
+    """
+
+    select_expr = ''
+    start_nd, end_nd = g.get_endpoints(eid)
+    for i in range(len(g.nodes)):
+        cur_field = f'n{i}_id'
+        if i == start_nd.id:
+            select_expr += fmt_node[0].format(field_name = cur_field)
+        elif i == end_nd.id:
+            select_expr += fmt_node[1].format(field_name = cur_field)
+        else:
+            select_expr += fmt_node[2].format(field_name = cur_field)
+        select_expr += ', '
+    
+    for i in range(len(g.edges)):
+        cur_field = f'e{i}_id'
+        if i == eid:
+            select_expr += fmt_edge[0].format(field_name = cur_field)
+        else:
+            select_expr += fmt_edge[1].format(field_name = cur_field)
+        select_expr += ', ' if i != len(g.edges) - 1 else ''
+    
+    return select_expr
+
+
+def gen_dependency_condition(dep_graph: DependencyGpraph, eid: int) -> str:
+    deps = dep_graph.get_dependencies(eid)
+    dep_cond = ''
+    for dep in deps:
+        if dep != 'root':
+            dep_cond += f't.e{dep}_id != "null" and '
+    return dep_cond
+
+
+def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
+    """
+    Generate the query for all edges.
+    
+    Args:
+        nodes: nodes in the pattern
+        edges: edges in the pattern
+
+    Returns:
+        edge_rules: query string for all edges
+    """
+
+    rules = ''
+
+    for edge in pat_graph.edges:
+        start, end = pat_graph.get_endpoints(edge.id)
+        start_field = f'n{start.id}_id'
+        end_field = f'n{end.id}_id'
+        edge_field = f'e{edge.id}_id'
+
+        edge_condition = f'op == "{edge.op}" and start_type == "{start.type}" and end_type == "{end.type}"'
+        dep_condition = gen_dependency_condition(dep_graph, edge.id)
+        self_select_expr = gen_select_expr(
+            pat_graph, edge.id,
+            ('start_id as {field_name}', 'end_id as {field_name}', '"null" as {field_name}'),
+            ('eid as {field_name}', '"null" as {field_name}')
         )
-        start_field = node_field[edge.start]
-        end_field = node_field[edge.end]
-        edge_field = 'e{}_id'.format(ith)
+        merge_select_expr = gen_select_expr(
+            pat_graph, edge.id,
+            ('s.start_id as {field_name}', 's.end_id as {field_name}', 't.{field_name}'),
+            ('s.eid as {field_name}', 't.{field_name}')
+        )
 
-        select_expr = ''
-        for i in range(len(nodes)):
-            cur_field = f'n{i}_id'
-            if cur_field == start_field:
-                select_expr += f'start_id as {cur_field}'
-            elif cur_field == end_field:
-                select_expr += f'end_id as {cur_field}'
-            else:
-                select_expr += f'"null" as {cur_field}'
-            select_expr += ', '
-        for i in range(len(edges)):
-            if i == ith:
-                select_expr += f'eid as e{i}_id'
-            else:
-                select_expr += f'"null" as e{i}_id'
-            select_expr += ', ' if i != len(edges) - 1 else ''
-        
-        rule += f'''
-from InputStream[{edge_condition}]
-select {select_expr}
-insert into CandidateStream;
-'''
-        select_expr = ''
-        for i in range(len(nodes)):
-            cur_field = f'n{i}_id'
-            if cur_field == start_field:
-                select_expr += f's.start_id as {cur_field}'
-            elif cur_field == end_field:
-                select_expr += f's.end_id as {cur_field}'
-            else:
-                select_expr += f't.{cur_field}'
-            select_expr += ', '
-        for i in range(len(edges)):
-            if i == ith:
-                select_expr += f's.eid as e{i}_id'
-            else:
-                select_expr += f't.e{i}_id'
-            select_expr += ', ' if i != len(edges) - 1 else ''
+        rules += dedent(f'''
+                        from InputStream[{edge_condition}]
+                        select {self_select_expr}
+                        insert into CandidateStream;
 
-        rule += f'''
-from InputStream[{edge_condition}] as s join
-    CandidateTable as t
-    on t.{edge_field} == "null" and
-        ((t.{start_field} == s.start_id and t.{end_field} == s.end_id) or
-        (t.{start_field} == s.start_id and t.{end_field} == "null") or
-        (t.{start_field} == "null" and t.{end_field} == s.end_id))
-select {select_expr}
-insert into CandidateStream;
-'''
-    return rule
+                        from InputStream[{edge_condition}] as s join
+                            CandidateTable as t
+                            on t.{edge_field} == "null" and {dep_condition}
+                                ((t.{start_field} == s.start_id and t.{end_field} == s.end_id) or
+                                (t.{start_field} == s.start_id and t.{end_field} == "null") or
+                                (t.{start_field} == "null" and t.{end_field} == s.end_id))
+                        select {merge_select_expr}
+                        insert into CandidateStream;
+                        ''')
+    return rules
     
 
 if __name__ == '__main__':
@@ -157,8 +162,12 @@ if __name__ == '__main__':
     parser.add_argument('--edge',
                         required=True,
                         help='edge file path')
+    parser.add_argument('--orels',
+                        required=True,
+                        help='orels file path')
 
     args = parser.parse_args()
-    nodes, edges = parse_graph(args.node, args.edge)
-    print(gen_header(len(nodes), len(edges)))
-    print(gen_edge_rules(nodes, edges))
+    pattern_graph = PatternGraph(args.node, args.edge)
+    dependency_graph = DependencyGpraph(args.orels)
+    print(gen_header(pattern_graph))
+    print(gen_edge_rules(pattern_graph, dependency_graph))
