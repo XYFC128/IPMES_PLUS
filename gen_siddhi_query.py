@@ -9,9 +9,6 @@ def gen_header(g: PatternGraph) -> str:
     Generate stream and table definitions
     """
 
-    header = '@App:name("SiddhiApp")\n'
-    header += 'define Stream InputStream (eid string, op string, start_id string, start_type string, end_id string, end_type string);\n'
-
     fields = '('
     output_condition = ''
     for i in range(len(g.nodes)):
@@ -29,7 +26,7 @@ def gen_header(g: PatternGraph) -> str:
     
     return dedent(f'''
                   @App:name("SiddhiApp")
-                  define Stream InputStream (eid string, op string, start_id string, start_type string, end_id string, end_type string);
+                  define Stream InputStream (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);
 
                   define Stream CandidateStream {fields};
                   define Table CandidateTable {fields};
@@ -124,7 +121,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
         end_field = f'n{end.id}_id'
         edge_field = f'e{edge.id}_id'
 
-        edge_condition = f'op == "{edge.op}" and start_type == "{start.type}" and end_type == "{end.type}"'
+        edge_condition = f'esig == "{edge.signature}" and start_sig == "{start.signature}" and end_sig == "{end.signature}"'
         dep_condition = gen_dependency_condition(dep_graph, edge.id)
         self_select_expr = gen_select_expr(
             pat_graph, edge.id,

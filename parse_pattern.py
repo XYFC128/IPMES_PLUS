@@ -1,16 +1,20 @@
 import json
 
+from preprocess import extract_node_signature
+
 class PatternEdge:
     def __init__(self, id: int, op: str, start: int, end: int):
         self.id = id
-        self.op = op
+        self.signature = op
         self.start = start
         self.end = end
 
+
 class PatternNode:
-    def __init__(self, id: int, type: str):
+    def __init__(self, id: int, node_obj: dict):
         self.id = id
-        self.type = type
+        self.signature = extract_node_signature(node_obj)
+
 
 class PatternGraph:
     def __init__(self, node_file: str, edge_file: str):
@@ -25,7 +29,7 @@ class PatternGraph:
             obj = json.loads(line)
             raw_id = int(obj['node']['id'])
             id_convert[raw_id] = i
-            nodes.append(PatternNode(i, obj['node']['properties']['type']))
+            nodes.append(PatternNode(i, obj['node']))
         
         for i, line in enumerate(edge_raw):
             obj = json.loads(line)
