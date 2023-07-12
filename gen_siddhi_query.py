@@ -26,19 +26,15 @@ def gen_header(g: PatternGraph) -> str:
     
     return dedent(f'''
                   @App:name("SiddhiApp")
+
                   define Stream InputStream (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);
 
-                  define Stream CandidateStream {fields};
-                  define Table CandidateTable {fields};
+                  define Window CandidateTable {fields} time(10 sec);
 
                   @sink(type="log")
                   define Stream OutputStream {fields};
 
-                  from CandidateStream
-                  select *
-                  insert into CandidateTable;
-
-                  from CandidateStream[{output_condition}]
+                  from CandidateTable[{output_condition}]
                   select *
                   insert into OutputStream;
                   ''')
@@ -137,7 +133,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
         rules += dedent(f'''
                         from InputStream[{edge_condition}]
                         select {self_select_expr}
-                        insert into CandidateStream;
+                        insert into CandidateTable;
 
                         from InputStream[{edge_condition}] as s join
                             CandidateTable as t
@@ -146,7 +142,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
                                 (t.{start_field} == s.start_id and t.{end_field} == "null") or
                                 (t.{start_field} == "null" and t.{end_field} == s.end_id))
                         select {merge_select_expr}
-                        insert into CandidateStream;
+                        insert into CandidateTable;
                         ''')
     return rules
     
