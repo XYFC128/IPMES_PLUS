@@ -42,13 +42,13 @@ def convert(inp: str) -> str:
     end_id = inp_obj['n']['id']
     end_sig = extract_node_signature(inp_obj['n'])
 
-    return f'{eid},{esig},{start_id},{start_sig},{end_id},{end_sig}'
+    return f'{eid},"{esig}",{start_id},"{start_sig}",{end_id},"{end_sig}"'
 
 
 if __name__ == '__main__':
     """
     This program treats each line in stdin as a JSON object of an event.
-    It output the preprocessed event in csv format to stdout.
+    It outputs the preprocessed event in csv format to stdout.
 
     Example usage:
         python preprocess.py < 12hour_attack_08_18.json > output.csv
