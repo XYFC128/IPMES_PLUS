@@ -47,8 +47,8 @@ def convert(inp: str) -> str:
 
 if __name__ == '__main__':
     """
-    This program treat each line in stdin as a JSON object of an event.
-    It output the preprocessed event into a csv format to stdout.
+    This program treats each line in stdin as a JSON object of an event.
+    It output the preprocessed event in csv format to stdout.
 
     Example usage:
         python preprocess.py < 12hour_attack_08_18.json > output.csv
