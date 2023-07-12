@@ -46,7 +46,23 @@ def convert(inp: str) -> str:
 
 
 if __name__ == '__main__':
-    import fileinput
+    """
+    This program treat each line in stdin as a JSON object of an event.
+    It output the preprocessed event into a csv format to stdout.
 
+    Example usage:
+        python preprocess.py < 12hour_attack_08_18.json > output.csv
+    
+    The fields in the output csv:
+        eid, esig, start_id, start_sig, end_id, end_sig:
+        - eid:       edge id
+        - esig:      edge signature
+        - start_id:  id of the start node
+        - start_sig: signature of the start node
+        - end_id:    id of the end node
+        - end_sig:   signature of the end node
+    """
+
+    import fileinput
     for line in fileinput.input():
         print(convert(line))
