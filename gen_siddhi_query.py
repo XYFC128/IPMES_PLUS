@@ -145,6 +145,25 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
                         insert into CandidateTable;
                         ''')
     return rules
+
+
+def gen_siddhi_app(node_file: str, edge_file: str, orels_file: str) -> str:
+    """
+    Given the 3 files describing a pattern, generate a Siddhi app to recognize the
+    pattern in the input string
+
+    Args:
+        node_file: path to xxx_node.json
+        edge_file: path to xxx_edge.json
+        orels_file: path to xxx_oRels.json
+
+    Retuerns:
+        A Siddhi app in str
+    """
+
+    pattern_graph = PatternGraph(node_file, edge_file)
+    dependency_graph = DependencyGpraph(orels_file)
+    return gen_header(pattern_graph) + gen_edge_rules(pattern_graph, dependency_graph)
     
 
 if __name__ == '__main__':
@@ -160,7 +179,4 @@ if __name__ == '__main__':
                         help='orels file path')
 
     args = parser.parse_args()
-    pattern_graph = PatternGraph(args.node, args.edge)
-    dependency_graph = DependencyGpraph(args.orels)
-    print(gen_header(pattern_graph))
-    print(gen_edge_rules(pattern_graph, dependency_graph))
+    print(gen_siddhi_app(args.node, args.edge, args.orels))

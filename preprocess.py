@@ -23,15 +23,15 @@ def extract_edge_signature(edge_obj: dict) -> str:
     return edge_obj['properties']['operation']
 
 
-def convert(inp: str) -> str:
+def convert(inp: str) -> list[str]:
     """
-    Convert the original attack graph input into csv format.
+    Convert the original attack graph input into a list of fields.
 
     Args:
         inp: a json string
     
     Returns:
-        the extracted fields in csv format
+        A list of the extracted fields
     """
 
     inp_obj = json.loads(inp)
@@ -42,7 +42,7 @@ def convert(inp: str) -> str:
     end_id = inp_obj['n']['id']
     end_sig = extract_node_signature(inp_obj['n'])
 
-    return f'{eid},"{esig}",{start_id},"{start_sig}",{end_id},"{end_sig}"'
+    return [eid, esig, start_id, start_sig, end_id, end_sig]
 
 
 if __name__ == '__main__':
@@ -65,4 +65,4 @@ if __name__ == '__main__':
 
     import fileinput
     for line in fileinput.input():
-        print(convert(line))
+        print(','.join(convert(line)))
