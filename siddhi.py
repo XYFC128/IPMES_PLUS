@@ -20,9 +20,12 @@ parser.add_argument('--pattern_prefix',
                     help='The path prefix of pattern\'s files, e.g. pattern/TTP11')
 
 args = parser.parse_args()
+regex = args.pattern_prefix.endswith('_regex')
+orels = args.pattern_prefix + '_oRels.json' if not regex else args.pattern_prefix[:-6] + '_oRels.json'
 siddhiApp = gen_siddhi_app(args.pattern_prefix + '_node.json',
                            args.pattern_prefix + '_edge.json',
-                           args.pattern_prefix + '_oRels.json'
+                           orels,
+                           regex
                            )
 siddhiManager = SiddhiManager()
 siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(siddhiApp)

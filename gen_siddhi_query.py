@@ -97,13 +97,14 @@ def gen_dependency_condition(dep_graph: DependencyGpraph, eid: int) -> str:
     return dep_cond
 
 
-def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
+def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=False) -> str:
     """
     Generate the query for all edges.
     
     Args:
         nodes: nodes in the pattern
         edges: edges in the pattern
+        regex: enable regex matching in the signatures
 
     Returns:
         edge_rules: query string for all edges
@@ -117,7 +118,10 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
         end_field = f'n{end.id}_id'
         edge_field = f'e{edge.id}_id'
 
-        edge_condition = f'esig == "{edge.signature}" and start_sig == "{start.signature}" and end_sig == "{end.signature}"'
+        if regex:
+            edge_condition = f'regex:matches("{edge.signature}", esig) and regex:matches("{start.signature}", start_sig) and regex:matches("{end.signature}", end_sig)'
+        else:
+            edge_condition = f'esig == "{edge.signature}" and start_sig == "{start.signature}" and end_sig == "{end.signature}"'
         dep_condition = gen_dependency_condition(dep_graph, edge.id)
         self_select_expr = gen_select_expr(
             pat_graph, edge.id,
@@ -147,7 +151,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph) -> str:
     return rules
 
 
-def gen_siddhi_app(node_file: str, edge_file: str, orels_file: str) -> str:
+def gen_siddhi_app(node_file: str, edge_file: str, orels_file: str, regex=False) -> str:
     """
     Given the 3 files describing a pattern, generate a Siddhi app to recognize the
     pattern in the input string
@@ -156,6 +160,7 @@ def gen_siddhi_app(node_file: str, edge_file: str, orels_file: str) -> str:
         node_file: path to xxx_node.json
         edge_file: path to xxx_edge.json
         orels_file: path to xxx_oRels.json
+        regex: enable regex matching in the signatures
 
     Retuerns:
         A Siddhi app in str
@@ -163,7 +168,7 @@ def gen_siddhi_app(node_file: str, edge_file: str, orels_file: str) -> str:
 
     pattern_graph = PatternGraph(node_file, edge_file)
     dependency_graph = DependencyGpraph(orels_file)
-    return gen_header(pattern_graph) + gen_edge_rules(pattern_graph, dependency_graph)
+    return gen_header(pattern_graph) + gen_edge_rules(pattern_graph, dependency_graph, regex)
     
 
 if __name__ == '__main__':
