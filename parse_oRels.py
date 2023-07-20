@@ -46,7 +46,8 @@ class DependencyGpraph:
         return self.graph[str(eid)]['children']
 
 
-
 if __name__ == '__main__':
     import sys
+    import pprint
     g = DependencyGpraph(sys.argv[1])
+    pprint.pprint(g.__dict__)

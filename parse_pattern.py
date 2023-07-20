@@ -48,3 +48,15 @@ class PatternGraph:
 
         edge = self.edges[eid]
         return self.nodes[edge.start], self.nodes[edge.end]
+
+
+if __name__ == '__main__':
+    import sys
+    import pprint
+    g = PatternGraph(sys.argv[1], sys.argv[2])
+    print('nodes: ')
+    for nd in g.nodes:
+        pprint.pprint(nd.__dict__)
+    print('edges: ')
+    for e in g.edges:
+        pprint.pprint(e.__dict__)
