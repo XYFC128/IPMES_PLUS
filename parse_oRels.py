@@ -28,7 +28,13 @@ import json
 
 class DependencyGpraph:
     def __init__(self, orels_file: str):
-        self.graph = json.load(open(orels_file))
+        self.graph: dict = json.load(open(orels_file))
+
+        # filter out 'root' in the dependencies
+        for k in self.graph.keys():
+            filtered = filter(lambda x: x != 'root', self.graph[k]['parents'])
+            self.graph[k]['parents'] = list(filtered)
+
 
     def get_start_events(self) -> list[int]:
         return self.graph['root']['children']

@@ -1,7 +1,7 @@
 import argparse
 from textwrap import dedent
 
-from parse_pattern import PatternGraph
+from parse_pattern import PatternGraph, PatternEdge, PatternNode
 from parse_oRels import DependencyGpraph
 
 def gen_header(g: PatternGraph) -> str:
@@ -24,10 +24,17 @@ def gen_header(g: PatternGraph) -> str:
         else:
             fields += ')'
     
+    buffer_streams = ''
+    for i in range(len(g.edges)):
+        buffer_streams += f'define Window N{i}Buffer (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string) time(10 sec); '
+    
     return dedent(f'''
                   @App:name("SiddhiApp")
 
                   define Stream InputStream (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);
+                  define Stream UnorderedInputStream (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);
+                  
+                  {buffer_streams}
 
                   define Window CandidateTable {fields} time(10 sec);
 
@@ -38,6 +45,17 @@ def gen_header(g: PatternGraph) -> str:
                   select *
                   insert into OutputStream;
                   ''')
+
+
+def gen_edge_condition(edge: PatternEdge, start: PatternNode, end: PatternNode, regex=False) -> str:
+    """
+    Generate the condition expression to match the given pattern edge
+    """
+
+    if regex:
+        return f'regex:matches("{edge.signature}", esig) and regex:matches("{start.signature}", start_sig) and regex:matches("{end.signature}", end_sig)'
+    else:
+        return f'esig == "{edge.signature}" and start_sig == "{start.signature}" and end_sig == "{end.signature}"'
 
 
 def gen_select_expr(g: PatternGraph, eid: int, fmt_node: tuple[str, str, str], fmt_edge: tuple[str, str]) -> str:
@@ -89,12 +107,42 @@ def gen_select_expr(g: PatternGraph, eid: int, fmt_node: tuple[str, str, str], f
 
 
 def gen_dependency_condition(dep_graph: DependencyGpraph, eid: int) -> str:
+    """
+    Generate the query to check if the dependencies is already in the
+    partially matched result
+    """
+
     deps = dep_graph.get_dependencies(eid)
     dep_cond = ''
     for dep in deps:
-        if dep != 'root':
-            dep_cond += f't.e{dep}_id != "null" and '
+        dep_cond += f't.e{dep}_id != "null" and '
     return dep_cond
+
+
+def gen_new_candidate_query(pat_graph: PatternGraph, dep_graph: DependencyGpraph, edge: PatternEdge, edge_condition: str) -> str:
+    """
+    If the edge has no dependency, this function returns a query that will create a new
+    entry in the CandidateTable containing only the given edge.
+
+    Otherwise, this function will return an empty string.
+    """
+
+    if len(dep_graph.get_dependencies(edge.id)) == 0:
+        self_select_expr = gen_select_expr(
+            pat_graph, edge.id,
+            ('start_id as {field_name}', 'end_id as {field_name}', '"null" as {field_name}'),
+            ('eid as {field_name}', '"null" as {field_name}')
+        )
+        return dedent(f'''
+            from InputStream[{edge_condition}]
+            select {self_select_expr}
+            insert into CandidateTable;
+
+            from N{edge.id}Buffer
+            select {self_select_expr}
+            insert into CandidateTable;
+        ''')
+    return ''
 
 
 def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=False) -> str:
@@ -118,16 +166,11 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=F
         end_field = f'n{end.id}_id'
         edge_field = f'e{edge.id}_id'
 
-        if regex:
-            edge_condition = f'regex:matches("{edge.signature}", esig) and regex:matches("{start.signature}", start_sig) and regex:matches("{end.signature}", end_sig)'
-        else:
-            edge_condition = f'esig == "{edge.signature}" and start_sig == "{start.signature}" and end_sig == "{end.signature}"'
+        edge_condition = gen_edge_condition(edge, start, end, regex)
         dep_condition = gen_dependency_condition(dep_graph, edge.id)
-        self_select_expr = gen_select_expr(
-            pat_graph, edge.id,
-            ('start_id as {field_name}', 'end_id as {field_name}', '"null" as {field_name}'),
-            ('eid as {field_name}', '"null" as {field_name}')
-        )
+
+        rules += gen_new_candidate_query(pat_graph, dep_graph, edge, edge_condition)
+
         merge_select_expr = gen_select_expr(
             pat_graph, edge.id,
             ('s.start_id as {field_name}', 's.end_id as {field_name}', 't.{field_name}'),
@@ -135,11 +178,20 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=F
         )
 
         rules += dedent(f'''
-                        from InputStream[{edge_condition}]
-                        select {self_select_expr}
-                        insert into CandidateTable;
+                        from UnorderedInputStream[{edge_condition}]
+                        select *
+                        insert into N{edge.id}Buffer;
 
                         from InputStream[{edge_condition}] as s join
+                            CandidateTable as t
+                            on t.{edge_field} == "null" and {dep_condition}
+                                ((t.{start_field} == s.start_id and t.{end_field} == s.end_id) or
+                                (t.{start_field} == s.start_id and t.{end_field} == "null") or
+                                (t.{start_field} == "null" and t.{end_field} == s.end_id))
+                        select {merge_select_expr}
+                        insert into CandidateTable;
+
+                        from N{edge.id}Buffer as s join
                             CandidateTable as t
                             on t.{edge_field} == "null" and {dep_condition}
                                 ((t.{start_field} == s.start_id and t.{end_field} == s.end_id) or
@@ -175,12 +227,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--node',
                         required=True,
+                        type=str,
                         help='node file path')
     parser.add_argument('--edge',
                         required=True,
+                        type=str,
                         help='edge file path')
     parser.add_argument('--orels',
                         required=True,
+                        type=str,
                         help='orels file path')
 
     args = parser.parse_args()

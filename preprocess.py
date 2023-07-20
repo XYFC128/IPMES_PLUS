@@ -23,7 +23,11 @@ def extract_edge_signature(edge_obj: dict) -> str:
     return edge_obj['properties']['operation']
 
 
-def convert(inp: str) -> list[str]:
+def extract_timestamp(edge_obj: dict) -> str:
+    return edge_obj['properties']['lastest']
+
+
+def extract_fields(inp: str) -> list[str]:
     """
     Convert the original attack graph input into a list of fields.
 
@@ -35,6 +39,7 @@ def convert(inp: str) -> list[str]:
     """
 
     inp_obj = json.loads(inp)
+    ts = extract_timestamp(inp_obj['r'])
     eid = inp_obj['r']['id']
     esig = extract_edge_signature(inp_obj['r'])
     start_id = inp_obj['m']['id']
@@ -42,7 +47,7 @@ def convert(inp: str) -> list[str]:
     end_id = inp_obj['n']['id']
     end_sig = extract_node_signature(inp_obj['n'])
 
-    return [eid, esig, start_id, start_sig, end_id, end_sig]
+    return [ts, eid, esig, start_id, start_sig, end_id, end_sig]
 
 
 if __name__ == '__main__':
@@ -54,7 +59,8 @@ if __name__ == '__main__':
         python preprocess.py < 12hour_attack_08_18.json > output.csv
     
     The fields in the output csv:
-        eid, esig, start_id, start_sig, end_id, end_sig:
+        timestamp, eid, esig, start_id, start_sig, end_id, end_sig:
+        - timestamp: timestamp
         - eid:       edge id
         - esig:      edge signature
         - start_id:  id of the start node
@@ -65,4 +71,4 @@ if __name__ == '__main__':
 
     import fileinput
     for line in fileinput.input():
-        print(','.join(convert(line)))
+        print(','.join(extract_fields(line)))

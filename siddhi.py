@@ -3,7 +3,7 @@ import sys
 from time import sleep
 import argparse
 
-from preprocess import convert
+from preprocess import extract_fields
 from gen_siddhi_query import gen_siddhi_app
 
 parser = argparse.ArgumentParser()
@@ -17,6 +17,7 @@ parser.description = """
                     """
 parser.add_argument('--pattern_prefix',
                     required=True,
+                    type=str,
                     help='The path prefix of pattern\'s files, e.g. pattern/TTP11')
 
 args = parser.parse_args()
@@ -32,12 +33,28 @@ siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(siddhiApp)
 
 # Retrieving input handler to push events into Siddhi
 inputHandler = siddhiAppRuntime.getInputHandler("InputStream")
+unorderedInputHandler = siddhiAppRuntime.getInputHandler("UnorderedInputStream")
 
 # Starting event processing
 siddhiAppRuntime.start()
 
+time_buffer = []
+last_time = ''
 for line in sys.stdin:
-    inputHandler.send(convert(line))
+    fields = extract_fields(line)
+    ts = fields[0]
+    event = fields[1:]
+    if ts == last_time:
+        time_buffer.append(event)
+        continue
+    
+    if len(time_buffer) > 1:
+        for e in time_buffer:
+            unorderedInputHandler.send(e)
+    
+    time_buffer = [event]
+    last_time = ts
+    inputHandler.send(event)
 
 # Wait for response
 print('Processed all input')
