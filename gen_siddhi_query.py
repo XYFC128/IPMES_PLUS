@@ -26,7 +26,7 @@ def gen_header(g: PatternGraph) -> str:
     
     buffer_streams = ''
     for i in range(len(g.edges)):
-        buffer_streams += f'define Window N{i}Buffer (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string) time(10 sec); '
+        buffer_streams += f'define Window E{i}Buffer (eid string, esig string, start_id string, start_sig string, end_id string, end_sig string) time(10 sec); '
     
     return dedent(f'''
                   @App:name("SiddhiApp")
@@ -138,7 +138,7 @@ def gen_new_candidate_query(pat_graph: PatternGraph, dep_graph: DependencyGpraph
             select {self_select_expr}
             insert into CandidateTable;
 
-            from N{edge.id}Buffer
+            from E{edge.id}Buffer
             select {self_select_expr}
             insert into CandidateTable;
         ''')
@@ -180,7 +180,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=F
         rules += dedent(f'''
                         from UnorderedInputStream[{edge_condition}]
                         select *
-                        insert into N{edge.id}Buffer;
+                        insert into E{edge.id}Buffer;
 
                         from InputStream[{edge_condition}] as s join
                             CandidateTable as t
@@ -191,7 +191,7 @@ def gen_edge_rules(pat_graph: PatternGraph, dep_graph: DependencyGpraph, regex=F
                         select {merge_select_expr}
                         insert into CandidateTable;
 
-                        from N{edge.id}Buffer as s join
+                        from E{edge.id}Buffer as s join
                             CandidateTable as t
                             on t.{edge_field} == "null" and {dep_condition}
                                 ((t.{start_field} == s.start_id and t.{end_field} == s.end_id) or
