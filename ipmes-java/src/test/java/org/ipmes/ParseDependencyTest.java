@@ -33,18 +33,18 @@ public class ParseDependencyTest {
 
         assertArrayEquals(
                 new Integer[] {0},
-                g.getChildrens(-1).toArray());
+                g.getChildren(-1).toArray());
         assertArrayEquals(
                 new Integer[] {1},
-                g.getChildrens(0).toArray());
+                g.getChildren(0).toArray());
         assertArrayEquals(
                 new Integer[] {2},
-                g.getChildrens(1).toArray());
+                g.getChildren(1).toArray());
         assertArrayEquals(
                 new Integer[] {3},
-                g.getChildrens(2).toArray());
+                g.getChildren(2).toArray());
         assertArrayEquals(
                 new Integer[] {},
-                g.getChildrens(3).toArray());
+                g.getChildren(3).toArray());
     }
 }

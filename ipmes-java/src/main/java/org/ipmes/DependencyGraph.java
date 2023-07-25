@@ -65,7 +65,7 @@ public class DependencyGraph {
             return Optional.empty();
         }
 
-        Integer numEdges = parentsMap.size();
+        int numEdges = parentsMap.size();
         ArrayList<ArrayList<Integer>> parentsList = new ArrayList<>(numEdges);
         ArrayList<ArrayList<Integer>> childsList = new ArrayList<>(numEdges);
         for (int i = 0; i < numEdges; ++i) {
@@ -79,7 +79,7 @@ public class DependencyGraph {
         return this.parents.get(eid + 1);
     }
 
-    public ArrayList<Integer> getChildrens(Integer eid) {
+    public ArrayList<Integer> getChildren(Integer eid) {
         return this.childs.get(eid + 1);
     }
 }
