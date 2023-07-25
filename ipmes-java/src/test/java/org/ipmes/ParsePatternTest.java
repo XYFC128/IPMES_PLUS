@@ -31,7 +31,7 @@ public class ParsePatternTest {
                 new PatternNode(0, "Process::hello.sh"),
                 new PatternNode(1, "Process::hello.sh"),
                 new PatternNode(2, "Process::journalctl"),
-                new PatternNode(3, "Artifact::directory::"),
+                new PatternNode(3, "Artifact::directory::/var/log/journal"),
                 new PatternNode(4, "Artifact::file::/usr/bin/journalctl")
         };
         assertArrayEquals(nodeAns, g.getNodes().toArray());
