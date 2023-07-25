@@ -59,7 +59,28 @@ public class PatternGraph {
         return this.nodes;
     }
 
+    PatternNode getNode(Integer id) {
+        return this.nodes.get(id);
+    }
+
     ArrayList<PatternEdge> getEdges() {
         return this.edges;
+    }
+
+    PatternEdge getEdge(Integer eid) {
+        return this.edges.get(eid);
+    }
+
+    public ArrayList<Integer> getSharedNodes(Integer eid1, Integer eid2) {
+        ArrayList<Integer> shared = new ArrayList<>();
+        PatternEdge e1 = this.edges.get(eid1);
+        PatternEdge e2 = this.edges.get(eid2);
+        Integer start1 = e1.getStartId(), start2 = e2.getStartId();
+        Integer end1 = e1.getEndId(), end2 = e2.getEndId();
+        if (start1.equals(start2) || start1.equals(end2))
+            shared.add(start1);
+        if (end1.equals(start2) || end1.equals(end2))
+            shared.add(end1);
+        return shared;
     }
 }

@@ -43,6 +43,16 @@ public class ParsePatternTest {
                 new PatternEdge(3, "open", 3, 2),
         };
         assertArrayEquals(edgeAns, g.getEdges().toArray());
+
+        // shared nodes
+        assertArrayEquals(
+                new Integer[] {},
+                g.getSharedNodes(0, 3).toArray()
+        );
+        assertArrayEquals(
+                new Integer[] {2},
+                g.getSharedNodes(1, 2).toArray()
+        );
     }
 
     @Test
