@@ -1,6 +1,7 @@
 package org.ipmes;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.Reader;
 import java.util.*;
 
 import org.json.*;
@@ -14,14 +15,14 @@ public class PatternGraph {
         this.edges = edges;
     }
 
-    public static Optional<PatternGraph> parse(String nodeFile, String edgeFile) {
+    public static Optional<PatternGraph> parse(Reader nodeReader, Reader edgeReader) {
         ArrayList<PatternNode> nodes = new ArrayList<>();
         ArrayList<PatternEdge> edges = new ArrayList<>();
+        HashMap<String, Integer> idConvert = new HashMap<String, Integer>();
         try {
-            Scanner nodeScanner = new Scanner(new File(nodeFile));
-            HashMap<String, Integer> idConvert = new HashMap<String, Integer>();
-            for (int i = 0; nodeScanner.hasNextLine(); i++) {
-                String line = nodeScanner.nextLine();
+            BufferedReader nodeBuf = new BufferedReader(nodeReader);
+            String line = nodeBuf.readLine();
+            for (int i = 0; line != null; i++) {
                 JSONObject obj = new JSONObject(line);
                 JSONObject nodeObj = obj.getJSONObject("node");
                 String rawId = nodeObj.getString("id");
@@ -29,12 +30,13 @@ public class PatternGraph {
                 String signature = Preprocess.extractNodeSignature(nodeObj);
 
                 nodes.add(new PatternNode(i, signature));
+                line = nodeBuf.readLine();
             }
-            nodeScanner.close();
+            nodeBuf.close();
 
-            Scanner edgeScanner = new Scanner(new File(edgeFile));
-            for (int i = 0; edgeScanner.hasNextLine(); i++) {
-                String line = edgeScanner.nextLine();
+            BufferedReader edgeBuf = new BufferedReader(edgeReader);
+            line = edgeBuf.readLine();
+            for (int i = 0; line != null; i++) {
                 JSONObject obj = new JSONObject(line);
                 JSONObject edgeObj = obj.getJSONObject("edge");
                 String raw_start = edgeObj.getJSONObject("start").getString("id");
@@ -44,8 +46,9 @@ public class PatternGraph {
                 Integer endId = idConvert.get(raw_end);
 
                 edges.add(new PatternEdge(i, signature, startId, endId));
+                line = edgeBuf.readLine();
             }
-            edgeScanner.close();
+            edgeBuf.close();
         } catch (Exception e) {
             return Optional.empty();
         }

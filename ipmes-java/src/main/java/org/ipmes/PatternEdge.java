@@ -12,6 +12,7 @@ public class PatternEdge {
         this.endId = endId;
     }
 
+    @Override
     public String toString() {
         return String.format(
                 "Edge {id: %d, signature: %s, startId: %d, endId: %d}",
@@ -20,5 +21,14 @@ public class PatternEdge {
                 this.startId,
                 this.endId
         );
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (!(other instanceof PatternEdge)) return false;
+        PatternEdge temp = (PatternEdge) other;
+        return this.id.equals(temp.id) && this.signature.equals(temp.signature) &&
+                this.startId.equals(temp.startId) && this.endId.equals(temp.endId);
     }
 }
