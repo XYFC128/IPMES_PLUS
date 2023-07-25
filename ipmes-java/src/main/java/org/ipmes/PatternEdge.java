@@ -2,9 +2,17 @@ package org.ipmes;
 
 public class PatternEdge {
     Integer id;
+    public Integer getId() { return this.id; }
+
     String signature;
+    public String getSignature() { return this.signature; }
+
     Integer startId;
+    public Integer getStartId() { return this.startId; }
+
     Integer endId;
+    public Integer getEndId() { return endId; }
+
     public PatternEdge(Integer id, String signature, Integer startId, Integer endId) {
         this.id = id;
         this.signature = signature;

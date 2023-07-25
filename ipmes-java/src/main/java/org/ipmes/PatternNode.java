@@ -2,7 +2,11 @@ package org.ipmes;
 
 public class PatternNode {
     Integer id;
+    public Integer getId() { return this.id; }
+
     String signature;
+    public String getSignature() { return this.signature; }
+
     public PatternNode(Integer id, String signature) {
         this.id = id;
         this.signature = signature;
