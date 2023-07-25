@@ -9,9 +9,9 @@ public class ConstructTCQ {
     public static void main(String[] args) throws FileNotFoundException {
 
         /*
-         * //////////////////////////////////
+         * ///////////////////////////////////////////////
          * initialization
-         *///////////////////////////////////
+         *////////////////////////////////////////////////
 
         // parsing temporal relationship
         FileReader orelsReader = new FileReader("/Users/datou/repos/CITI/data/patterns/TTP10_oRels.json");
@@ -25,9 +25,9 @@ public class ConstructTCQ {
         PatternGraph SpatialRelation = tmpSpatialRelation.get();
 
         /*
-         * //////////////////////////////////
+         * ///////////////////////////////////////////////
          * DFS to generate TC subqueries
-         *///////////////////////////////////
+         *////////////////////////////////////////////////
 
         int numEdges = SpatialRelation.getEdges().size();
         ArrayList<TCQuery> subQueries = new ArrayList<TCQuery>();
@@ -36,5 +36,10 @@ public class ConstructTCQ {
             tmpList.add(i);
             subQueries.addAll(TCQuery.generate_TCQueries(TemporalRelation, SpatialRelation, tmpList, i));
         }
+
+        /*
+         * ///////////////////////////////////////////////
+         * generate Siddhi Query from TC subqueries
+         *////////////////////////////////////////////////
     }
 }
