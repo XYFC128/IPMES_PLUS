@@ -12,7 +12,7 @@ public class Preprocess {
         } else if (type.equals("Artifact")) {
             String subtype = properties.getString("subtype");
             signature += String.format("%s::", subtype);
-            if (subtype.equals("file") || subtype.equals("diectory")) {
+            if (subtype.equals("file") || subtype.equals("directory")) {
                 signature += properties.getString("path");
             } else if (subtype.equals("network socket")) {
                 signature += String.format(
