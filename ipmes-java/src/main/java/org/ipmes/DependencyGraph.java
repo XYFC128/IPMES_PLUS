@@ -13,16 +13,29 @@ import java.util.stream.Collectors;
 
 public class DependencyGraph {
     ArrayList<ArrayList<Integer>> parents;
-    ArrayList<ArrayList<Integer>> childs;
+    ArrayList<ArrayList<Integer>> child;
 
-    DependencyGraph(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> childs) {
+    DependencyGraph(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> child) {
         this.parents = parents;
-        this.childs = childs;
+        this.child = child;
+    }
+
+    static ArrayList<Integer> parseArrayOfEdgeId(JSONArray array) {
+        ArrayList<Integer> res = new ArrayList<>();
+        for (int i = 0; i < array.length(); ++i) {
+            Object obj = array.get(i);
+            Integer item = -1;
+            if (obj instanceof Integer) {
+                item = (Integer)obj;
+            }
+            res.add(item);
+        }
+        return res;
     }
 
     public static Optional<DependencyGraph> parse(Reader orelsReader) {
         HashMap<Integer, ArrayList<Integer>> parentsMap = new HashMap<>();
-        HashMap<Integer, ArrayList<Integer>> childsMap = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> childMap = new HashMap<>();
         try {
             BufferedReader orelsBuf = new BufferedReader(orelsReader);
             String content = orelsBuf.lines().collect(Collectors.joining());
@@ -34,32 +47,13 @@ public class DependencyGraph {
                 String key = (String) keys.next();
                 JSONObject curObj = graphObj.getJSONObject(key);
 
-                Integer id = -1;
+                int id = -1;
                 if (!key.equals("root"))
                     id = Integer.parseInt(key);
                 id += 1;
 
-                JSONArray curParents = curObj.getJSONArray("parents");
-                parentsMap.put(id, new ArrayList<>());
-                for (int i = 0; i < curParents.length(); ++i) {
-                    Object tmp = curParents.get(i);
-                    Integer p = -1;
-                    if (tmp instanceof Integer) {
-                        p = (Integer)tmp;
-                    }
-                    parentsMap.get(id).add(p);
-                }
-
-                JSONArray curChildren = curObj.getJSONArray("children");
-                childsMap.put(id, new ArrayList<>());
-                for (int i = 0; i < curChildren.length(); ++i) {
-                    Object tmp = curChildren.get(i);
-                    Integer c = -1;
-                    if (tmp instanceof Integer) {
-                        c = (Integer)tmp;
-                    }
-                    childsMap.get(id).add(c);
-                }
+                parentsMap.put(id, parseArrayOfEdgeId(curObj.getJSONArray("parents")));
+                childMap.put(id, parseArrayOfEdgeId(curObj.getJSONArray("children")));
             }
         } catch (Exception e) {
             return Optional.empty();
@@ -70,7 +64,7 @@ public class DependencyGraph {
         ArrayList<ArrayList<Integer>> childsList = new ArrayList<>(numEdges);
         for (int i = 0; i < numEdges; ++i) {
             parentsList.add(i, parentsMap.get(i));
-            childsList.add(i, childsMap.get(i));
+            childsList.add(i, childMap.get(i));
         }
         return Optional.of(new DependencyGraph(parentsList, childsList));
     }
@@ -80,6 +74,6 @@ public class DependencyGraph {
     }
 
     public ArrayList<Integer> getChildren(Integer eid) {
-        return this.childs.get(eid + 1);
+        return this.child.get(eid + 1);
     }
 }
