@@ -6,23 +6,22 @@ public class Preprocess {
     public static String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");
         String type = properties.getString("type");
-        String signatre = String.format("%s::", type);
+        String signature = String.format("%s::", type);
         if (type.equals("Process")) {
-            signatre += properties.getString("name");
+            signature += properties.getString("name");
         } else if (type.equals("Artifact")) {
             String subtype = properties.getString("subtype");
-            signatre += String.format("%s::", subtype);
+            signature += String.format("%s::", subtype);
             if (subtype.equals("file") || subtype.equals("diectory")) {
-                signatre += properties.getString("path");
+                signature += properties.getString("path");
             } else if (subtype.equals("network socket")) {
-                signatre += String.format(
+                signature += String.format(
                         "%s:%s",
                         properties.getString("remote address"),
-                        properties.getString("remote port")
-                );
+                        properties.getString("remote port"));
             }
         }
-        return signatre;
+        return signature;
     }
 
     public static String extractEdgeSignature(JSONObject edgeObj) {

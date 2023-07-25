@@ -3,3 +3,5 @@ __pycache__/
 /data/
 /siddhi-bin/
 project/target/
+.DS_Store
+.vscode/settings.json
