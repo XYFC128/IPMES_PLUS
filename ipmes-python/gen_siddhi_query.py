@@ -60,7 +60,7 @@ def gen_edge_condition(edge: PatternEdge, start: PatternNode, end: PatternNode, 
 
 def gen_select_expr(g: PatternGraph, eid: int, fmt_node: tuple[str, str, str], fmt_edge: tuple[str, str]) -> str:
     """
-    Generate the "select" exptrssion in siddhi query. The selection result will have the same fields as
+    Generate the "select" expression in siddhi query. The selection result will have the same fields as
     the CandidateTable, i.e. (n0_id, n1_id, ..., e0_id, e1_id, ...).
 
     This function takes 5 format strings to format the output on different scenarios:
