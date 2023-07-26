@@ -1,9 +1,12 @@
 package org.ipmes;
 
+import io.siddhi.query.api.SiddhiApp;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import io.siddhi.query.compiler.SiddhiCompiler;
 
 import static org.junit.Assert.*;
 
@@ -63,5 +66,12 @@ public class SiddhiQueryTest {
                 generator.genSelectExpression(edge, "\"null\"", "\"null\"", "\"null\"", "null"));
         assertEquals("a as n0_id, b as n1_id, c as e0_id",
                 generator.genSelectExpression(edge, "a", "b", "c", "null"));
+    }
+
+    @Test
+    public void shouldCompile() {
+        SiddhiAppGenerator generator = createSimpleGenerator();
+        SiddhiApp app = SiddhiCompiler.parse(generator.generate());
+        assertNotNull(app);
     }
 }
