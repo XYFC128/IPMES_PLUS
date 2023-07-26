@@ -33,7 +33,7 @@ public class SharedNodeRelation {
         Integer[] endpoints2 = e2.getEndponts();
         for (int i = 0; i < 2; ++i) {
             for (int j : this.relation[i]) {
-                if (endpoints1[i] != endpoints2[j])
+                if (endpoints1[i].equals(endpoints2[j]))
                     return false;
             }
         }
