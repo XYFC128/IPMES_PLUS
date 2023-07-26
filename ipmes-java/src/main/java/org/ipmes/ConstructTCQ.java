@@ -39,6 +39,30 @@ public class ConstructTCQ {
 
         /*
          * ///////////////////////////////////////////////
+         * greedy select longest TC subqueries
+         *////////////////////////////////////////////////
+
+        subQueries.sort((Q1, Q2) -> (Q2.size - Q1.size));
+        // subQ_provider: index of subqueries
+        ArrayList<Integer> subQ_provider = new ArrayList<Integer>();
+        // subQ_selected: result of greedy select
+        ArrayList<Integer> subQ_selected = new ArrayList<Integer>();
+        for (int i = 0; i < subQueries.size(); i++) {
+            boolean shouldSelect = true;
+            for (int j = 0; j < subQueries.get(i).size; j++) {
+                if (subQ_selected.contains(subQueries.get(i).query.get(j))) {
+                    shouldSelect = false;
+                    break;
+                }
+            }
+            if (shouldSelect) {
+                subQ_provider.add(i);
+                subQ_selected.addAll(subQueries.get(i).query);
+            }
+        }
+
+        /*
+         * ///////////////////////////////////////////////
          * generate Siddhi Query from TC subqueries
          *////////////////////////////////////////////////
     }
