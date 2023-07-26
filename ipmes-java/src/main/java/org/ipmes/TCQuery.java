@@ -21,9 +21,8 @@ public class TCQuery {
     // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
-        for (int i = 0; i < this.query.size(); i++) {
-            if (this.query.get(i) != eid &&
-                    (!this.SpatialRelation.getSharedNodes(this.query.get(i), eid).isEmpty()))
+        for (int i : this.query) {
+            if (i != eid && (!this.SpatialRelation.getSharedNodes(i, eid).isEmpty()))
                 ret.add(i);
         }
         return ret;
@@ -56,21 +55,17 @@ public class TCQuery {
         // extract children
         ArrayList<Integer> children = TemporalRelation.getChildren(current_ID);
 
-        int numChildren = children.size(), current_path_size = current_path.size();
-
         // add the present path to the subquery set
         ArrayList<Integer> ret_path = new ArrayList<Integer>(current_path);
         ret.add(new TCQuery(ret_path, SpatialRelation));
 
         // deal with every child
-        for (int i = 0; i < numChildren; i++) {
-            int childId = children.get(i);
-            for (int j = 0; j < current_path_size; j++) {
-                int current_path_edgeId = current_path.get(j);
+        for (Integer childId : children) {
+            for (Integer current_path_edgeId : current_path) {
                 // checking 1. and 2.
                 if (!(SpatialRelation.getSharedNodes(childId, current_path_edgeId).isEmpty()
                         || current_path.contains(childId))) {
-                    ArrayList<Integer> new_current_path = current_path;
+                    ArrayList<Integer> new_current_path = new ArrayList<Integer>(current_path);
                     new_current_path.add(childId);
                     ret.addAll(generate_TCQueries(
                             TemporalRelation,
