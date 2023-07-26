@@ -13,6 +13,27 @@ public class TCQuery {
         this.query = query;
     }
 
+    /*
+     * sorted by temporal order
+     * ArrayList of eid
+     */
+    public ArrayList<Integer> getEdges() {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        return ret;
+    }
+
+    /*
+     * ArrayList of eid
+     */
+    public ArrayList<Integer> getInQueryDependencies(Integer eid) {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        return ret;
+    }
+
+    Integer getId() {
+        return 0;
+    }
+
     // DFS to find out possible TC subqueries
     // constraints:
     // 1. new edge is not in the TC subquery yet
