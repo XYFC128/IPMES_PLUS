@@ -20,4 +20,8 @@ public class MatchEdge {
     public Integer getEndId() {
         return 0;
     }
+
+    public Integer[] getEndponts() {
+        return new Integer[] {this.getStartId(), this.getEndId()};
+    }
 }

@@ -1,5 +1,7 @@
 package org.ipmes;
 
+import java.util.ArrayList;
+
 public class PatternEdge {
     Integer id;
     public Integer getId() { return this.id; }
@@ -18,6 +20,10 @@ public class PatternEdge {
         this.signature = signature;
         this.startId = startId;
         this.endId = endId;
+    }
+
+    Integer[] getEndponts() {
+        return new Integer[] {this.startId, this.endId};
     }
 
     @Override
