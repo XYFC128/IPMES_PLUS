@@ -97,6 +97,8 @@ public class SiddhiAppGenerator {
     String genDependencyCondition(PatternEdge edge) {
         String condition = "";
         for (int parentId : this.dependency.getParents(edge.getId())) {
+            if (parentId == -1)
+                continue;
             condition += String.format("t.e%d_id != \"null\" and ", parentId);
         }
         return condition;
