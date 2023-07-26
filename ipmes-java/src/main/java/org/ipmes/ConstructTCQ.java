@@ -50,6 +50,8 @@ public class ConstructTCQ {
         for (int i = 0; i < subQueries.size(); i++) {
             boolean shouldSelect = true;
             subQueries.get(i).setTCQueryID(i);
+            // System.out.println(subQueries.get(i).getTCQueryID() + ": " +
+            // subQueries.get(i).getQueryEdges());
             for (int j = 0; j < subQueries.get(i).query.size(); j++) {
                 if (subQ_selected.contains(subQueries.get(i).query.get(j))) {
                     shouldSelect = false;

@@ -4,12 +4,13 @@ import java.util.*;
 
 public class TCQuery {
 
-    // we can later sort quiries by size to greedy choose
-    int id;
+    int id; // id for the TCQuery
     ArrayList<Integer> query;
+    PatternGraph SpatialRelation;
 
-    public TCQuery(ArrayList<Integer> query) {
+    public TCQuery(ArrayList<Integer> query, PatternGraph SpatialRelation) {
         this.query = query;
+        this.SpatialRelation = SpatialRelation;
     }
 
     // getter for query
@@ -20,14 +21,21 @@ public class TCQuery {
     // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
+        for (int i = 0; i < this.query.size(); i++) {
+            if (this.query.get(i) != eid &&
+                    (!this.SpatialRelation.getSharedNodes(this.query.get(i), eid).isEmpty()))
+                ret.add(i);
+        }
         return ret;
     }
 
+    // getter of TCQueryID
     Integer getTCQueryID() {
         return id;
     }
 
-    void setTCQueryID(int id) {
+    // setter of TCQueryID
+    void setTCQueryID(Integer id) {
         this.id = id;
     }
 
@@ -37,6 +45,7 @@ public class TCQuery {
     // 2. new edge need to have share node with TC subquery
     // 3. follow temporal rules
     // so we handle edges in temporal order, then check 1. and 2.
+
     public static ArrayList<TCQuery> generate_TCQueries(
             DependencyGraph TemporalRelation,
             PatternGraph SpatialRelation,
@@ -51,7 +60,7 @@ public class TCQuery {
 
         // add the present path to the subquery set
         ArrayList<Integer> ret_path = new ArrayList<Integer>(current_path);
-        ret.add(new TCQuery(ret_path));
+        ret.add(new TCQuery(ret_path, SpatialRelation));
 
         // deal with every child
         for (int i = 0; i < numChildren; i++) {
