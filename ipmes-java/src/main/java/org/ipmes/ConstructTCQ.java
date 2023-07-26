@@ -42,14 +42,15 @@ public class ConstructTCQ {
          * greedy select longest TC subqueries
          *////////////////////////////////////////////////
 
-        subQueries.sort((Q1, Q2) -> (Q2.size - Q1.size));
+        subQueries.sort((Q1, Q2) -> (Q2.query.size() - Q1.query.size()));
         // subQ_provider: index of subqueries
         ArrayList<Integer> subQ_provider = new ArrayList<Integer>();
         // subQ_selected: result of greedy select
         ArrayList<Integer> subQ_selected = new ArrayList<Integer>();
         for (int i = 0; i < subQueries.size(); i++) {
             boolean shouldSelect = true;
-            for (int j = 0; j < subQueries.get(i).size; j++) {
+            subQueries.get(i).setTCQueryID(i);
+            for (int j = 0; j < subQueries.get(i).query.size(); j++) {
                 if (subQ_selected.contains(subQueries.get(i).query.get(j))) {
                     shouldSelect = false;
                     break;

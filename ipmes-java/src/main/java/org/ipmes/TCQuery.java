@@ -5,28 +5,30 @@ import java.util.*;
 public class TCQuery {
 
     // we can later sort quiries by size to greedy choose
-    int size;
+    int id;
     ArrayList<Integer> query;
 
-    public TCQuery(int size, ArrayList<Integer> query) {
-        this.size = size;
+    public TCQuery(ArrayList<Integer> query) {
         this.query = query;
     }
 
+    // getter for query
     public ArrayList<Integer> getQueryEdges() {
         return this.query;
     }
 
-    /*
-     * ArrayList of eid
-     */
+    // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
         return ret;
     }
 
-    Integer getId() {
-        return 0;
+    Integer getTCQueryID() {
+        return id;
+    }
+
+    void setTCQueryID(int id) {
+        this.id = id;
     }
 
     // DFS to find out possible TC subqueries
@@ -49,7 +51,7 @@ public class TCQuery {
 
         // add the present path to the subquery set
         ArrayList<Integer> ret_path = new ArrayList<Integer>(current_path);
-        ret.add(new TCQuery(current_path_size, ret_path));
+        ret.add(new TCQuery(ret_path));
 
         // deal with every child
         for (int i = 0; i < numChildren; i++) {
