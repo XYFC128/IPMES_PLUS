@@ -13,19 +13,18 @@ public class TCQuery {
         this.query = query;
     }
 
+    // getter for query
     public ArrayList<Integer> getQueryEdges() {
         return this.query;
     }
 
-    /*
-     * ArrayList of eid
-     */
+    // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
         return ret;
     }
 
-    Integer getId() {
+    Integer getTCQueryID() {
         return 0;
     }
 
