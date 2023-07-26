@@ -13,13 +13,8 @@ public class TCQuery {
         this.query = query;
     }
 
-    /*
-     * sorted by temporal order
-     * ArrayList of eid
-     */
-    public ArrayList<Integer> getEdges() {
-        ArrayList<Integer> ret = new ArrayList<Integer>();
-        return ret;
+    public ArrayList<Integer> getQueryEdges() {
+        return this.query;
     }
 
     /*
