@@ -3,6 +3,7 @@ package org.ipmes;
 import io.siddhi.query.api.SiddhiApp;
 import org.junit.Test;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -25,6 +26,15 @@ public class SiddhiQueryTest {
                 new ArrayList<>(Arrays.asList(new ArrayList<>(), new ArrayList<>()))
         );
         return new SiddhiAppGenerator(pattern, dependency, false);
+    }
+
+    SiddhiAppGenerator createTTP11Generator() {
+        String nodes = TTPGenerator.genTTP11Nodes();
+        String edges = TTPGenerator.genTTP11Edges();
+        PatternGraph pattern = PatternGraph.parse(new StringReader(nodes), new StringReader(edges)).get();
+        String orels = TTPGenerator.genTTP11Orels();
+        DependencyGraph dep = DependencyGraph.parse(new StringReader(orels)).get();
+        return new SiddhiAppGenerator(pattern, dep, false);
     }
 
     @Test
@@ -69,9 +79,17 @@ public class SiddhiQueryTest {
     }
 
     @Test
-    public void shouldCompile() {
-        SiddhiAppGenerator generator = createSimpleGenerator();
-        SiddhiApp app = SiddhiCompiler.parse(generator.generate());
+    public void shouldCompile1() {
+        SiddhiAppGenerator gen = createSimpleGenerator();
+        SiddhiApp app = SiddhiCompiler.parse(gen.generate());
+        assertNotNull(app);
+    }
+
+    @Test
+    public void shouldCompile2() {
+        SiddhiAppGenerator gen = createTTP11Generator();
+        System.out.println(gen.generate());
+        SiddhiApp app = SiddhiCompiler.parse(gen.generate());
         assertNotNull(app);
     }
 }

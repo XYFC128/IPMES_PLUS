@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class ParseDependencyTest {
     @Test
     public void parseTemporalRelation() {
-        String orels = "{\"0\":{\"parents\":[\"root\"],\"children\":[1]},\"1\":{\"parents\":[0],\"children\":[2]},\"2\":{\"parents\":[1],\"children\":[3]},\"3\":{\"parents\":[2],\"children\":[]},\"root\":{\"parents\":[],\"children\":[0]}}";
+        String orels = TTPGenerator.genTTP11Orels();
         Optional<DependencyGraph> res = DependencyGraph.parse(new StringReader(orels));
         assertTrue(res.isPresent());
         DependencyGraph g = res.get();
