@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
 
-public class ConstructTCQ {
+public class Decomposition {
 
     public static void main(String[] args) throws FileNotFoundException {
 
@@ -51,8 +51,6 @@ public class ConstructTCQ {
         for (int i = 0; i < subQueries.size(); i++) {
             boolean shouldSelect = true;
             subQueries.get(i).setTCQueryID(i);
-            // System.out.println(subQueries.get(i).getTCQueryID() + ": " +
-            // subQueries.get(i).getQueryEdges());
             for (int j : subQueries.get(i).query) {
                 if (subQ_selected.contains(j)) {
                     shouldSelect = false;
