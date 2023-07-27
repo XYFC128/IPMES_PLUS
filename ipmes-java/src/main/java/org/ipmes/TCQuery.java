@@ -18,6 +18,16 @@ public class TCQuery {
         return this.query;
     }
 
+    public ArrayList<Integer> getQueryNodes() {
+        HashSet<Integer> nodes = new HashSet<>();
+        for (Integer eid : this.query) {
+            PatternEdge e = SpatialRelation.getEdge(eid);
+            nodes.add(e.getStartId());
+            nodes.add(e.getEndId());
+        }
+        return new ArrayList<Integer>(nodes);
+    }
+
     // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
