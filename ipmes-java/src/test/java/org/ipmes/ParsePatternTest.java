@@ -40,7 +40,7 @@ public class ParsePatternTest {
         // shared nodes
         assertTrue(g.getSharedNodes(0, 3).isEmpty());
         assertArrayEquals(
-                new Integer[] {2},
+                new PatternNode[] {nodeAns[2]},
                 g.getSharedNodes(1, 2).toArray()
         );
     }

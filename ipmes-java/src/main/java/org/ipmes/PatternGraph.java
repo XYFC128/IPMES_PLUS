@@ -71,16 +71,16 @@ public class PatternGraph {
         return this.edges.get(eid);
     }
 
-    public ArrayList<Integer> getSharedNodes(Integer eid1, Integer eid2) {
-        ArrayList<Integer> shared = new ArrayList<>();
-        PatternEdge e1 = this.edges.get(eid1);
-        PatternEdge e2 = this.edges.get(eid2);
+    public ArrayList<PatternNode> getSharedNodes(Integer patternEdgeId1, Integer patternEdgeId2) {
+        ArrayList<PatternNode> shared = new ArrayList<>();
+        PatternEdge e1 = getEdge(patternEdgeId1);
+        PatternEdge e2 = getEdge(patternEdgeId2);
         Integer start1 = e1.getStartId(), start2 = e2.getStartId();
         Integer end1 = e1.getEndId(), end2 = e2.getEndId();
         if (start1.equals(start2) || start1.equals(end2))
-            shared.add(start1);
+            shared.add(getNode(start1));
         if (end1.equals(start2) || end1.equals(end2))
-            shared.add(end1);
+            shared.add(getNode(end1));
         return shared;
     }
 }
