@@ -7,7 +7,7 @@ public class MatchedResult {
     public Integer getMatchedTCQueryId() {
         return 0;
     }
-    public ArrayList<MatchEdge> getMatches() {
+    public ArrayList<DataEdge> getMatches() {
         return new ArrayList<>();
     }
 }

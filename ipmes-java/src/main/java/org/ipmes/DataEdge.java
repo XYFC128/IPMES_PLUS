@@ -1,9 +1,9 @@
 package org.ipmes;
 
-public class MatchEdge {
-    Integer eventId;
-    public Integer getEventId() {
-        return this.eventId;
+public class DataEdge {
+    Integer dataId;
+    public Integer getDataId() {
+        return this.dataId;
     }
 
     Integer timestamp;
@@ -21,17 +21,17 @@ public class MatchEdge {
         return this.endId;
     }
 
-    Integer patterId;
-    public Integer getPatternId() {
-        return this.patterId;
+    PatternEdge matched;
+    public PatternEdge getMatched() {
+        return this.matched;
     }
 
-    MatchEdge(Integer eventId, Integer timestamp, Integer startId, Integer endId, Integer patternId) {
-        this.eventId = eventId;
+    DataEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
+        this.dataId = dataId;
         this.timestamp = timestamp;
         this.startId = startId;
         this.endId = endId;
-        this.patterId = patternId;
+        this.matched = matched;
     }
 
     public Integer[] getEndponts() {
