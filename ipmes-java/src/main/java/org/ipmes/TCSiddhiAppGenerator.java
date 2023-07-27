@@ -82,7 +82,7 @@ public class TCSiddhiAppGenerator {
         }
 
         for (Integer eid : q.getQueryEdges()) {
-            expr.add(String.format("e%1$d.eid as e%1$d_id", eid));
+            expr.add(String.format("e%1$d.timestamp as e%1$d_ts, e%1$d.eid as e%1$d_id", eid));
         }
 
         return "select " + String.join(", ", expr);
