@@ -24,26 +24,40 @@ public class Join {
         return ret;
     }
 
-    private boolean checkRelation(DataEdge candidate, DataEdge alreadyIn) {
+    private boolean checkRelation(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
         int arr[][] = {
-                { candidate.matched.getStartId(), candidate.matched.getEndId() },
-                { alreadyIn.matched.getStartId(), alreadyIn.matched.getEndId() },
-                { candidate.getStartId(), candidate.getEndId() },
-                { alreadyIn.getStartId(), alreadyIn.getEndId() }
+                { edgeInMatchResult.matched.getStartId(), edgeInMatchResult.matched.getEndId() },
+                { edgeInTable.matched.getStartId(), edgeInTable.matched.getEndId() },
+                { edgeInMatchResult.getStartId(), edgeInMatchResult.getEndId() },
+                { edgeInTable.getStartId(), edgeInTable.getEndId() }
         };
         return (relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]));
     }
 
-    private boolean checkTime(DataEdge candidate, DataEdge alreadyIn) {
-        return (this.temporalRelation.getParents(candidate.matched.getId()).contains(alreadyIn.matched.getId())
-                && candidate.timestamp > alreadyIn.timestamp)
+    private boolean checkTime(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
+        return (this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
+                .contains(edgeInTable.matched.getId())
+                && edgeInMatchResult.timestamp > edgeInTable.timestamp)
                 ||
-                (this.temporalRelation.getChildren(candidate.matched.getId()).contains(alreadyIn.matched.getId())
-                        && candidate.timestamp < alreadyIn.timestamp)
+                (this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
+                        .contains(edgeInTable.matched.getId())
+                        && edgeInMatchResult.timestamp < edgeInTable.timestamp)
                 ||
-                (!this.temporalRelation.getParents(candidate.matched.getId()).contains(alreadyIn.matched.getId())
-                        && !this.temporalRelation.getChildren(candidate.matched.getId())
-                                .contains(alreadyIn.matched.getId()));
+                (!this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
+                        .contains(edgeInTable.matched.getId())
+                        && !this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
+                                .contains(edgeInTable.matched.getId()));
+    }
+
+    // detect whether any edge in subTCQ appear in entry
+    private boolean overlap(ArrayList<DataEdge> subTCQ, ArrayList<DataEdge> entry) {
+        for (DataEdge i : subTCQ) {
+            for (DataEdge j : entry) {
+                if (i.matched.getId() == j.matched.getId())
+                    return true;
+            }
+        }
+        return false;
     }
 
     /*
@@ -60,16 +74,21 @@ public class Join {
     // endId: node id in the input data
     // matched: 0 based id we given to the edge
     // }
-    public void joinMatchResult() {
+    public ArrayList<ArrayList<Integer>> joinMatchResult() {
         ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
         ArrayList<ArrayList<DataEdge>> expansionTable = new ArrayList<ArrayList<DataEdge>>();
+        ArrayList<ArrayList<Integer>> answer = new ArrayList<ArrayList<Integer>>();
         boolean fit = true;
+        int totalSize = this.spatialRelation.getEdges().size();
         for (ArrayList<DataEdge> subTCQ : matchResult) {
             for (ArrayList<DataEdge> entry : expansionTable) {
                 fit = true;
-                for (DataEdge candidate : subTCQ) {
-                    for (DataEdge alreadyIn : entry) {
-                        if (!checkRelation(candidate, alreadyIn) || !checkTime(candidate, alreadyIn)) {
+                if (overlap(subTCQ, entry))
+                    continue;
+                for (DataEdge edgeInMatchResult : subTCQ) {
+                    for (DataEdge edgeInTable : entry) {
+                        if (!checkRelation(edgeInMatchResult, edgeInTable)
+                                || !checkTime(edgeInMatchResult, edgeInTable)) {
                             fit = false;
                             break;
                         }
@@ -77,9 +96,18 @@ public class Join {
                     if (!fit)
                         break;
                 }
-                if (fit)
+                if (fit) {
                     entry.addAll(subTCQ);
+                    if (entry.size() == totalSize) {
+                        ArrayList<Integer> tmp = new ArrayList<Integer>();
+                        for (DataEdge edge : entry) {
+                            tmp.add(edge.getDataId());
+                        }
+                        answer.add(tmp);
+                    }
+                }
             }
         }
+        return answer;
     }
 }
