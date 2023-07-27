@@ -4,14 +4,46 @@ import java.util.ArrayList;
 
 public class Join {
 
-    private boolean checkRelation(DataEdge candidate, DataEdge AlreadyIn) {
+    DependencyGraph temporalRelation;
+    PatternGraph spatialRelation;
 
-        return true;
+    public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
+        this.temporalRelation = temporalRelation;
+        this.spatialRelation = spatialRelation;
     }
 
-    private boolean checkTime(DataEdge candidate, DataEdge AlreadyIn) {
+    private Integer relationType(int n[], int m[]) {
+        int ret = 0;
+        for (int i : n) {
+            for (int j : m) {
+                if (i == j)
+                    ret += 1;
+                ret *= 2;
+            }
+        }
+        return ret;
+    }
 
-        return true;
+    private boolean checkRelation(DataEdge candidate, DataEdge alreadyIn) {
+        int arr[][] = {
+                { candidate.matched.getStartId(), candidate.matched.getEndId() },
+                { alreadyIn.matched.getStartId(), alreadyIn.matched.getEndId() },
+                { candidate.getStartId(), candidate.getEndId() },
+                { alreadyIn.getStartId(), alreadyIn.getEndId() }
+        };
+        return (relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]));
+    }
+
+    private boolean checkTime(DataEdge candidate, DataEdge alreadyIn) {
+        return (this.temporalRelation.getParents(candidate.matched.getId()).contains(alreadyIn.matched.getId())
+                && candidate.timestamp > alreadyIn.timestamp)
+                ||
+                (this.temporalRelation.getChildren(candidate.matched.getId()).contains(alreadyIn.matched.getId())
+                        && candidate.timestamp < alreadyIn.timestamp)
+                ||
+                (!this.temporalRelation.getParents(candidate.matched.getId()).contains(alreadyIn.matched.getId())
+                        && !this.temporalRelation.getChildren(candidate.matched.getId())
+                                .contains(alreadyIn.matched.getId()));
     }
 
     /*
@@ -29,15 +61,15 @@ public class Join {
     // matched: 0 based id we given to the edge
     // }
     public void joinMatchResult() {
-        ArrayList<ArrayList<DataEdge>> MatchResult = new ArrayList<ArrayList<DataEdge>>();
-        ArrayList<ArrayList<DataEdge>> ExpansionTable = new ArrayList<ArrayList<DataEdge>>();
+        ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
+        ArrayList<ArrayList<DataEdge>> expansionTable = new ArrayList<ArrayList<DataEdge>>();
         boolean fit = true;
-        for (ArrayList<DataEdge> subTCQ : MatchResult) {
-            for (ArrayList<DataEdge> entry : ExpansionTable) {
+        for (ArrayList<DataEdge> subTCQ : matchResult) {
+            for (ArrayList<DataEdge> entry : expansionTable) {
                 fit = true;
                 for (DataEdge candidate : subTCQ) {
-                    for (DataEdge AlreadyIn : entry) {
-                        if (!checkRelation(candidate, AlreadyIn) || !checkTime(candidate, AlreadyIn)) {
+                    for (DataEdge alreadyIn : entry) {
+                        if (!checkRelation(candidate, alreadyIn) || !checkTime(candidate, alreadyIn)) {
                             fit = false;
                             break;
                         }
@@ -45,8 +77,8 @@ public class Join {
                     if (!fit)
                         break;
                 }
-                // if(fit)
-                // put subTCQ in this entry;
+                if (fit)
+                    entry.addAll(subTCQ);
             }
         }
     }
