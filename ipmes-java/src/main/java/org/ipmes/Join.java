@@ -4,6 +4,11 @@ import java.util.ArrayList;
 
 public class Join {
 
+    /*
+     * ///////////////////////////////////////////////
+     * initialize
+     *////////////////////////////////////////////////
+
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
 
@@ -12,6 +17,13 @@ public class Join {
         this.spatialRelation = spatialRelation;
     }
 
+    /*
+     * ///////////////////////////////////////////////
+     * methods for checking edge relation
+     *////////////////////////////////////////////////
+
+    // use bit-operation like method to check edge spatial relation
+    // improvement: change to bit-operation
     private Integer relationType(int n[], int m[]) {
         int ret = 0;
         for (int i : n) {
@@ -65,21 +77,12 @@ public class Join {
      * join the result of TC subquery matching
      *////////////////////////////////////////////////
 
-    // output of Siddhi App would be ArrayList<MatchEdge>
-    //
-    // DataEdge{
-    // dataId: edge id in the input data
-    // timestamp: timestamp in the input data
-    // startId: node id in the input data
-    // endId: node id in the input data
-    // matched: 0 based id we given to the edge
-    // }
     public ArrayList<ArrayList<Integer>> joinMatchResult() {
         ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
         ArrayList<ArrayList<DataEdge>> expansionTable = new ArrayList<ArrayList<DataEdge>>();
         ArrayList<ArrayList<Integer>> answer = new ArrayList<ArrayList<Integer>>();
         boolean fit = true;
-        int totalSize = this.spatialRelation.getEdges().size();
+        int numEdges = this.spatialRelation.getEdges().size();
         for (ArrayList<DataEdge> subTCQ : matchResult) {
             for (ArrayList<DataEdge> entry : expansionTable) {
                 fit = true;
@@ -87,8 +90,8 @@ public class Join {
                     continue;
                 for (DataEdge edgeInMatchResult : subTCQ) {
                     for (DataEdge edgeInTable : entry) {
-                        if (!checkRelation(edgeInMatchResult, edgeInTable)
-                                || !checkTime(edgeInMatchResult, edgeInTable)) {
+                        if (!(checkRelation(edgeInMatchResult, edgeInTable)
+                                && checkTime(edgeInMatchResult, edgeInTable))) {
                             fit = false;
                             break;
                         }
@@ -98,7 +101,7 @@ public class Join {
                 }
                 if (fit) {
                     entry.addAll(subTCQ);
-                    if (entry.size() == totalSize) {
+                    if (entry.size() == numEdges) {
                         ArrayList<Integer> tmp = new ArrayList<Integer>();
                         for (DataEdge edge : entry) {
                             tmp.add(edge.getDataId());
