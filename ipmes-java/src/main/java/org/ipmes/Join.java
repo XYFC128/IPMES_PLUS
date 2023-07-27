@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Join {
 
     private boolean checkRelation(DataEdge candidate, DataEdge AlreadyIn) {
-        candidate.matched.
+
         return true;
     }
 
@@ -28,25 +28,25 @@ public class Join {
     // endId: node id in the input data
     // matched: 0 based id we given to the edge
     // }
-    public void joinMatchResult(){
-    ArrayList<ArrayList<DataEdge>> MatchResult = new ArrayList<ArrayList<DataEdge>>();
-    ArrayList<ArrayList<DataEdge>> ExpansionTable = new ArrayList<ArrayList<DataEdge>>();
-    boolean fit = true;
-    for(ArrayList<DataEdge> subTCQ : MatchResult){
-            for(ArrayList<DataEdge> entry : ExpansionTable){
+    public void joinMatchResult() {
+        ArrayList<ArrayList<DataEdge>> MatchResult = new ArrayList<ArrayList<DataEdge>>();
+        ArrayList<ArrayList<DataEdge>> ExpansionTable = new ArrayList<ArrayList<DataEdge>>();
+        boolean fit = true;
+        for (ArrayList<DataEdge> subTCQ : MatchResult) {
+            for (ArrayList<DataEdge> entry : ExpansionTable) {
                 fit = true;
-                for(DataEdge candidate : subTCQ){
-                    for(DataEdge AlreadyIn : entry){
-                        if(!checkRelation(candidate, AlreadyIn) || !checkTime(candidate, AlreadyIn)){
+                for (DataEdge candidate : subTCQ) {
+                    for (DataEdge AlreadyIn : entry) {
+                        if (!checkRelation(candidate, AlreadyIn) || !checkTime(candidate, AlreadyIn)) {
                             fit = false;
                             break;
                         }
                     }
-                    if(!fit)
+                    if (!fit)
                         break;
                 }
-                if(fit)
-                    // put subTCQ in this entry;
+                // if(fit)
+                // put subTCQ in this entry;
             }
         }
     }
