@@ -4,12 +4,12 @@ import java.util.*;
 
 public class Decomposition {
 
-    DependencyGraph TemporalRelation;
-    PatternGraph SpatialRelation;
+    DependencyGraph temporalRelation;
+    PatternGraph spatialRelation;
 
-    public Decomposition(DependencyGraph TemporalRelation, PatternGraph SpatialRelation) {
-        this.TemporalRelation = TemporalRelation;
-        this.SpatialRelation = SpatialRelation;
+    public Decomposition(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
+        this.temporalRelation = temporalRelation;
+        this.spatialRelation = spatialRelation;
     }
 
     // DFS to find out possible TC subqueries
@@ -19,25 +19,25 @@ public class Decomposition {
     // 3. follow temporal rules
     // so we handle edges in temporal order, then check 1. and 2.
 
-    private ArrayList<TCQuery> generate_TCQueries(ArrayList<Integer> current_path, int current_ID) {
+    private ArrayList<TCQuery> generateTCQueries(ArrayList<Integer> currentPath, int currentId) {
         // the TC subquery set to be return
         ArrayList<TCQuery> ret = new ArrayList<TCQuery>();
         // extract children
-        ArrayList<Integer> children = this.TemporalRelation.getChildren(current_ID);
+        ArrayList<Integer> children = this.temporalRelation.getChildren(currentId);
 
         // add the present path to the subquery set
-        ArrayList<Integer> ret_path = new ArrayList<Integer>(current_path);
-        ret.add(new TCQuery(ret_path, this.SpatialRelation));
+        ArrayList<Integer> retPath = new ArrayList<Integer>(currentPath);
+        ret.add(new TCQuery(retPath, this.spatialRelation));
 
         // deal with every child
         for (Integer childId : children) {
-            for (Integer current_path_edgeId : current_path) {
+            for (Integer currentPathEdgeId : currentPath) {
                 // checking 1. and 2.
-                if (!(this.SpatialRelation.getSharedNodes(childId, current_path_edgeId).isEmpty()
-                        || current_path.contains(childId))) {
-                    ArrayList<Integer> new_current_path = new ArrayList<Integer>(current_path);
-                    new_current_path.add(childId);
-                    ret.addAll(generate_TCQueries(new_current_path, childId));
+                if (!(this.spatialRelation.getSharedNodes(childId, currentPathEdgeId).isEmpty()
+                        || currentPath.contains(childId))) {
+                    ArrayList<Integer> newCurrentPath = new ArrayList<Integer>(currentPath);
+                    newCurrentPath.add(childId);
+                    ret.addAll(generateTCQueries(newCurrentPath, childId));
                     continue;
                 }
             }
@@ -52,12 +52,12 @@ public class Decomposition {
          * DFS to generate TC subqueries
          *////////////////////////////////////////////////
 
-        int numEdges = this.SpatialRelation.getEdges().size();
+        int numEdges = this.spatialRelation.getEdges().size();
         ArrayList<TCQuery> subQueries = new ArrayList<TCQuery>();
         for (int i = 0; i < numEdges; i++) {
             ArrayList<Integer> tmpList = new ArrayList<Integer>();
             tmpList.add(i);
-            subQueries.addAll(generate_TCQueries(tmpList, i));
+            subQueries.addAll(generateTCQueries(tmpList, i));
         }
 
         /*
@@ -67,26 +67,26 @@ public class Decomposition {
 
         // sort in decreasing size
         subQueries.sort((Q1, Q2) -> (Q2.query.size() - Q1.query.size()));
-        // subQ_provider: index of subqueries
-        ArrayList<Integer> subQ_provider = new ArrayList<Integer>();
-        // subQ_selected: result of greedy select
-        ArrayList<Integer> subQ_selected = new ArrayList<Integer>();
-        ArrayList<TCQuery> ParseToCEP = new ArrayList<TCQuery>();
+        // subQueryProvider: index of subqueries
+        ArrayList<Integer> subQueryProvider = new ArrayList<Integer>();
+        // subQuerySelected: result of greedy select
+        ArrayList<Integer> subQuerySelected = new ArrayList<Integer>();
+        ArrayList<TCQuery> parseToCEP = new ArrayList<TCQuery>();
         for (int i = 0; i < subQueries.size(); i++) {
             boolean shouldSelect = true;
             for (int j : subQueries.get(i).query) {
-                if (subQ_selected.contains(j)) {
+                if (subQuerySelected.contains(j)) {
                     shouldSelect = false;
                     break;
                 }
             }
             if (shouldSelect) {
-                subQ_provider.add(i);
+                subQueryProvider.add(i);
                 subQueries.get(i).setTCQueryID(i);
-                subQ_selected.addAll(subQueries.get(i).query);
-                ParseToCEP.add(subQueries.get(i));
+                subQuerySelected.addAll(subQueries.get(i).query);
+                parseToCEP.add(subQueries.get(i));
             }
         }
-        return ParseToCEP;
+        return parseToCEP;
     }
 }
