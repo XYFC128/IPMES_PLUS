@@ -3,12 +3,6 @@ package org.ipmes;
 import java.util.ArrayList;
 
 public class Join {
-
-    /*
-     * ///////////////////////////////////////////////
-     * initialize
-     *////////////////////////////////////////////////
-
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
 
@@ -17,14 +11,16 @@ public class Join {
         this.spatialRelation = spatialRelation;
     }
 
-    /*
-     * ///////////////////////////////////////////////
-     * methods for checking edge relation
-     *////////////////////////////////////////////////
-
-    // use bit-operation like method to check edge spatial relation
-    // improvement: change to bit-operation
-    private Integer relationType(int n[], int m[]) {
+    /**
+     * Use bit-operation like method to check edge spatial relation
+     * <p>
+     *     TODO: change to bit-operation
+     * </p>
+     * @param n endpoints of one edge
+     * @param m endpoints of another edge
+     * @return the relationship type
+     */
+    private Integer relationType(Integer n[], Integer m[]) {
         int ret = 0;
         for (int i : n) {
             for (int j : m) {
@@ -37,13 +33,13 @@ public class Join {
     }
 
     private boolean checkRelation(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
-        int arr[][] = {
-                { edgeInMatchResult.matched.getStartId(), edgeInMatchResult.matched.getEndId() },
-                { edgeInTable.matched.getStartId(), edgeInTable.matched.getEndId() },
-                { edgeInMatchResult.getStartId(), edgeInMatchResult.getEndId() },
-                { edgeInTable.getStartId(), edgeInTable.getEndId() }
+        Integer arr[][] = {
+                edgeInMatchResult.matched.getEndpoints(),
+                edgeInTable.matched.getEndpoints(),
+                edgeInMatchResult.getEndpoints(),
+                edgeInTable.getEndpoints()
         };
-        return (relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]));
+        return relationType(arr[0], arr[1]).equals(relationType(arr[2], arr[3]));
     }
 
     private boolean checkTime(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
@@ -61,22 +57,26 @@ public class Join {
                                 .contains(edgeInTable.matched.getId()));
     }
 
-    // detect whether any edge in subTCQ appear in entry
+    /**
+     * Detect whether any edge in subTCQ appear in entry
+     * @param subTCQ TC sub-query
+     * @param entry the matched entry
+     * @return true if they share a pattern edge
+     */
     private boolean overlap(ArrayList<DataEdge> subTCQ, ArrayList<DataEdge> entry) {
         for (DataEdge i : subTCQ) {
             for (DataEdge j : entry) {
-                if (i.matched.getId() == j.matched.getId())
+                if (i.matched.getId().equals(j.matched.getId()))
                     return true;
             }
         }
         return false;
     }
 
-    /*
-     * ///////////////////////////////////////////////
-     * join the result of TC subquery matching
-     *////////////////////////////////////////////////
-
+    /**
+     * Join the match result of TC sub-queries
+     * @return the match result of the whole pattern
+     */
     public ArrayList<ArrayList<Integer>> joinMatchResult() {
         ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
         ArrayList<ArrayList<DataEdge>> expansionTable = new ArrayList<ArrayList<DataEdge>>();

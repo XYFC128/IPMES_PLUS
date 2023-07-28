@@ -34,7 +34,7 @@ public class DataEdge {
         this.matched = matched;
     }
 
-    public Integer[] getEndponts() {
+    public Integer[] getEndpoints() {
         return new Integer[] {this.startId, this.endId};
     }
 }
