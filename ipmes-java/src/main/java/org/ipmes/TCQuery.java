@@ -2,6 +2,19 @@ package org.ipmes;
 
 import java.util.*;
 
+/**
+ * Time-Connected Query.
+ * <p>
+ *     A TC-Query is a list of pattern edges where
+ *     <ul>
+ *         <li>All prefix of the list can form a weakly connected subgraph.</li>
+ *         <li>
+ *             An edge in the list depends on its previous edge. That means
+ *             TC-Query is ordered by the temporal order of edges.
+ *         </li>
+ *     </ul>
+ * </p>
+ */
 public class TCQuery {
 
     int id; // id for the TCQuery
@@ -13,11 +26,18 @@ public class TCQuery {
         this.SpatialRelation = SpatialRelation;
     }
 
-    // getter for query
+    /**
+     * Get the list of edges in the TC-Query. Ordered by temporal order.
+     * @return list of pattern edge id in temporal order
+     */
     public ArrayList<Integer> getQueryEdges() {
         return this.query;
     }
 
+    /**
+     * Get the pattern nodes in the TC-Query. Ordered by their id.
+     * @return list of sorted pattern node id
+     */
     public ArrayList<Integer> getQueryNodes() {
         HashSet<Integer> nodes = new HashSet<>();
         for (Integer eid : this.query) {

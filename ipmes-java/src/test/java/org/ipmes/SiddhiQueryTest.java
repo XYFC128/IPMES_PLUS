@@ -88,7 +88,6 @@ public class SiddhiQueryTest {
     @Test
     public void shouldCompile2() {
         SiddhiAppGenerator gen = createTTP11Generator();
-        System.out.println(gen.generate());
         SiddhiApp app = SiddhiCompiler.parse(gen.generate());
         assertNotNull(app);
     }

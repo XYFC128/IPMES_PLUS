@@ -6,6 +6,15 @@ import java.util.*;
 
 import org.json.*;
 
+/**
+ * PatternGraph represent the spatial relation of a pattern.
+ * <p>
+ *     The graph is a directional graph. We will re-assign id
+ *     for all nodes and edges in the pattern. The id of edges
+ *     and nodes is unique. However, the id of an edge may be the same as
+ *     a node, so do not mix them together.
+ * </p>
+ */
 public class PatternGraph {
     ArrayList<PatternNode> nodes;
     ArrayList<PatternEdge> edges;

@@ -3,6 +3,16 @@ package org.ipmes;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * A generator that generates Siddhi app in a String to match given TC-Queries.
+ * <p>
+ * The generated Siddhi app utilize Siddhi's temporal pattern syntax to match
+ * the temporal order of the TC-Queries. The output of a TC-Query q will be
+ * a stream called TC{q}Output. The field of output stream contains every matched
+ * node id in that query, timestamp and id of matched edge.
+ *
+ * @see TCQuery
+ */
 public class TCSiddhiAppGenerator {
     PatternGraph patternGraph;
     DependencyGraph dependencyGraph;
@@ -13,6 +23,10 @@ public class TCSiddhiAppGenerator {
         this.tcQueries = tcQueries;
     }
 
+    /**
+     * Start the generating process
+     * @return A Siddhi app that can be fed into Siddhi compiler and runtime
+     */
     public String generate() {
         String app = "@App:name(\"SiddhiApp\")\n";
         app += genStreamDefinition();
@@ -21,6 +35,20 @@ public class TCSiddhiAppGenerator {
         return app;
     }
 
+    /**
+     * Generate the output stream definition of given TC-Query.
+     * <p>
+     * The fields of output stream are:
+     * <ol>
+     *     <li>n{i}_id string: the matched data node id of the pattern node i.</li>
+     *     <li>e{j}_id string: the matched data edge id of the pattern edge j.</li>
+     *     <li>e{j}_ts string: the matched data edge timestamp of the pattern edge j.</li>
+     * </ol>
+     * The order of fields is like: n{i}_id, ..., e{j}_id, e{j}_ts, e{k}_id, e{k}_ts, ...
+     *
+     * @param q the TC-Query want to generate for
+     * @return the generated stream definition, with an end-of-line character at the end
+     */
     String genTCQueryStreamDefinition(TCQuery q) {
         String def = String.format("define stream TC%dOutput (", q.getTCQueryID());
         ArrayList<Integer> edges = q.getQueryEdges();
@@ -39,6 +67,12 @@ public class TCSiddhiAppGenerator {
         return def + fields + ");\n";
     }
 
+    /**
+     * Generate the definition of all the streams we need, including the input stream
+     * and the output stream of each TC-Queries.
+     *
+     * @return the stream definitions, with an end-of-line character at the end
+     */
     String genStreamDefinition() {
         String def = "define Stream InputStream (timestamp string, eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);\n";
         for (TCQuery q : this.tcQueries)
@@ -46,6 +80,21 @@ public class TCSiddhiAppGenerator {
         return def;
     }
 
+    /**
+     * Generate the condition expression to check the shared node relation between given
+     * edge and its prefix in a TC-Query.
+     * <p>
+     *     We only need to know the nodes in its prefix and their owner (who the node
+     *     belongs to, that is, the start node or end node of what edge). So, we can
+     *     check for each endpoints of the pattern edge if it already has a owner in
+     *     the prefix, and generate the conditional expression requiring they must be
+     *     the same.
+     * </p>
+     *
+     * @param edge the pattern we want to generate for
+     * @param prefixNodes a map recording the owner of each pattern nodes in the prefix
+     * @return the condition expression to check the shared node relation
+     */
     String genSharedNodeConditions(PatternEdge edge, HashMap<Integer, String> prefixNodes) {
         ArrayList<String> conditions = new ArrayList<>();
         String startPrefix = prefixNodes.get(edge.getStartId());
@@ -57,6 +106,14 @@ public class TCSiddhiAppGenerator {
         return String.join(" and ", conditions);
     }
 
+    /**
+     * Generate the shared node condition and signature match expression for a pattern
+     * edge.
+     *
+     * @param edge the pattern edge we generate for
+     * @param prefixNodes same as the prefixNodes in the parameter of genSharedNodeConditions
+     * @return the combined edge condition
+     */
     String genEdgeCondition(PatternEdge edge, HashMap<Integer, String> prefixNodes) {
         String sharedNodeCondition = genSharedNodeConditions(edge, prefixNodes);
 
@@ -73,12 +130,20 @@ public class TCSiddhiAppGenerator {
         return sharedNodeCondition + " and " + signatureCondition;
     }
 
-    String genSelectExpression(TCQuery q, HashMap<Integer, String> prefixNodes) {
+    /**
+     * Generate the expression to select the required field of the match result of a TC-Query
+     * to insert into its output stream.
+     *
+     * @param q the TC-Query
+     * @param nodeOwner a map recording the owner of each pattern nodes
+     * @return the select expression
+     */
+    String genSelectExpression(TCQuery q, HashMap<Integer, String> nodeOwner) {
         ArrayList<String> expr = new ArrayList<>();
 
         ArrayList<Integer> nodes = q.getQueryNodes();
         for (Integer nid : nodes) {
-            expr.add(String.format("%s as n%d_id", prefixNodes.get(nid), nid));
+            expr.add(String.format("%s as n%d_id", nodeOwner.get(nid), nid));
         }
 
         for (Integer eid : q.getQueryEdges()) {
@@ -88,6 +153,15 @@ public class TCSiddhiAppGenerator {
         return "select " + String.join(", ", expr);
     }
 
+    /**
+     * Generate the Siddhi pattern query syntax for a TC-Query.
+     * <p>
+     *     The generated query will match the result from InputStream and insert
+     *     a new entry in the output stream of the TC-Query.
+     * </p>
+     * @param q the TC-Query
+     * @return the Siddhi pattern query
+     */
     String genTCPatternQuery(TCQuery q) {
         String query = "from ";
 
