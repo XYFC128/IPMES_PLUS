@@ -1,5 +1,9 @@
 package org.ipmes;
 
+/**
+ * Data edge is an edge in streaming data graph. Also, it's an edge in a partial
+ * match result ,so there must be a pattern edge that matched the data edge.
+ */
 public class DataEdge {
     Integer dataId;
     public Integer getDataId() {
@@ -22,6 +26,11 @@ public class DataEdge {
     }
 
     PatternEdge matched;
+
+    /**
+     * Get the pattern edge this data edge matched to.
+     * @return the pattern edge
+     */
     public PatternEdge getMatched() {
         return this.matched;
     }
