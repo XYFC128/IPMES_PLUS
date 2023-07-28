@@ -46,6 +46,11 @@
             <version>1.10.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.siddhi.extension.execution.regex</groupId>
+            <artifactId>siddhi-execution-regex</artifactId>
+            <version>5.0.7</version>
+        </dependency>
     </dependencies>
 
     <properties>
