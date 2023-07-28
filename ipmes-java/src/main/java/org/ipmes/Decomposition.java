@@ -12,13 +12,23 @@ public class Decomposition {
         this.spatialRelation = spatialRelation;
     }
 
-    // DFS to find out possible TC subqueries
-    // constraints:
-    // 1. new edge is not in the TC subquery yet
-    // 2. new edge need to have share node with TC subquery
-    // 3. follow temporal rules
-    // so we handle edges in temporal order, then check 1. and 2.
 
+    /**
+     * DFS on {@link DependencyGraph} to find out all possible TC sub-queries starting at
+     * the given node in the graph.
+     * <p>
+     *     When encounter a new node, we check the following constrains:
+     *     <ol>
+     *         <li>new edge is not in the TC sub-query yet</li>
+     *         <li>new edge need to have share node with TC sub-query</li>
+     *         <li>follow temporal rules</li>
+     *     </ol>
+     *     If all checks passed, create a new TC sub-query and append to the results.
+     * </p>
+     * @param currentPath current traversed path
+     * @param currentId the starting node
+     * @return all possible TC sub-queries starting at the node
+     */
     private ArrayList<TCQuery> generateTCQueries(ArrayList<Integer> currentPath, int currentId) {
         // the TC subquery set to be return
         ArrayList<TCQuery> ret = new ArrayList<TCQuery>();
@@ -45,26 +55,16 @@ public class Decomposition {
         return ret;
     }
 
-    public ArrayList<TCQuery> decompose() {
-
-        /*
-         * ///////////////////////////////////////////////
-         * DFS to generate TC subqueries
-         *////////////////////////////////////////////////
-
-        int numEdges = this.spatialRelation.getEdges().size();
-        ArrayList<TCQuery> subQueries = new ArrayList<TCQuery>();
-        for (int i = 0; i < numEdges; i++) {
-            ArrayList<Integer> tmpList = new ArrayList<Integer>();
-            tmpList.add(i);
-            subQueries.addAll(generateTCQueries(tmpList, i));
-        }
-
-        /*
-         * ///////////////////////////////////////////////
-         * greedy select longest TC subqueries
-         *////////////////////////////////////////////////
-
+    /**
+     * Greedy select the longest possible TC-Query until all edges in the
+     * pattern are selected.
+     * <p>
+     *     Each edge will only be in one TC-Query
+     * </p>
+     * @param subQueries all the possible TC sub-queries
+     * @return all the TC-Queries
+     */
+    ArrayList<TCQuery> selectTCSubQueries(ArrayList<TCQuery> subQueries) {
         // sort in decreasing size
         subQueries.sort((Q1, Q2) -> (Q2.query.size() - Q1.query.size()));
         // subQueryProvider: index of subqueries
@@ -88,5 +88,23 @@ public class Decomposition {
             }
         }
         return parseToCEP;
+    }
+
+    /**
+     * Decompose the possibly non-TC pattern into TC-Queries
+     *
+     * @return TC-Queries
+     */
+    public ArrayList<TCQuery> decompose() {
+        // DFS to generate TC sub-queries
+        int numEdges = this.spatialRelation.getEdges().size();
+        ArrayList<TCQuery> subQueries = new ArrayList<TCQuery>();
+        for (int i = 0; i < numEdges; i++) {
+            ArrayList<Integer> tmpList = new ArrayList<Integer>();
+            tmpList.add(i);
+            subQueries.addAll(generateTCQueries(tmpList, i));
+        }
+
+        return selectTCSubQueries(subQueries);
     }
 }
