@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
  *     The meaning of the elements in the graph:
  *     <ul>
  *         <li>
- *             Nodes: each node represent a pattern edge. The id of a node is
- *             correspond to the pattern edge id it representing.
+ *             Nodes: each node represents a pattern edge. The id of a node
+ *             corresponds to the pattern edge id it representing.
  *         </li>
  *         <li>
- *             Arc: each arc in the graph represent a dependency relation. The
+ *             Arc: each arc in the graph represents a dependency relation. The
  *             end node depends on the start node. Also, the start node is the
  *             parent of the end node.
  *         </li>

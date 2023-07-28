@@ -1,6 +1,8 @@
 package org.ipmes;
 
-
+/**
+ * The old siddhi app generator.
+ */
 public class SiddhiAppGenerator {
     PatternGraph graph;
     DependencyGraph dependency;
