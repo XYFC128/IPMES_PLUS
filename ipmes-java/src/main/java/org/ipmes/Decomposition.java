@@ -12,21 +12,22 @@ public class Decomposition {
         this.spatialRelation = spatialRelation;
     }
 
-
     /**
-     * DFS on {@link DependencyGraph} to find out all possible TC sub-queries starting at
+     * DFS on {@link DependencyGraph} to find out all possible TC sub-queries
+     * starting at
      * the given node in the graph.
      * <p>
-     *     When encounter a new node, we check the following constrains:
-     *     <ol>
-     *         <li>new edge is not in the TC sub-query yet</li>
-     *         <li>new edge need to have share node with TC sub-query</li>
-     *         <li>follow temporal rules</li>
-     *     </ol>
-     *     If all checks passed, create a new TC sub-query and append to the results.
+     * When encounter a new node, we check the following constraints:
+     * <ol>
+     * <li>new edge is not in the TC sub-query yet</li>
+     * <li>new edge need to have share node with TC sub-query</li>
+     * <li>follow temporal rules</li>
+     * </ol>
+     * If all checks passed, create a new TC sub-query and append to the results.
      * </p>
+     * 
      * @param currentPath current traversed path
-     * @param currentId the starting node
+     * @param currentId   the starting node
      * @return all possible TC sub-queries starting at the node
      */
     private ArrayList<TCQuery> generateTCQueries(ArrayList<Integer> currentPath, int currentId) {
@@ -59,8 +60,9 @@ public class Decomposition {
      * Greedy select the longest possible TC-Query until all edges in the
      * pattern are selected.
      * <p>
-     *     Each edge will only be in one TC-Query
+     * Each edge will only be in one TC-Query
      * </p>
+     * 
      * @param subQueries all the possible TC sub-queries
      * @return all the TC-Queries
      */

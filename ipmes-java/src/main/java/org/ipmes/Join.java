@@ -14,8 +14,9 @@ public class Join {
     /**
      * Use bit-operation like method to check edge spatial relation
      * <p>
-     *     TODO: change to bit-operation
+     * TODO: change to bit-operation
      * </p>
+     * 
      * @param n endpoints of one edge
      * @param m endpoints of another edge
      * @return the relationship type
@@ -59,8 +60,9 @@ public class Join {
 
     /**
      * Detect whether any edge in subTCQ appear in entry
+     * 
      * @param subTCQ TC sub-query
-     * @param entry the matched entry
+     * @param entry  the matched entry
      * @return true if they share a pattern edge
      */
     private boolean overlap(ArrayList<DataEdge> subTCQ, ArrayList<DataEdge> entry) {
@@ -75,7 +77,20 @@ public class Join {
 
     /**
      * Join the match result of TC sub-queries
-     * @return the match result of the whole pattern
+     * <p>
+     * When we want to join the match result, we check the following constraints:
+     * <ol>
+     * <li>the two match results do not overlap</li>
+     * <li>the spatial relation of the two match results are fine</li>
+     * <li>the temporal relation of the two match results are fine</li>
+     * </ol>
+     * If all constraints are followed, create a new entry and add it to
+     * expansionTable.
+     * If the entry contains every edge, it is one of the match results of the whole
+     * pattern.
+     * <\p>
+     * 
+     * @return the match results of the whole pattern
      */
     public ArrayList<ArrayList<Integer>> joinMatchResult() {
         ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
