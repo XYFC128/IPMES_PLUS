@@ -17,10 +17,16 @@ public class TCSiddhiAppGenerator {
     PatternGraph patternGraph;
     DependencyGraph dependencyGraph;
     ArrayList<TCQuery> tcQueries;
+    boolean useRegex;
     public TCSiddhiAppGenerator(PatternGraph patternGraph, DependencyGraph dependencyGraph, ArrayList<TCQuery> tcQueries) {
         this.patternGraph = patternGraph;
         this.dependencyGraph = dependencyGraph;
         this.tcQueries = tcQueries;
+        this.useRegex = false;
+    }
+
+    public void setUseRegex(boolean flag) {
+        this.useRegex = flag;
     }
 
     /**
@@ -108,7 +114,8 @@ public class TCSiddhiAppGenerator {
 
     /**
      * Generate the shared node condition and signature match expression for a pattern
-     * edge.
+     * edge. If enable regex matching, it will treat the extracted signature as a
+     * regular expression and use regex matching to match the data edges.
      *
      * @param edge the pattern edge we generate for
      * @param prefixNodes same as the prefixNodes in the parameter of genSharedNodeConditions
@@ -119,12 +126,22 @@ public class TCSiddhiAppGenerator {
 
         PatternNode startNode = this.patternGraph.getNode(edge.getStartId());
         PatternNode endNode = this.patternGraph.getNode(edge.getEndId());
-        String signatureCondition = String.format(
-            "esig == \"%s\" and start_sig == \"%s\" and end_sig == \"%s\"",
-            edge.getSignature(),
-            startNode.getSignature(),
-            endNode.getSignature()
-        );
+        String signatureCondition;
+        if (this.useRegex) {
+            signatureCondition = String.format(
+                    "regex:matches(\"%s\", esig) and regex:matches(\"%s\", start_sig) and regex:matches(\"%s\", end_sig)",
+                    edge.getSignature(),
+                    startNode.getSignature(),
+                    endNode.getSignature()
+            );
+        } else {
+            signatureCondition = String.format(
+                    "esig == \"%s\" and start_sig == \"%s\" and end_sig == \"%s\"",
+                    edge.getSignature(),
+                    startNode.getSignature(),
+                    endNode.getSignature()
+            );
+        }
         if (sharedNodeCondition.isEmpty())
             return signatureCondition;
         return sharedNodeCondition + " and " + signatureCondition;
