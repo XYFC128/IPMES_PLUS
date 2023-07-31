@@ -21,13 +21,13 @@ public class Join {
      * @param m endpoints of another edge
      * @return the relationship type
      */
-    private Integer relationType(Integer n[], Integer m[]) {
-        int ret = 0;
+    private byte relationType(Integer n[], Integer m[]) {
+        byte ret = 0;
         for (int i : n) {
             for (int j : m) {
                 if (i == j)
-                    ret += 1;
-                ret *= 2;
+                    ret &= 1;
+                ret <<= 1;
             }
         }
         return ret;
@@ -40,7 +40,7 @@ public class Join {
                 edgeInMatchResult.getEndpoints(),
                 edgeInTable.getEndpoints()
         };
-        return relationType(arr[0], arr[1]).equals(relationType(arr[2], arr[3]));
+        return relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]);
     }
 
     private boolean checkTime(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
