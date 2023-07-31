@@ -1,14 +1,20 @@
 package org.ipmes;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Join {
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
+    ArrayList<Map<Integer, DataEdge>> answer;
+    ArrayList<Map<Integer, DataEdge>> expansionTable;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
+        this.answer = new ArrayList<Map<Integer, DataEdge>>();
+        this.expansionTable = new ArrayList<Map<Integer, DataEdge>>();
     }
 
     /**
@@ -79,7 +85,7 @@ public class Join {
     }
 
     /**
-     * Join the match result of TC sub-queries
+     * save match result of TC sub-queries
      * <p>
      * When we want to join the match result, we check the following constraints:
      * <ol>
@@ -95,21 +101,33 @@ public class Join {
      * 
      * @return the match results of the whole pattern
      */
-    public ArrayList<ArrayList<Integer>> joinMatchResult() {
-        ArrayList<ArrayList<DataEdge>> matchResult = new ArrayList<ArrayList<DataEdge>>();
-        ArrayList<ArrayList<DataEdge>> expansionTable = new ArrayList<ArrayList<DataEdge>>();
-        ArrayList<ArrayList<Integer>> answer = new ArrayList<ArrayList<Integer>>();
+
+    boolean checkNoOverlap(Map<Integer, DataEdge> entry, ArrayList<DataEdge> result) {
+        return true;
+    }
+
+    void combineResult(ArrayList<DataEdge> result, Map<Integer, DataEdge> entry, Integer tcQueryId) {
+        return;
+    }
+
+    /**
+     * Consume the match result and start the streaming join algorithm.
+     * <p>
+     * TODO: preprocess which edges' relationships need to be checked.
+     * </p>
+     * 
+     * @param result    the match result
+     * @param tcQueryId the TC-Query id of the result
+     */
+    public void addMatchResult(ArrayList<DataEdge> result, Integer tcQueryId) {
         boolean fit = true;
-        int numEdges = this.spatialRelation.getEdges().size();
-        for (ArrayList<DataEdge> subTCQ : matchResult) {
-            for (ArrayList<DataEdge> entry : expansionTable) {
-                fit = true;
-                if (overlap(subTCQ, entry))
-                    continue;
-                for (DataEdge edgeInMatchResult : subTCQ) {
-                    for (DataEdge edgeInTable : entry) {
-                        if (!(checkRelation(edgeInMatchResult, edgeInTable)
-                                && checkTime(edgeInMatchResult, edgeInTable))) {
+        for (Map<Integer, DataEdge> entry : this.expansionTable) {
+            if (checkNoOverlap(entry, result)) {
+                for (Map.Entry<Integer, DataEdge> entryInTable : entry.entrySet()) {
+                    for (DataEdge edgeInResult : result) {
+                        DataEdge edgeInTable = entryInTable.getValue();
+                        if (!(checkRelation(edgeInResult, edgeInTable)
+                                && checkTime(edgeInResult, edgeInTable))) {
                             fit = false;
                             break;
                         }
@@ -118,27 +136,9 @@ public class Join {
                         break;
                 }
                 if (fit) {
-                    entry.addAll(subTCQ);
-                    if (entry.size() == numEdges) {
-                        ArrayList<Integer> tmp = new ArrayList<Integer>();
-                        for (DataEdge edge : entry) {
-                            tmp.add(edge.getDataId());
-                        }
-                        answer.add(tmp);
-                    }
+                    combineResult(result, entry, tcQueryId);
                 }
             }
         }
-        return answer;
-    }
-
-    /**
-     * Consume the match result and start the streaming join algorithm.
-     *
-     * @param result the match result
-     * @param tcQueryId the TC-Query id of the result
-     */
-    public void addMatchResult(ArrayList<DataEdge> result, Integer tcQueryId) {
-
     }
 }
