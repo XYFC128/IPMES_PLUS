@@ -18,12 +18,21 @@ import java.util.*;
 public class TCQuery {
 
     int id; // id for the TCQuery
-    ArrayList<Integer> query;
+    ArrayList<Integer> edges;
+    ArrayList<Integer> nodes;
     PatternGraph SpatialRelation;
 
-    public TCQuery(ArrayList<Integer> query, PatternGraph SpatialRelation) {
-        this.query = query;
+    public TCQuery(ArrayList<Integer> edges, PatternGraph SpatialRelation) {
+        this.edges = edges;
         this.SpatialRelation = SpatialRelation;
+
+        HashSet<Integer> nodes = new HashSet<>();
+        for (Integer eid : edges) {
+            PatternEdge e = SpatialRelation.getEdge(eid);
+            nodes.add(e.getStartId());
+            nodes.add(e.getEndId());
+        }
+        this.nodes = new ArrayList<>(nodes);
     }
 
     /**
@@ -31,7 +40,7 @@ public class TCQuery {
      * @return list of pattern edge id in temporal order
      */
     public ArrayList<Integer> getQueryEdges() {
-        return this.query;
+        return this.edges;
     }
 
     /**
@@ -39,19 +48,13 @@ public class TCQuery {
      * @return list of sorted pattern node id
      */
     public ArrayList<Integer> getQueryNodes() {
-        HashSet<Integer> nodes = new HashSet<>();
-        for (Integer eid : this.query) {
-            PatternEdge e = SpatialRelation.getEdge(eid);
-            nodes.add(e.getStartId());
-            nodes.add(e.getEndId());
-        }
-        return new ArrayList<Integer>(nodes);
+        return this.nodes;
     }
 
     // return an arraylist contains every share node of the edge in this query
     public ArrayList<Integer> getInQueryDependencies(Integer eid) {
         ArrayList<Integer> ret = new ArrayList<Integer>();
-        for (int i : this.query) {
+        for (int i : this.edges) {
             if (i != eid && (!this.SpatialRelation.getSharedNodes(i, eid).isEmpty()))
                 ret.add(i);
         }

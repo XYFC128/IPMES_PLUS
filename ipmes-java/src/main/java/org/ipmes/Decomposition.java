@@ -68,7 +68,7 @@ public class Decomposition {
      */
     ArrayList<TCQuery> selectTCSubQueries(ArrayList<TCQuery> subQueries) {
         // sort in decreasing size
-        subQueries.sort((Q1, Q2) -> (Q2.query.size() - Q1.query.size()));
+        subQueries.sort((Q1, Q2) -> (Q2.edges.size() - Q1.edges.size()));
         // subQueryProvider: index of subqueries
         ArrayList<Integer> subQueryProvider = new ArrayList<Integer>();
         // subQuerySelected: result of greedy select
@@ -76,7 +76,7 @@ public class Decomposition {
         ArrayList<TCQuery> parseToCEP = new ArrayList<TCQuery>();
         for (int i = 0; i < subQueries.size(); i++) {
             boolean shouldSelect = true;
-            for (int j : subQueries.get(i).query) {
+            for (int j : subQueries.get(i).edges) {
                 if (subQuerySelected.contains(j)) {
                     shouldSelect = false;
                     break;
@@ -85,7 +85,7 @@ public class Decomposition {
             if (shouldSelect) {
                 subQueryProvider.add(i);
                 subQueries.get(i).setTCQueryID(i);
-                subQuerySelected.addAll(subQueries.get(i).query);
+                subQuerySelected.addAll(subQueries.get(i).edges);
                 parseToCEP.add(subQueries.get(i));
             }
         }
