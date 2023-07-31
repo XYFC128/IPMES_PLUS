@@ -14,7 +14,10 @@ public class Join {
     /**
      * Use bit-operation like method to check edge spatial relation
      * <p>
-     * TODO: change to bit-operation
+     * we have two input DataEdge DE1 and DE2,
+     * if the relation between DE1.matched.getEndPoints and DE2.matched.getEndPoints
+     * equals DE1.getEndPoints and DE2.getEndPoints, return true.
+     * Otherwise, return false.
      * </p>
      * 
      * @param n endpoints of one edge
@@ -26,7 +29,7 @@ public class Join {
         for (int i : n) {
             for (int j : m) {
                 if (i == j)
-                    ret &= 1;
+                    ret |= 1;
                 ret <<= 1;
             }
         }
