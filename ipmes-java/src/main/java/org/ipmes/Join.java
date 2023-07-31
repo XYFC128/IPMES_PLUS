@@ -131,4 +131,14 @@ public class Join {
         }
         return answer;
     }
+
+    /**
+     * Consume the match result and start the streaming join algorithm.
+     *
+     * @param result the match result
+     * @param tcQueryId the TC-Query id of the result
+     */
+    public void addMatchResult(ArrayList<DataEdge> result, Integer tcQueryId) {
+
+    }
 }
