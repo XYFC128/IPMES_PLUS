@@ -116,7 +116,7 @@ public class Join {
             combineTo.put(edge.matched.getId(), edge);
         }
         this.expansionTable.add(combineTo);
-        if (combineTo.size() == this.spatialRelation.getEdges().size())
+        if (combineTo.size() == this.spatialRelation.numEdges())
             this.answer.add(combineTo);
         return;
     }
@@ -173,7 +173,7 @@ public class Join {
 
     public ArrayList<ArrayList<DataEdge>> extractAnswer() {
         ArrayList<ArrayList<DataEdge>> ret = new ArrayList<ArrayList<DataEdge>>();
-        int len = this.spatialRelation.getEdges().size();
+        int len = this.spatialRelation.numEdges();
         for (Map<Integer, DataEdge> entry : this.answer) {
             ArrayList<DataEdge> temp = new ArrayList<DataEdge>();
             for (int i = 0; i < len; i++) {
