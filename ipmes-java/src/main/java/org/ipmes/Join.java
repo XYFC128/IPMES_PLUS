@@ -173,11 +173,10 @@ public class Join {
 
     public ArrayList<ArrayList<DataEdge>> extractAnswer() {
         ArrayList<ArrayList<DataEdge>> ret = new ArrayList<ArrayList<DataEdge>>();
-        int len = this.spatialRelation.numEdges();
         for (Map<Integer, DataEdge> entry : this.answer) {
             ArrayList<DataEdge> temp = new ArrayList<DataEdge>();
-            for (int i = 0; i < len; i++) {
-                temp.add(entry.get(i));
+            for (DataEdge edge : entry.values()) {
+                temp.add(edge);
             }
             ret.add(temp);
         }
