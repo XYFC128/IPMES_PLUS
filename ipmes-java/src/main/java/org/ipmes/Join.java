@@ -157,6 +157,7 @@ public class Join {
                     if (!fit)
                         break;
                 }
+                // 先存在別的地方，最後再combine到table
                 if (fit) {
                     Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
                     combineResult(temp, result);
