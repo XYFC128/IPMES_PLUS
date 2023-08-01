@@ -2,6 +2,9 @@ package org.ipmes;
 
 import java.util.ArrayList;
 import java.util.Map;
+
+import javax.xml.crypto.Data;
+
 import java.util.HashMap;
 
 public class Join {
@@ -68,23 +71,6 @@ public class Join {
     }
 
     /**
-     * Detect whether any edge in subTCQ appear in entry
-     * 
-     * @param subTCQ TC sub-query
-     * @param entry  the matched entry
-     * @return true if they share a pattern edge
-     */
-    private boolean overlap(ArrayList<DataEdge> subTCQ, ArrayList<DataEdge> entry) {
-        for (DataEdge i : subTCQ) {
-            for (DataEdge j : entry) {
-                if (i.matched.getId().equals(j.matched.getId()))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * save match result of TC sub-queries
      * <p>
      * When we want to join the match result, we check the following constraints:
@@ -102,11 +88,36 @@ public class Join {
      * @return the match results of the whole pattern
      */
 
+    /**
+     * Detect whether any edge in subTCQ appear in entry
+     * 
+     * @param entry  the matched entry
+     * @param result the match result of TC subquery
+     * @return true if no overlapping between entry and result
+     */
+
     boolean checkNoOverlap(Map<Integer, DataEdge> entry, ArrayList<DataEdge> result) {
+        for (DataEdge edge : result) {
+            if (entry.containsKey(edge.matched.getId()))
+                return false;
+        }
         return true;
     }
 
-    void combineResult(ArrayList<DataEdge> result, Map<Integer, DataEdge> entry, Integer tcQueryId) {
+    /**
+     * add match result to the Map combineTo, and add combineTo to expansionTable.
+     * 
+     * @param combineTo the Map we want to add result to
+     * @param result    the match result of TC subquery
+     * 
+     */
+    void combineResult(Map<Integer, DataEdge> combineTo, ArrayList<DataEdge> result) {
+        for (DataEdge edge : result) {
+            combineTo.put(edge.matched.getId(), edge);
+        }
+        this.expansionTable.add(combineTo);
+        if (combineTo.size() == this.spatialRelation.getEdges().size())
+            this.answer.add(combineTo);
         return;
     }
 
@@ -115,12 +126,25 @@ public class Join {
      * <p>
      * TODO: preprocess which edges' relationships need to be checked.
      * </p>
+     * <p>
+     * When we want to join the match result, we check the following constraints:
+     * <ol>
+     * <li>the two match results do not overlap</li>
+     * <li>the spatial relation of the two match results are fine</li>
+     * <li>the temporal relation of the two match results are fine</li>
+     * </ol>
+     * If all constraints are followed, create a new entry and add it to
+     * expansionTable.
+     * If the entry contains every edge, it is one of the match results of the whole
+     * pattern.
+     * <\p>
      * 
      * @param result    the match result
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(ArrayList<DataEdge> result, Integer tcQueryId) {
         boolean fit = true;
+        // join
         for (Map<Integer, DataEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
                 for (Map.Entry<Integer, DataEdge> entryInTable : entry.entrySet()) {
@@ -136,9 +160,14 @@ public class Join {
                         break;
                 }
                 if (fit) {
-                    combineResult(result, entry, tcQueryId);
+                    Map<Integer, DataEdge> temp = new HashMap<Integer, DataEdge>(entry);
+                    combineResult(temp, result);
                 }
             }
+            fit = true;
         }
+        // insert
+        Map<Integer, DataEdge> temp = new HashMap<Integer, DataEdge>();
+        combineResult(temp, result);
     }
 }
