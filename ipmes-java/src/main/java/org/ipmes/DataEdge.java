@@ -1,7 +1,5 @@
 package org.ipmes;
 
-import javax.xml.crypto.Data;
-
 /**
  * Data edge is an edge in streaming data graph. Also, it's an edge in a partial
  * match result, so there must be a pattern edge that matched the data edge.
