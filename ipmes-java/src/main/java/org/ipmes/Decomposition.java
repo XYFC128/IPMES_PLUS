@@ -52,21 +52,13 @@ public class Decomposition {
         parents.remove(parents.size() - 1);
     }
 
-    /**
-     * Returns true if all edges in the given TC-Query are not selected.
-     * @param subQuery the query
-     * @param isEdgeSelected if an edge is selected, isEdgeSelected[edge id] will be true
-     * @return true if all edges in the given TC-Query are not selected.
-     */
-    boolean nonSelected(TCQuery subQuery, boolean[] isEdgeSelected) {
-        boolean shouldSelect = true;
+    boolean containSelected(TCQuery subQuery, boolean[] isEdgeSelected) {
         for (PatternEdge e : subQuery.getEdges()) {
             if (isEdgeSelected[e.getId()]) {
-                shouldSelect = false;
-                break;
+                return true;
             }
         }
-        return shouldSelect;
+        return false;
     }
 
     /**
@@ -87,7 +79,7 @@ public class Decomposition {
         boolean[] isEdgeSelected = new boolean[this.spatialRelation.numEdges()];
         Arrays.fill(isEdgeSelected, false);
         for (TCQuery subQuery : subQueries) {
-            if (!nonSelected(subQuery, isEdgeSelected))
+            if (containSelected(subQuery, isEdgeSelected))
                 continue;
 
             for (PatternEdge e : subQuery.getEdges())
