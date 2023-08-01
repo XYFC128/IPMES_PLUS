@@ -192,6 +192,7 @@ public class TCSiddhiAppGenerator {
             prefixNodes.put(edge.getStartId(), String.format("e%d.start_id", edge.getId()));
             prefixNodes.put(edge.getEndId(), String.format("e%d.end_id", edge.getId()));
         }
+        query += "within 10 sec\n";
         query += genSelectExpression(q, prefixNodes);
         query += String.format("\ninsert into TC%dOutput;\n", q.getTCQueryID());
 

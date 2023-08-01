@@ -1,5 +1,7 @@
 package org.ipmes;
 
+import javax.xml.crypto.Data;
+
 /**
  * Data edge is an edge in streaming data graph. Also, it's an edge in a partial
  * match result, so there must be a pattern edge that matched the data edge.
@@ -45,5 +47,27 @@ public class DataEdge {
 
     public Integer[] getEndpoints() {
         return new Integer[] {this.startId, this.endId};
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "DataEdge {dataId: %d, timestamp: %d, startId: %d, endId: %d, matchId: %d}",
+                this.dataId,
+                this.timestamp,
+                this.startId,
+                this.endId,
+                this.matched.getId()
+        );
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (!(obj instanceof DataEdge)) return false;
+        DataEdge other = (DataEdge) obj;
+        return this.dataId.equals(other.dataId) && this.timestamp.equals(other.timestamp)
+                && this.startId.equals(other.startId) && this.endId.equals(other.endId)
+                && this.matched.equals(other.matched);
     }
 }

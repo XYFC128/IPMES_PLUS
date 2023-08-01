@@ -1,5 +1,6 @@
 package org.ipmes;
 
+import io.siddhi.core.event.Event;
 import org.json.*;
 
 public class Preprocess {
@@ -26,5 +27,23 @@ public class Preprocess {
 
     public static String extractEdgeSignature(JSONObject edgeObj) {
         return edgeObj.getJSONObject("properties").getString("operation");
+    }
+
+    public static String extractTimestamp(JSONObject edgeObj) {
+        return edgeObj.getJSONObject("properties").getString("lastest");
+    }
+
+    public static Object[] toEventData(String eventStr) {
+        JSONObject inpObj = new JSONObject(eventStr);
+        JSONObject edgeObj = inpObj.getJSONObject("r");
+        String ts = extractTimestamp(edgeObj);
+        String eid = edgeObj.getString("id");
+        String esig = extractEdgeSignature(edgeObj);
+        String startId = inpObj.getJSONObject("m").getString("id");
+        String startSig = extractNodeSignature(inpObj.getJSONObject("m"));
+        String endId = inpObj.getJSONObject("n").getString("id");
+        String endSig = extractNodeSignature(inpObj.getJSONObject("n"));
+
+        return new Object[]{ts, eid, esig, startId, startSig, endId, endSig};
     }
 }
