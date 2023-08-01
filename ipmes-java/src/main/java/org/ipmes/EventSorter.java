@@ -11,18 +11,19 @@ public class EventSorter {
         }
     }
 
-    static boolean match(PatternEdge edge, Object[] eventData) {
-        String startSig = edge.getStartNode().getSignature();
-        String endSig = edge.getEndNode().getSignature();
-        return edge.getSignature().equals(eventData[2]) &&
-                startSig.equals(eventData[4]) && endSig.equals(eventData[6]);
+    static boolean match(PatternEdge patternEdge, EventEdge eventEdge) {
+        String startSig = patternEdge.getStartNode().getSignature();
+        String endSig = patternEdge.getEndNode().getSignature();
+        return patternEdge.getSignature().equals(eventEdge.edgeSignature) &&
+                startSig.equals(eventEdge.startSignature) &&
+                endSig.equals(eventEdge.endSignature);
     }
 
-    public ArrayList<Object[]> sort(ArrayList<Object[]> events) {
-        ArrayList<Object[]> sorted = new ArrayList<>(events.size());
+    public ArrayList<EventEdge> rearrange(ArrayList<EventEdge> events) {
+        ArrayList<EventEdge> sorted = new ArrayList<>(events.size());
 
         for (PatternEdge edge : this.totalOrder) {
-            for (Object[] data : events) {
+            for (EventEdge data : events) {
                 if (match(edge, data))
                     sorted.add(data);
             }

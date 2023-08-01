@@ -3,8 +3,6 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.siddhi.core.SiddhiAppRuntime;
@@ -52,21 +50,33 @@ public class Main {
         InputHandler inputHandler = runtime.getInputHandler("InputStream");
         runtime.start();
 
+        EventSorter sorter = new EventSorter(tcQueries);
+        ArrayList<EventEdge> timeBuffer = new ArrayList<>();
         while (line != null) {
-            inputHandler.send(Preprocess.toEventData(line));
+            EventEdge event = new EventEdge(line);
+            if (!timeBuffer.isEmpty()) {
+                if (event.timestamp.equals(timeBuffer.get(0).timestamp)) {
+                    timeBuffer.add(event);
+                } else {
+                    ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
+                    for (EventEdge edge : sorted)
+                        inputHandler.send(edge.toEventData());
+                    timeBuffer.clear();
+                }
+            } else {
+                timeBuffer.add(event);
+            }
             line = inputReader.readLine();
         }
 
         System.out.println("Match Results:");
-        ArrayList<ArrayList<DataEdge>> results = join.extractAnswer();
-        for (ArrayList<DataEdge> result : results) {
+        ArrayList<ArrayList<MatchEdge>> results = join.extractAnswer();
+        for (ArrayList<MatchEdge> result : results) {
             System.out.print("[");
             System.out.print(
-                    String.join(", ",
-                            result.stream()
-                                .map(edge -> edge.getDataId().toString())
-                                .collect(Collectors.toList())
-                    )
+                result.stream()
+                    .map(edge -> edge.getDataId().toString())
+                    .collect(Collectors.joining(", "))
             );
             System.out.println("]");
         }

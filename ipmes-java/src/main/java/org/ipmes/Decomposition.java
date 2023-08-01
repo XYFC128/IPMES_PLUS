@@ -103,6 +103,9 @@ public class Decomposition {
             generateTCQueries(edge, parents, subQueries);
         }
 
-        return selectTCSubQueries(subQueries);
+        ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
+        for (int i = 0; i < selected.size(); ++i)
+            selected.get(i).setId(i);
+        return selected;
     }
 }

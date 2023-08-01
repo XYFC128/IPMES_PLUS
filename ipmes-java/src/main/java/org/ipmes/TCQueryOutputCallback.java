@@ -28,12 +28,12 @@ public class TCQueryOutputCallback extends StreamCallback {
         return Math.round(toNum * 1000);
     }
 
-    ArrayList<DataEdge> toMatchResult(Event e) {
+    ArrayList<MatchEdge> toMatchResult(Event e) {
         Object[] data = e.getData();
         int numNodes = this.query.numNodes();
         ArrayList<PatternEdge> patternEdges = this.query.getEdges();
 
-        ArrayList<DataEdge> res = new ArrayList<>();
+        ArrayList<MatchEdge> res = new ArrayList<>();
         for (int i = 0; i < patternEdges.size(); ++i) {
             Integer ts = parseTimestamp((String)data[numNodes + i * 2]);
             String eid = (String)data[numNodes + i * 2 + 1];
@@ -43,7 +43,7 @@ public class TCQueryOutputCallback extends StreamCallback {
             Integer endIdx = this.node2FieldIdx.get(matched.getEndId());
             String endMatch = (String)data[endIdx];
 
-            res.add(new DataEdge(
+            res.add(new MatchEdge(
                     Integer.parseInt(eid),
                     ts,
                     Integer.parseInt(startMatch),
@@ -57,7 +57,7 @@ public class TCQueryOutputCallback extends StreamCallback {
     @Override
     public void receive(Event[] events) {
         for (Event e : events) {
-            ArrayList<DataEdge> res = toMatchResult(e);
+            ArrayList<MatchEdge> res = toMatchResult(e);
             this.join.addMatchResult(res, this.query.getId());
         }
     }

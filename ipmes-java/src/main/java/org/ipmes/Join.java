@@ -3,21 +3,19 @@ package org.ipmes;
 import java.util.ArrayList;
 import java.util.Map;
 
-import javax.xml.crypto.Data;
-
 import java.util.HashMap;
 
 public class Join {
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
-    ArrayList<Map<Integer, DataEdge>> answer;
-    ArrayList<Map<Integer, DataEdge>> expansionTable;
+    ArrayList<Map<Integer, MatchEdge>> answer;
+    ArrayList<Map<Integer, MatchEdge>> expansionTable;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
-        this.answer = new ArrayList<Map<Integer, DataEdge>>();
-        this.expansionTable = new ArrayList<Map<Integer, DataEdge>>();
+        this.answer = new ArrayList<Map<Integer, MatchEdge>>();
+        this.expansionTable = new ArrayList<Map<Integer, MatchEdge>>();
     }
 
     /**
@@ -45,7 +43,7 @@ public class Join {
         return ret;
     }
 
-    private boolean checkRelation(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
+    private boolean checkRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Integer[][] arr = {
                 edgeInMatchResult.matched.getEndpoints(),
                 edgeInTable.matched.getEndpoints(),
@@ -55,7 +53,7 @@ public class Join {
         return relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]);
     }
 
-    private boolean checkTime(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
+    private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
                 .contains(edgeInTable.matched.getId())
                 && edgeInMatchResult.timestamp > edgeInTable.timestamp)
@@ -96,8 +94,8 @@ public class Join {
      * @return true if no overlapping between entry and result
      */
 
-    boolean checkNoOverlap(Map<Integer, DataEdge> entry, ArrayList<DataEdge> result) {
-        for (DataEdge edge : result) {
+    boolean checkNoOverlap(Map<Integer, MatchEdge> entry, ArrayList<MatchEdge> result) {
+        for (MatchEdge edge : result) {
             if (entry.containsKey(edge.matched.getId()))
                 return false;
         }
@@ -111,8 +109,8 @@ public class Join {
      * @param result    the match result of TC subquery
      * 
      */
-    void combineResult(Map<Integer, DataEdge> combineTo, ArrayList<DataEdge> result) {
-        for (DataEdge edge : result) {
+    void combineResult(Map<Integer, MatchEdge> combineTo, ArrayList<MatchEdge> result) {
+        for (MatchEdge edge : result) {
             combineTo.put(edge.matched.getId(), edge);
         }
         this.expansionTable.add(combineTo);
@@ -142,14 +140,14 @@ public class Join {
      * @param result    the match result
      * @param tcQueryId the TC-Query id of the result
      */
-    public void addMatchResult(ArrayList<DataEdge> result, Integer tcQueryId) {
+    public void addMatchResult(ArrayList<MatchEdge> result, Integer tcQueryId) {
         boolean fit = true;
         // join
-        for (Map<Integer, DataEdge> entry : this.expansionTable) {
+        for (Map<Integer, MatchEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
-                for (Map.Entry<Integer, DataEdge> entryInTable : entry.entrySet()) {
-                    for (DataEdge edgeInResult : result) {
-                        DataEdge edgeInTable = entryInTable.getValue();
+                for (Map.Entry<Integer, MatchEdge> entryInTable : entry.entrySet()) {
+                    for (MatchEdge edgeInResult : result) {
+                        MatchEdge edgeInTable = entryInTable.getValue();
                         if (!(checkRelation(edgeInResult, edgeInTable)
                                 && checkTime(edgeInResult, edgeInTable))) {
                             fit = false;
@@ -160,22 +158,22 @@ public class Join {
                         break;
                 }
                 if (fit) {
-                    Map<Integer, DataEdge> temp = new HashMap<Integer, DataEdge>(entry);
+                    Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
                     combineResult(temp, result);
                 }
             }
             fit = true;
         }
         // insert
-        Map<Integer, DataEdge> temp = new HashMap<Integer, DataEdge>();
+        Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>();
         combineResult(temp, result);
     }
 
-    public ArrayList<ArrayList<DataEdge>> extractAnswer() {
-        ArrayList<ArrayList<DataEdge>> ret = new ArrayList<ArrayList<DataEdge>>();
+    public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
+        ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<ArrayList<MatchEdge>>();
         int len = this.spatialRelation.numEdges();
-        for (Map<Integer, DataEdge> entry : this.answer) {
-            ArrayList<DataEdge> temp = new ArrayList<DataEdge>();
+        for (Map<Integer, MatchEdge> entry : this.answer) {
+            ArrayList<MatchEdge> temp = new ArrayList<MatchEdge>();
             for (int i = 0; i < len; i++) {
                 temp.add(entry.get(i));
             }

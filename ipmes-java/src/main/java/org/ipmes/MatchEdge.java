@@ -1,10 +1,10 @@
 package org.ipmes;
 
 /**
- * Data edge is an edge in streaming data graph. Also, it's an edge in a partial
+ * Match edge is an edge in streaming data graph. Also, it's an edge in a partial
  * match result, so there must be a pattern edge that matched the data edge.
  */
-public class DataEdge {
+public class MatchEdge {
     Integer dataId;
     public Integer getDataId() {
         return this.dataId;
@@ -28,14 +28,14 @@ public class DataEdge {
     PatternEdge matched;
 
     /**
-     * Get the pattern edge this data edge matched to.
+     * Get the pattern edge this match edge matched with.
      * @return the pattern edge
      */
     public PatternEdge getMatched() {
         return this.matched;
     }
 
-    DataEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
+    MatchEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
         this.dataId = dataId;
         this.timestamp = timestamp;
         this.startId = startId;
@@ -62,8 +62,8 @@ public class DataEdge {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (!(obj instanceof DataEdge)) return false;
-        DataEdge other = (DataEdge) obj;
+        if (!(obj instanceof MatchEdge)) return false;
+        MatchEdge other = (MatchEdge) obj;
         return this.dataId.equals(other.dataId) && this.timestamp.equals(other.timestamp)
                 && this.startId.equals(other.startId) && this.endId.equals(other.endId)
                 && this.matched.equals(other.matched);
