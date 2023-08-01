@@ -3,6 +3,9 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import io.siddhi.core.SiddhiAppRuntime;
 import io.siddhi.core.SiddhiManager;
@@ -54,8 +57,21 @@ public class Main {
             line = inputReader.readLine();
         }
 
+        System.out.println("Match Results:");
+        ArrayList<ArrayList<DataEdge>> results = join.extractAnswer();
+        for (ArrayList<DataEdge> result : results) {
+            System.out.print("[");
+            System.out.print(
+                    String.join(", ",
+                            result.stream()
+                                .map(edge -> edge.getDataId().toString())
+                                .collect(Collectors.toList())
+                    )
+            );
+            System.out.println("]");
+        }
+
         runtime.shutdown();
         siddhiManager.shutdown();
-        System.out.println("Process Finished");
     }
 }
