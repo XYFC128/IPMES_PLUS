@@ -18,7 +18,7 @@ public class SiddhiQueryTest {
         nodes.add(new PatternNode(1, "bbb"));
 
         ArrayList<PatternEdge> edges = new ArrayList<>();
-        edges.add(new PatternEdge(0, "edge", 0, 1));
+        edges.add(new PatternEdge(0, "edge", nodes.get(0), nodes.get(1)));
 
         PatternGraph pattern = new PatternGraph(nodes, edges);
         DependencyGraph dependency = new DependencyGraph(
@@ -62,9 +62,9 @@ public class SiddhiQueryTest {
     @Test
     public void genEdgeCondition() {
         SiddhiAppGenerator generator = createSimpleGenerator();
-
+        ArrayList<PatternNode> nodes = generator.graph.getNodes();
         assertEquals("esig == \"edge\" and start_sig == \"aaa\" and end_sig == \"bbb\"",
-                generator.genEdgeCondition(new PatternEdge(0, "edge", 0, 1)));
+                generator.genEdgeCondition(new PatternEdge(0, "edge", nodes.get(0), nodes.get(1))));
     }
 
     @Test

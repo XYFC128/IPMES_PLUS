@@ -30,10 +30,10 @@ public class ParsePatternTest {
         assertArrayEquals(nodeAns, g.getNodes().toArray());
 
         PatternEdge[] edgeAns = {
-                new PatternEdge(0, "fork", 0, 1),
-                new PatternEdge(1, "execve", 1, 2),
-                new PatternEdge(2, "load", 4, 2),
-                new PatternEdge(3, "open", 3, 2),
+                new PatternEdge(0, "fork", nodeAns[0], nodeAns[1]),
+                new PatternEdge(1, "execve", nodeAns[1], nodeAns[2]),
+                new PatternEdge(2, "load", nodeAns[4], nodeAns[2]),
+                new PatternEdge(3, "open", nodeAns[3], nodeAns[2]),
         };
         assertArrayEquals(edgeAns, g.getEdges().toArray());
 

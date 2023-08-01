@@ -7,21 +7,23 @@ public class PatternEdge {
     String signature;
     public String getSignature() { return this.signature; }
 
-    Integer startId;
-    public Integer getStartId() { return this.startId; }
+    PatternNode startNode;
+    public PatternNode getStartNode() { return this.startNode; }
+    public Integer getStartId() { return this.startNode.getId(); }
 
-    Integer endId;
-    public Integer getEndId() { return endId; }
+    PatternNode endNode;
+    public PatternNode getEndNode() { return this.endNode; }
+    public Integer getEndId() { return this.endNode.getId(); }
 
-    public PatternEdge(Integer id, String signature, Integer startId, Integer endId) {
+    public PatternEdge(Integer id, String signature, PatternNode startNode, PatternNode endNode) {
         this.id = id;
         this.signature = signature;
-        this.startId = startId;
-        this.endId = endId;
+        this.startNode = startNode;
+        this.endNode = endNode;
     }
 
     Integer[] getEndpoints() {
-        return new Integer[] {this.startId, this.endId};
+        return new Integer[] {this.getStartId(), this.getEndId()};
     }
 
     @Override
@@ -30,8 +32,8 @@ public class PatternEdge {
                 "Edge {id: %d, signature: %s, startId: %d, endId: %d}",
                 this.id,
                 this.signature,
-                this.startId,
-                this.endId
+                this.getStartId(),
+                this.getEndId()
         );
     }
 
@@ -41,6 +43,6 @@ public class PatternEdge {
         if (!(other instanceof PatternEdge)) return false;
         PatternEdge temp = (PatternEdge) other;
         return this.id.equals(temp.id) && this.signature.equals(temp.signature) &&
-                this.startId.equals(temp.startId) && this.endId.equals(temp.endId);
+                this.startNode.equals(temp.startNode) && this.endNode.equals(temp.endNode);
     }
 }

@@ -54,7 +54,7 @@ public class PatternGraph {
                 Integer startId = idConvert.get(raw_start);
                 Integer endId = idConvert.get(raw_end);
 
-                edges.add(new PatternEdge(i, signature, startId, endId));
+                edges.add(new PatternEdge(i, signature, nodes.get(startId), nodes.get(endId)));
                 line = edgeBuf.readLine();
             }
             edgeBuf.close();
