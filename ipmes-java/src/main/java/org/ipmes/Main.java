@@ -20,7 +20,8 @@ public class Main {
         } else {
             orelsFile = ttpPrefix + "_oRels.json";
         }
-        PatternGraph pattern = PatternGraph.parse(new FileReader(ttpPrefix + "_node.json"), new FileReader(ttpPrefix + "_edge.json")).get();
+        PatternGraph pattern = PatternGraph
+                .parse(new FileReader(ttpPrefix + "_node.json"), new FileReader(ttpPrefix + "_edge.json")).get();
         DependencyGraph dep = DependencyGraph.parse(new FileReader(orelsFile)).get();
 
         // Decomposition
@@ -39,8 +40,7 @@ public class Main {
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),
-                    new TCQueryOutputCallback(q, pattern, join)
-            );
+                    new TCQueryOutputCallback(q, pattern, join));
         }
 
         String inputFile = args[1];

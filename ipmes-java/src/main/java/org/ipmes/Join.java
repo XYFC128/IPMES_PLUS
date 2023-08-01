@@ -170,4 +170,19 @@ public class Join {
         Map<Integer, DataEdge> temp = new HashMap<Integer, DataEdge>();
         combineResult(temp, result);
     }
+
+    public ArrayList<ArrayList<DataEdge>> extractAnswer() {
+        ArrayList<ArrayList<DataEdge>> ret = new ArrayList<ArrayList<DataEdge>>();
+        ArrayList<DataEdge> temp = new ArrayList<DataEdge>();
+        int len = this.spatialRelation.edges.size();
+        for (Map<Integer, DataEdge> entry : this.answer) {
+            for (int i = 0; i < len; i++) {
+                temp.add(entry.get(i));
+            }
+            ret.add(temp);
+            temp.clear();
+        }
+        this.answer.clear();
+        return ret;
+    }
 }
