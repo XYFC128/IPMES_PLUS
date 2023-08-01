@@ -22,8 +22,8 @@ public class TCQueryOutputCallbackTest {
         String edges = TTPGenerator.genTTP11Edges();
         PatternGraph pattern = PatternGraph.parse(new StringReader(nodes), new StringReader(edges)).get();
 
-        ArrayList<Integer> queryEdges = new ArrayList<>(List.of(0));
-        TCQuery q = new TCQuery(queryEdges, pattern);
+        ArrayList<PatternEdge> queryEdges = new ArrayList<>(List.of(pattern.getEdge(0)));
+        TCQuery q = new TCQuery(queryEdges);
 
         TCQueryOutputCallback callback = new TCQueryOutputCallback(q, pattern, null);
         ArrayList<DataEdge> res = callback.toMatchResult(new Event(0, new Object[] {"0", "1", "100.0", "10"}));

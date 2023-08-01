@@ -18,56 +18,54 @@ import java.util.*;
 public class TCQuery {
 
     int id; // id for the TCQuery
-    ArrayList<Integer> edges;
-    ArrayList<Integer> nodes;
-    PatternGraph SpatialRelation;
+    ArrayList<PatternEdge> edges;
+    ArrayList<PatternNode> nodes;
 
-    public TCQuery(ArrayList<Integer> edges, PatternGraph SpatialRelation) {
+    public TCQuery(ArrayList<PatternEdge> edges) {
         this.edges = edges;
-        this.SpatialRelation = SpatialRelation;
+        this.nodes = null;
+    }
 
-        HashSet<Integer> nodes = new HashSet<>();
-        for (Integer eid : edges) {
-            PatternEdge e = SpatialRelation.getEdge(eid);
-            nodes.add(e.getStartId());
-            nodes.add(e.getEndId());
-        }
-        this.nodes = new ArrayList<>(nodes);
+    public int numEdges() {
+        return this.edges.size();
     }
 
     /**
      * Get the list of edges in the TC-Query. Ordered by temporal order.
      * @return list of pattern edge id in temporal order
      */
-    public ArrayList<Integer> getQueryEdges() {
+    public ArrayList<PatternEdge> getEdges() {
         return this.edges;
+    }
+
+    public int numNodes() {
+        return this.getNodes().size();
     }
 
     /**
      * Get the pattern nodes in the TC-Query. Ordered by their id.
      * @return list of sorted pattern node id
      */
-    public ArrayList<Integer> getQueryNodes() {
+    public ArrayList<PatternNode> getNodes() {
+        if (this.nodes == null) {
+            HashSet<PatternNode> nodes = new HashSet<>();
+            for (PatternEdge edge : edges) {
+                nodes.add(edge.getStartNode());
+                nodes.add(edge.getEndNode());
+            }
+            this.nodes = new ArrayList<>(nodes);
+            this.nodes.sort((n1, n2) -> (n1.getId() - n2.getId()));
+        }
         return this.nodes;
     }
 
-    // return an arraylist contains every share node of the edge in this query
-    public ArrayList<Integer> getInQueryDependencies(Integer eid) {
-        ArrayList<Integer> ret = new ArrayList<Integer>();
-        for (int i : this.edges) {
-            if (i != eid && (!this.SpatialRelation.getSharedNodes(i, eid).isEmpty()))
-                ret.add(i);
-        }
-        return ret;
-    }
-
     // getter of TCQueryID
-    Integer getTCQueryID() {
+    Integer getId() {
         return id;
     }
 
     // setter of TCQueryID
-    void setTCQueryID(Integer id) {
+    void setId(Integer id) {
         this.id = id;
     }
 }

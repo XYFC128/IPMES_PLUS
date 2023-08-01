@@ -56,15 +56,14 @@ public class TCSiddhiAppGenerator {
      * @return the generated stream definition, with an end-of-line character at the end
      */
     String genTCQueryStreamDefinition(TCQuery q) {
-        String def = String.format("define stream TC%dOutput (", q.getTCQueryID());
-        ArrayList<Integer> edges = q.getQueryEdges();
+        String def = String.format("define stream TC%dOutput (", q.getId());
 
         String fields = "";
-        for (Integer i : q.getQueryNodes()) {
-            fields += String.format("n%d_id string, ", i);
+        for (PatternNode nd : q.getNodes()) {
+            fields += String.format("n%d_id string, ", nd.getId());
         }
-        for (Integer i : q.getQueryEdges()) {
-            fields += String.format("e%1$d_ts string, e%1$d_id string, ", i);
+        for (PatternEdge edge : q.getEdges()) {
+            fields += String.format("e%1$d_ts string, e%1$d_id string, ", edge.getId());
         }
 
         if (!fields.isEmpty())
@@ -158,13 +157,12 @@ public class TCSiddhiAppGenerator {
     String genSelectExpression(TCQuery q, HashMap<Integer, String> nodeOwner) {
         ArrayList<String> expr = new ArrayList<>();
 
-        ArrayList<Integer> nodes = q.getQueryNodes();
-        for (Integer nid : nodes) {
-            expr.add(String.format("%s as n%d_id", nodeOwner.get(nid), nid));
+        for (PatternNode nd : q.getNodes()) {
+            expr.add(String.format("%s as n%d_id", nodeOwner.get(nd.getId()), nd.getId()));
         }
 
-        for (Integer eid : q.getQueryEdges()) {
-            expr.add(String.format("e%1$d.timestamp as e%1$d_ts, e%1$d.eid as e%1$d_id", eid));
+        for (PatternEdge edge : q.getEdges()) {
+            expr.add(String.format("e%1$d.timestamp as e%1$d_ts, e%1$d.eid as e%1$d_id", edge.getId()));
         }
 
         return "select " + String.join(", ", expr);
@@ -183,10 +181,9 @@ public class TCSiddhiAppGenerator {
         String query = "from ";
 
         HashMap<Integer, String> prefixNodes = new HashMap<>();
-        for (Integer eid : q.getQueryEdges()) {
+        for (PatternEdge edge : q.getEdges()) {
             if (!prefixNodes.isEmpty())
                 query += "  -> ";
-            PatternEdge edge = patternGraph.getEdge(eid);
             query += String.format("every(e%d = InputStream[%s])\n",
                     edge.getId(), genEdgeCondition(edge, prefixNodes));
             prefixNodes.put(edge.getStartId(), String.format("e%d.start_id", edge.getId()));
@@ -194,7 +191,7 @@ public class TCSiddhiAppGenerator {
         }
         query += "within 10 sec\n";
         query += genSelectExpression(q, prefixNodes);
-        query += String.format("\ninsert into TC%dOutput;\n", q.getTCQueryID());
+        query += String.format("\ninsert into TC%dOutput;\n", q.getId());
 
         return query;
     }
