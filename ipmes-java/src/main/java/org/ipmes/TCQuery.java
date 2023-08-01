@@ -32,7 +32,7 @@ public class TCQuery {
 
     /**
      * Get the list of edges in the TC-Query. Ordered by temporal order.
-     * @return list of pattern edge id in temporal order
+     * @return list of pattern edge in temporal order
      */
     public ArrayList<PatternEdge> getEdges() {
         return this.edges;
@@ -44,7 +44,7 @@ public class TCQuery {
 
     /**
      * Get the pattern nodes in the TC-Query. Ordered by their id.
-     * @return list of sorted pattern node id
+     * @return list of sorted pattern node
      */
     public ArrayList<PatternNode> getNodes() {
         if (this.nodes == null) {

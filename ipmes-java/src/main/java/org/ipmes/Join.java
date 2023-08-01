@@ -46,7 +46,7 @@ public class Join {
     }
 
     private boolean checkRelation(DataEdge edgeInMatchResult, DataEdge edgeInTable) {
-        Integer arr[][] = {
+        Integer[][] arr = {
                 edgeInMatchResult.matched.getEndpoints(),
                 edgeInTable.matched.getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
