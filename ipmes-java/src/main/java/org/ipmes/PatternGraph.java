@@ -64,19 +64,31 @@ public class PatternGraph {
         return Optional.of(new PatternGraph(nodes, edges));
     }
 
-    ArrayList<PatternNode> getNodes() {
+    public int numNodes() {
+        if (this.nodes == null)
+            return 0;
+        return this.nodes.size();
+    }
+
+    public ArrayList<PatternNode> getNodes() {
         return this.nodes;
     }
 
-    PatternNode getNode(Integer id) {
+    public PatternNode getNode(Integer id) {
         return this.nodes.get(id);
     }
 
-    ArrayList<PatternEdge> getEdges() {
+    public int numEdges() {
+        if (this.edges == null)
+            return 0;
+        return this.edges.size();
+    }
+
+    public ArrayList<PatternEdge> getEdges() {
         return this.edges;
     }
 
-    PatternEdge getEdge(Integer eid) {
+    public PatternEdge getEdge(Integer eid) {
         return this.edges.get(eid);
     }
 

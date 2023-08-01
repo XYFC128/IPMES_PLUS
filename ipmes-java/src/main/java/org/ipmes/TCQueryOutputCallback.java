@@ -17,28 +17,27 @@ public class TCQueryOutputCallback extends StreamCallback {
         this.join = join;
         this.node2FieldIdx = new HashMap<>();
 
-        ArrayList<Integer> nodes = query.getQueryNodes();
+        ArrayList<PatternNode> nodes = query.getNodes();
         for (int i = 0; i < nodes.size(); ++i) {
-            node2FieldIdx.put(nodes.get(i), i);
+            node2FieldIdx.put(nodes.get(i).getId(), i);
         }
     }
 
     static Integer parseTimestamp(String tsStr) {
-        Float toNum = Float.parseFloat(tsStr);
+        float toNum = Float.parseFloat(tsStr);
         return Math.round(toNum * 1000);
     }
 
     ArrayList<DataEdge> toMatchResult(Event e) {
         Object[] data = e.getData();
-        Integer numNodes = this.query.getQueryNodes().size();
-        ArrayList<Integer> patternEdgeIds = this.query.getQueryEdges();
+        int numNodes = this.query.numNodes();
+        ArrayList<PatternEdge> patternEdges = this.query.getEdges();
 
         ArrayList<DataEdge> res = new ArrayList<>();
-        for (int i = 0; i < patternEdgeIds.size(); ++i) {
+        for (int i = 0; i < patternEdges.size(); ++i) {
             Integer ts = parseTimestamp((String)data[numNodes + i * 2]);
             String eid = (String)data[numNodes + i * 2 + 1];
-            Integer matchedId = patternEdgeIds.get(i);
-            PatternEdge matched = this.patternGraph.getEdge(matchedId);
+            PatternEdge matched = patternEdges.get(i);
             Integer startIdx = this.node2FieldIdx.get(matched.getStartId());
             String startMatch = (String)data[startIdx];
             Integer endIdx = this.node2FieldIdx.get(matched.getEndId());
@@ -59,7 +58,7 @@ public class TCQueryOutputCallback extends StreamCallback {
     public void receive(Event[] events) {
         for (Event e : events) {
             ArrayList<DataEdge> res = toMatchResult(e);
-            this.join.addMatchResult(res, this.query.getTCQueryID());
+            this.join.addMatchResult(res, this.query.getId());
         }
     }
 }

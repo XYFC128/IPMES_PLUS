@@ -5,8 +5,6 @@ import io.siddhi.core.SiddhiManager;
 import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.input.InputHandler;
 import io.siddhi.core.stream.output.StreamCallback;
-import io.siddhi.query.api.SiddhiApp;
-import io.siddhi.query.compiler.SiddhiCompiler;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -29,8 +27,8 @@ public class DecompositionTest {
 
         assertFalse(queries.isEmpty());
         TCQuery q = queries.get(0);
-        assertArrayEquals(new Integer[] {0, 1, 2, 3, 4}, q.getQueryNodes().toArray());
-        assertArrayEquals(new Integer[] {0, 1, 2, 3}, q.getQueryEdges().toArray());
+        assertArrayEquals(pattern.getNodes().toArray(), q.getNodes().toArray());
+        assertArrayEquals(pattern.getEdges().toArray(), q.getEdges().toArray());
     }
 
     @Test

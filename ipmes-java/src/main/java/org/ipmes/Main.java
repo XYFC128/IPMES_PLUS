@@ -39,7 +39,7 @@ public class Main {
         Join join = new Join(dep, pattern);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
-                    String.format("TC%dOutput", q.getTCQueryID()),
+                    String.format("TC%dOutput", q.getId()),
                     new TCQueryOutputCallback(q, pattern, join));
         }
 
