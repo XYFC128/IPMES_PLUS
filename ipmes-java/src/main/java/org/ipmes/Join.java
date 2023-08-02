@@ -2,9 +2,6 @@ package org.ipmes;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.regex.MatchResult;
-
-import org.osgi.service.device.Match;
 
 import java.util.HashMap;
 
@@ -59,11 +56,11 @@ public class Join {
     private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
                 .contains(edgeInTable.matched.getId())
-                && edgeInMatchResult.timestamp > edgeInTable.timestamp)
+                && edgeInMatchResult.timestamp >= edgeInTable.timestamp)
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
                         .contains(edgeInTable.matched.getId())
-                        && edgeInMatchResult.timestamp < edgeInTable.timestamp)
+                        && edgeInMatchResult.timestamp <= edgeInTable.timestamp)
                 ||
                 (!this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
                         .contains(edgeInTable.matched.getId())
@@ -149,8 +146,8 @@ public class Join {
         for (Map<Integer, MatchEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
                 for (Map.Entry<Integer, MatchEdge> entryInTable : entry.entrySet()) {
+                    MatchEdge edgeInTable = entryInTable.getValue();
                     for (MatchEdge edgeInResult : result) {
-                        MatchEdge edgeInTable = entryInTable.getValue();
                         if (!(checkRelation(edgeInResult, edgeInTable)
                                 && checkTime(edgeInResult, edgeInTable))) {
                             fit = false;
