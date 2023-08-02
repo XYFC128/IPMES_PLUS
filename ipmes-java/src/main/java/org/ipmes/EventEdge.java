@@ -3,7 +3,7 @@ package org.ipmes;
 import org.json.JSONObject;
 
 /**
- * EventEdge represent an event about to be feed into CEP tool
+ * EventEdge represent an event about to be fed into CEP tool
  */
 public class EventEdge {
     public String timestamp;
