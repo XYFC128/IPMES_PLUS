@@ -60,12 +60,7 @@ public class Join {
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
                         .contains(edgeInTable.matched.getId())
-                        && edgeInMatchResult.timestamp <= edgeInTable.timestamp)
-                ||
-                (!this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
-                        .contains(edgeInTable.matched.getId())
-                        && !this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
-                                .contains(edgeInTable.matched.getId()));
+                        && edgeInMatchResult.timestamp <= edgeInTable.timestamp);
     }
 
     /**
@@ -145,19 +140,33 @@ public class Join {
         // join
         for (Map<Integer, MatchEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
-                for (Map.Entry<Integer, MatchEdge> entryInTable : entry.entrySet()) {
-                    MatchEdge edgeInTable = entryInTable.getValue();
-                    for (MatchEdge edgeInResult : result) {
-                        if (!(checkRelation(edgeInResult, edgeInTable)
-                                && checkTime(edgeInResult, edgeInTable))) {
-                            fit = false;
-                            break;
+                for (Relation relationship : this.temporalRelation.TCQRelation.get(tcQueryId)) {
+                    if (entry.containsKey(relationship.idOfEntry)) {
+                        for (MatchEdge tmpEdge : result) {
+                            if (tmpEdge.matched.getId() != relationship.idOfResult)
+                                continue;
+                            if (!(checkRelation(tmpEdge, entry.get(relationship.idOfEntry))
+                                    && checkTime(tmpEdge, entry.get(relationship.idOfEntry)))) {
+                                fit = false;
+                                break;
+                            }
                         }
+
                     }
-                    if (!fit)
-                        break;
                 }
-                // 先存在別的地方，最後再combine到table
+
+                // for (Map.Entry<Integer, MatchEdge> entryInTable : entry.entrySet()) {
+                // MatchEdge edgeInTable = entryInTable.getValue();
+                // for (MatchEdge edgeInResult : result) {
+                // if (!(checkRelation(edgeInResult, edgeInTable)
+                // && checkTime(edgeInResult, edgeInTable))) {
+                // fit = false;
+                // break;
+                // }
+                // }
+                // if (!fit)
+                // break;
+                // }
                 if (fit) {
                     Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
                     combineResult(temp, result);

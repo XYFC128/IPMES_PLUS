@@ -37,7 +37,7 @@ public class Decomposition {
      * If all checks passed, create a new TC sub-query and append to the results.
      * </p>
      * 
-     * @param cur current PatternEdge
+     * @param cur     current PatternEdge
      * @param parents the traversed path
      * @param results an array list to store the results
      */
@@ -90,6 +90,27 @@ public class Decomposition {
         return selectedTCQ;
     }
 
+    private void proprocessRelation(ArrayList<TCQuery> selectedTcQueries) {
+        for (TCQuery TCQ1 : selectedTcQueries) {
+            for (TCQuery TCQ2 : selectedTcQueries) {
+                // skip the same TCQ when iterating
+                if (TCQ1.equals(TCQ2))
+                    continue;
+                for (PatternEdge edge1 : TCQ1.edges) {
+                    for (PatternEdge edge2 : TCQ2.edges) {
+                        if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
+                                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())) {
+                            Relation tempRelation = new Relation();
+                            tempRelation.idOfResult = edge1.getId();
+                            tempRelation.idOfEntry = edge2.getId();
+                            this.temporalRelation.TCQRelation.get(TCQ1.getId()).add(tempRelation);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Decompose the possibly non-TC pattern into TC-Queries
      *
@@ -106,6 +127,7 @@ public class Decomposition {
         ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
         for (int i = 0; i < selected.size(); ++i)
             selected.get(i).setId(i);
+        proprocessRelation(selected);
         return selected;
     }
 }

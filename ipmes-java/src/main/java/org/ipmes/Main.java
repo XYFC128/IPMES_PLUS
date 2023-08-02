@@ -77,10 +77,9 @@ public class Main {
         for (ArrayList<MatchEdge> result : results) {
             System.out.print("[");
             System.out.print(
-                result.stream()
-                    .map(edge -> edge.getDataId().toString())
-                    .collect(Collectors.joining(", "))
-            );
+                    result.stream()
+                            .map(edge -> edge.getDataId().toString())
+                            .collect(Collectors.joining(", ")));
             System.out.println("]");
         }
 
