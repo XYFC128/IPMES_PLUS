@@ -2,9 +2,6 @@ package org.ipmes;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.regex.MatchResult;
-
-import org.osgi.service.device.Match;
 
 import java.util.HashMap;
 
