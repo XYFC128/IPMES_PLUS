@@ -10,12 +10,15 @@ public class Join {
     PatternGraph spatialRelation;
     ArrayList<Map<Integer, MatchEdge>> answer;
     ArrayList<Map<Integer, MatchEdge>> expansionTable;
+    Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
 
-    public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
+    public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
+            Map<Integer, ArrayList<TCQueryRelation>> TCQRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<Map<Integer, MatchEdge>>();
         this.expansionTable = new ArrayList<Map<Integer, MatchEdge>>();
+        this.TCQRelation = TCQRelation;
     }
 
     /**
@@ -140,7 +143,7 @@ public class Join {
         // join
         for (Map<Integer, MatchEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
-                for (Relation relationship : this.temporalRelation.TCQRelation.get(tcQueryId)) {
+                for (TCQueryRelation relationship : this.TCQRelation.get(tcQueryId)) {
                     if (entry.containsKey(relationship.idOfEntry)) {
                         for (MatchEdge tmpEdge : result) {
                             if (tmpEdge.matched.getId() != relationship.idOfResult)
@@ -151,7 +154,8 @@ public class Join {
                                 break;
                             }
                         }
-
+                        if (!fit)
+                            break;
                     }
                 }
 

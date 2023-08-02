@@ -3,6 +3,7 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.siddhi.core.SiddhiAppRuntime;
@@ -28,6 +29,7 @@ public class Main {
         // Decomposition
         Decomposition d = new Decomposition(dep, pattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
+        Map<Integer, ArrayList<TCQueryRelation>> TCQRelation = d.getTCQRelation();
         TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, tcQueries);
         gen.setUseRegex(useRegex);
 
@@ -36,8 +38,7 @@ public class Main {
         System.out.println(appStr);
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-
-        Join join = new Join(dep, pattern);
+        Join join = new Join(dep, pattern, TCQRelation);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),

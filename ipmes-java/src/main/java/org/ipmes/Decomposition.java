@@ -6,10 +6,13 @@ public class Decomposition {
 
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
+    // TCQueryId, relation of edges
+    Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
 
     public Decomposition(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
+        this.TCQRelation = new HashMap<Integer, ArrayList<TCQueryRelation>>();
     }
 
     boolean hasSharedNode(PatternEdge edge, ArrayList<PatternEdge> parents) {
@@ -100,10 +103,10 @@ public class Decomposition {
                     for (PatternEdge edge2 : TCQ2.edges) {
                         if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
                                 || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())) {
-                            Relation tempRelation = new Relation();
+                            TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();
-                            this.temporalRelation.TCQRelation.get(TCQ1.getId()).add(tempRelation);
+                            this.TCQRelation.get(TCQ1.getId()).add(tempRelation);
                         }
                     }
                 }
@@ -125,9 +128,16 @@ public class Decomposition {
         }
 
         ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
-        for (int i = 0; i < selected.size(); ++i)
+        for (int i = 0; i < selected.size(); ++i) {
             selected.get(i).setId(i);
+            ArrayList<TCQueryRelation> tempRel = new ArrayList<TCQueryRelation>();
+            this.TCQRelation.put(i, tempRel);
+        }
         proprocessRelation(selected);
         return selected;
+    }
+
+    public Map<Integer, ArrayList<TCQueryRelation>> getTCQRelation() {
+        return this.TCQRelation;
     }
 }
