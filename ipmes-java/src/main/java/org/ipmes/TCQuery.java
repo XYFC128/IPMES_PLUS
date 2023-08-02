@@ -71,12 +71,12 @@ public class TCQuery {
     }
 
     // getter of TCQueryID
-    Integer getId() {
+    public Integer getId() {
         return id;
     }
 
     // setter of TCQueryID
-    void setId(Integer id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 }
