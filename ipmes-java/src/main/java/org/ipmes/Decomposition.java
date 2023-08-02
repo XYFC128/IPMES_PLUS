@@ -102,7 +102,8 @@ public class Decomposition {
                 for (PatternEdge edge1 : TCQ1.edges) {
                     for (PatternEdge edge2 : TCQ2.edges) {
                         if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
-                                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())) {
+                                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
+                                || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty())) {
                             TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();

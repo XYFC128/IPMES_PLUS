@@ -60,12 +60,15 @@ public class Join {
 
     private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
-                .contains(edgeInTable.matched.getId())
-                && edgeInMatchResult.timestamp >= edgeInTable.timestamp)
+                .contains(edgeInTable.matched.getId()) && edgeInMatchResult.timestamp >= edgeInTable.timestamp)
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
+                        .contains(edgeInTable.matched.getId()) && edgeInMatchResult.timestamp <= edgeInTable.timestamp)
+                ||
+                (!this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
                         .contains(edgeInTable.matched.getId())
-                        && edgeInMatchResult.timestamp <= edgeInTable.timestamp);
+                        && !this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
+                                .contains(edgeInTable.matched.getId()));
     }
 
     /**
