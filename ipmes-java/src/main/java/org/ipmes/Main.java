@@ -68,6 +68,9 @@ public class Main {
             }
             line = inputReader.readLine();
         }
+        ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
+        for (EventEdge edge : sorted)
+            inputHandler.send(edge.toEventData());
 
         System.out.println("Match Results:");
         ArrayList<ArrayList<MatchEdge>> results = join.extractAnswer();
