@@ -146,7 +146,7 @@ public class Join {
                 for (TCQueryRelation relationship : this.TCQRelation.get(tcQueryId)) {
                     if (entry.containsKey(relationship.idOfEntry)) {
                         for (MatchEdge tmpEdge : result) {
-                            if (tmpEdge.matched.getId() != relationship.idOfResult)
+                            if (!tmpEdge.matched.getId().equals(relationship.idOfResult))
                                 continue;
                             if (!(checkRelation(tmpEdge, entry.get(relationship.idOfEntry))
                                     && checkTime(tmpEdge, entry.get(relationship.idOfEntry)))) {
