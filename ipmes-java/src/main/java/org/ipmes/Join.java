@@ -163,19 +163,6 @@ public class Join {
                             break;
                     }
                 }
-
-                // for (Map.Entry<Integer, MatchEdge> entryInTable : entry.entrySet()) {
-                // MatchEdge edgeInTable = entryInTable.getValue();
-                // for (MatchEdge edgeInResult : result) {
-                // if (!(checkRelation(edgeInResult, edgeInTable)
-                // && checkTime(edgeInResult, edgeInTable))) {
-                // fit = false;
-                // break;
-                // }
-                // }
-                // if (!fit)
-                // break;
-                // }
                 if (fit) {
                     Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
                     combineResult(temp, result);
