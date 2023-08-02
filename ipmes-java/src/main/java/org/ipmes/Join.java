@@ -2,6 +2,9 @@ package org.ipmes;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.regex.MatchResult;
+
+import org.osgi.service.device.Match;
 
 import java.util.HashMap;
 
@@ -113,7 +116,6 @@ public class Join {
         for (MatchEdge edge : result) {
             combineTo.put(edge.matched.getId(), edge);
         }
-        this.expansionTable.add(combineTo);
         if (combineTo.size() == this.spatialRelation.numEdges())
             this.answer.add(combineTo);
         return;
@@ -142,6 +144,7 @@ public class Join {
      */
     public void addMatchResult(ArrayList<MatchEdge> result, Integer tcQueryId) {
         boolean fit = true;
+        ArrayList<Map<Integer, MatchEdge>> buffer = new ArrayList<Map<Integer, MatchEdge>>();
         // join
         for (Map<Integer, MatchEdge> entry : this.expansionTable) {
             if (checkNoOverlap(entry, result)) {
@@ -161,6 +164,7 @@ public class Join {
                 if (fit) {
                     Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
                     combineResult(temp, result);
+                    buffer.add(temp);
                 }
             }
             fit = true;
@@ -168,6 +172,9 @@ public class Join {
         // insert
         Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>();
         combineResult(temp, result);
+        this.expansionTable.add(temp);
+        this.expansionTable.addAll(buffer);
+        buffer.clear();
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
