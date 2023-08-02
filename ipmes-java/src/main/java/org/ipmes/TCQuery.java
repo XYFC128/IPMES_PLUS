@@ -44,6 +44,17 @@ public class TCQuery {
 
     /**
      * Get the pattern nodes in the TC-Query. Ordered by their id.
+     * <p>
+     *     this.nodes is initially set to null, and will be created
+     *     at the first call to this function. Because we generate
+     *     a lot of TC-Queries during decomposition and the process
+     *     doesn't need to use nodes, so this optimization can
+     *     save us some time collecting nodes for unused TC-Queries.
+     * </p>
+     * <p>
+     *     Also, store the nodes in TC-Query allows us to access it
+     *     quickly without re-collecting it everytime we use it.
+     * </p>
      * @return list of sorted pattern node
      */
     public ArrayList<PatternNode> getNodes() {
