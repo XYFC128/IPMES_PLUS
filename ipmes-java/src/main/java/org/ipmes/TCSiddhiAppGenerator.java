@@ -36,8 +36,12 @@ public class TCSiddhiAppGenerator {
     public String generate() {
         String app = "@App:name(\"SiddhiApp\")\n";
         app += genStreamDefinition();
-        for (TCQuery q : this.tcQueries)
-            app += genTCPatternQuery(q);
+        for (TCQuery q : this.tcQueries) {
+            if (q.numEdges() < 2)
+                app += genSimpleFilter(q);
+            else
+                app += genTCPatternQuery(q);
+        }
         return app;
     }
 
@@ -101,6 +105,8 @@ public class TCSiddhiAppGenerator {
      * @return the condition expression to check the shared node relation
      */
     String genSharedNodeConditions(PatternEdge edge, HashMap<Integer, String> prefixNodes) {
+        if (prefixNodes == null)
+            return "";
         ArrayList<String> conditions = new ArrayList<>();
         String startPrefix = prefixNodes.get(edge.getStartId());
         String endPrefix = prefixNodes.get(edge.getEndId());
@@ -192,6 +198,28 @@ public class TCSiddhiAppGenerator {
         query += "within 10 sec\n";
         query += genSelectExpression(q, prefixNodes);
         query += String.format("\ninsert into TC%dOutput;\n", q.getId());
+
+        return query;
+    }
+
+    /**
+     * Generate a simple filter query for a TC-Query containing 1 edge.
+     * <b>This function will not work if given TC-Query contains more than
+     * 1 edge</b>
+     * @param q the TC-Query containing only 1 edge.
+     * @return simple Siddhi filter query to filter the given edge
+     */
+    String genSimpleFilter(TCQuery q) {
+        PatternEdge edge = q.getEdges().get(0);
+        String query = String.format("from InputStream[%s]\n", genEdgeCondition(edge, null));
+
+        query += "select ";
+        if (edge.getStartId() < edge.getEndId())
+            query += String.format("start_id as n%d_id, end_id as n%d_id, ", edge.getStartId(), edge.getEndId());
+        else
+            query += String.format("end_id as n%d_id, start_id as n%d_id, ", edge.getEndId(), edge.getStartId());
+        query += String.format("timestamp as e%1$d_ts, eid as e%1$d_id\n", edge.getId());
+        query += String.format("insert into TC%dOutput;\n", q.getId());
 
         return query;
     }
