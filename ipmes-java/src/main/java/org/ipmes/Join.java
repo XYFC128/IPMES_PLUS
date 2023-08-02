@@ -11,6 +11,7 @@ public class Join {
     ArrayList<Map<Integer, MatchEdge>> answer;
     ArrayList<Map<Integer, MatchEdge>> expansionTable;
     Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
+    int time;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
             Map<Integer, ArrayList<TCQueryRelation>> TCQRelation) {
@@ -19,6 +20,7 @@ public class Join {
         this.answer = new ArrayList<Map<Integer, MatchEdge>>();
         this.expansionTable = new ArrayList<Map<Integer, MatchEdge>>();
         this.TCQRelation = TCQRelation;
+        this.time = -1;
     }
 
     /**
