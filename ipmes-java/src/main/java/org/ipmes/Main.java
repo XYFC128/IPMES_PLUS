@@ -50,27 +50,24 @@ public class Main {
         InputHandler inputHandler = runtime.getInputHandler("InputStream");
         runtime.start();
 
-        EventSorter sorter = new EventSorter(tcQueries);
+        EventSorter sorter = new EventSorter(tcQueries, useRegex);
         ArrayList<EventEdge> timeBuffer = new ArrayList<>();
         while (line != null) {
             EventEdge event = new EventEdge(line);
-            if (!timeBuffer.isEmpty()) {
-                if (event.timestamp.equals(timeBuffer.get(0).timestamp)) {
-                    timeBuffer.add(event);
-                } else {
-                    ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
-                    for (EventEdge edge : sorted)
-                        inputHandler.send(edge.toEventData());
-                    timeBuffer.clear();
-                }
-            } else {
-                timeBuffer.add(event);
+            if (!timeBuffer.isEmpty() && !event.timestamp.equals(timeBuffer.get(0).timestamp)) {
+                ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
+                for (EventEdge edge : sorted)
+                    inputHandler.send(edge.toEventData());
+                timeBuffer.clear();
             }
+            timeBuffer.add(event);
             line = inputReader.readLine();
         }
-        ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
-        for (EventEdge edge : sorted)
-            inputHandler.send(edge.toEventData());
+        if (!timeBuffer.isEmpty()) {
+            ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
+            for (EventEdge edge : sorted)
+                inputHandler.send(edge.toEventData());
+        }
 
         System.out.println("Match Results:");
         ArrayList<ArrayList<MatchEdge>> results = join.extractAnswer();

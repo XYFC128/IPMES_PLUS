@@ -10,11 +10,13 @@ import java.util.ArrayList;
  */
 public class EventSorter {
     ArrayList<PatternEdge> totalOrder;
-    public EventSorter(ArrayList<TCQuery> tcQueries) {
+    boolean useRegex;
+    public EventSorter(ArrayList<TCQuery> tcQueries, boolean useRegex) {
         this.totalOrder = new ArrayList<>();
         for (TCQuery q : tcQueries) {
             totalOrder.addAll(q.getEdges());
         }
+        this.useRegex = useRegex;
     }
 
     /**
