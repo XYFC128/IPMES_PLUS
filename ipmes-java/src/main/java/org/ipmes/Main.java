@@ -77,7 +77,7 @@ public class Main {
             System.out.print(
                     result.stream()
                             .map(edge -> edge.getDataId().toString())
-                            .collect(Collectors.joining(", ")));
+                            .collect(Collectors.joining(",")));
             System.out.println("]");
         }
 
