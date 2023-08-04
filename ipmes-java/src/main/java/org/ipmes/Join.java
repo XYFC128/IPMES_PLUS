@@ -107,8 +107,6 @@ public class Join {
                             fit = false;
                             break;
                         }
-                        if (!fit)
-                            break;
                     }
                 }
                 if (fit) {
