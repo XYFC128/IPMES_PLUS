@@ -23,8 +23,7 @@ public class EventEdge {
         this.endSignature = endSig;
     }
 
-    public EventEdge(String jsonStr) {
-        JSONObject inpObj = new JSONObject(jsonStr);
+    public EventEdge(JSONObject inpObj) {
         JSONObject edgeObj = inpObj.getJSONObject("r");
         this.timestamp = Preprocess.extractTimestamp(edgeObj);
         this.edgeId = edgeObj.getString("id");
@@ -33,6 +32,17 @@ public class EventEdge {
         this.startSignature = Preprocess.extractNodeSignature(inpObj.getJSONObject("m"));
         this.endId = inpObj.getJSONObject("n").getString("id");
         this.endSignature = Preprocess.extractNodeSignature(inpObj.getJSONObject("n"));
+    }
+
+    public EventEdge(String csvRow) {
+        String[] fields = csvRow.split(",");
+        this.timestamp      = fields[0];
+        this.edgeId         = fields[1];
+        this.edgeSignature  = fields[2];
+        this.startId        = fields[3];
+        this.startSignature = fields[4];
+        this.endId          = fields[5];
+        this.endSignature   = fields[6];
     }
 
     public Object[] toEventData() {
