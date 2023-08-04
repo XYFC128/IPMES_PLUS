@@ -26,9 +26,9 @@ public class TCQueryOutputCallbackTest {
         TCQuery q = new TCQuery(queryEdges);
 
         TCQueryOutputCallback callback = new TCQueryOutputCallback(q, pattern, null);
-        ArrayList<MatchEdge> res = callback.toMatchResult(new Event(0, new Object[] {"0", "1", "100.0", "10"}));
+        MatchResult res = callback.toMatchResult(new Event(0, new Object[] {"0", "1", "100.0", "10"}));
         assertArrayEquals(
                 new MatchEdge[] {new MatchEdge(10, 100000, 0, 1, pattern.getEdge(0))},
-                res.toArray());
+                res.matchEdges().toArray());
     }
 }
