@@ -1,6 +1,5 @@
 package org.ipmes;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class Decomposition {
@@ -13,6 +12,32 @@ public class Decomposition {
     public Decomposition(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
+    }
+
+    /**
+     * Decompose the possibly non-TC pattern into TC-Queries
+     *
+     * @return TC-Queries
+     */
+    public ArrayList<TCQuery> decompose() {
+        // DFS to generate TC sub-queries
+        ArrayList<TCQuery> subQueries = new ArrayList<>();
+        ArrayList<PatternEdge> parents = new ArrayList<>();
+        for (PatternEdge edge : this.spatialRelation.getEdges()) {
+            generateTCQueries(edge, parents, subQueries);
+        }
+
+        ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
+        for (int i = 0; i < selected.size(); ++i) {
+            selected.get(i).setId(i);
+        }
+
+        this.TCQRelation = genRelations(selected);
+        return selected;
+    }
+
+    public ArrayList<TCQueryRelation>[] getTCQRelation() {
+        return this.TCQRelation;
     }
 
     boolean hasSharedNode(PatternEdge edge, ArrayList<PatternEdge> parents) {
@@ -55,7 +80,7 @@ public class Decomposition {
         parents.remove(parents.size() - 1);
     }
 
-    boolean containSelected(TCQuery subQuery, boolean[] isEdgeSelected) {
+    boolean containsSelectedEdge(TCQuery subQuery, boolean[] isEdgeSelected) {
         for (PatternEdge e : subQuery.getEdges()) {
             if (isEdgeSelected[e.getId()]) {
                 return true;
@@ -82,7 +107,7 @@ public class Decomposition {
         boolean[] isEdgeSelected = new boolean[this.spatialRelation.numEdges()];
         Arrays.fill(isEdgeSelected, false);
         for (TCQuery subQuery : subQueries) {
-            if (containSelected(subQuery, isEdgeSelected))
+            if (containsSelectedEdge(subQuery, isEdgeSelected))
                 continue;
 
             for (PatternEdge e : subQuery.getEdges())
@@ -93,10 +118,23 @@ public class Decomposition {
         return selectedTCQ;
     }
 
+    boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
+        return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
+                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
+                || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty());
+    }
+
+    /**
+     * Generate relations for all selected TC Query. This method will collect all relations
+     * related with all edges in a tc Query, including temporal relations and spatial relations.
+     * @param selected selected TC-Query
+     * @return an array of relations, i-th element is the relations for i-th TC-Query
+     */
     ArrayList<TCQueryRelation>[] genRelations(ArrayList<TCQuery> selected) {
         ArrayList<TCQueryRelation>[] relations = (ArrayList<TCQueryRelation>[])new ArrayList[selected.size()];
         for (int i = 0; i < relations.length; ++i)
             relations[i] = new ArrayList<>();
+
         for (TCQuery TCQ1 : selected) {
             for (TCQuery TCQ2 : selected) {
                 // skip the same TCQ when iterating
@@ -104,9 +142,7 @@ public class Decomposition {
                     continue;
                 for (PatternEdge edge1 : TCQ1.edges) {
                     for (PatternEdge edge2 : TCQ2.edges) {
-                        if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
-                                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
-                                || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty())) {
+                        if (hasRelations(edge1, edge2)) {
                             TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();
@@ -117,31 +153,5 @@ public class Decomposition {
             }
         }
         return relations;
-    }
-
-    /**
-     * Decompose the possibly non-TC pattern into TC-Queries
-     *
-     * @return TC-Queries
-     */
-    public ArrayList<TCQuery> decompose() {
-        // DFS to generate TC sub-queries
-        ArrayList<TCQuery> subQueries = new ArrayList<>();
-        ArrayList<PatternEdge> parents = new ArrayList<>();
-        for (PatternEdge edge : this.spatialRelation.getEdges()) {
-            generateTCQueries(edge, parents, subQueries);
-        }
-
-        ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
-        for (int i = 0; i < selected.size(); ++i) {
-            selected.get(i).setId(i);
-        }
-
-        this.TCQRelation = genRelations(selected);
-        return selected;
-    }
-
-    public ArrayList<TCQueryRelation>[] getTCQRelation() {
-        return this.TCQRelation;
     }
 }
