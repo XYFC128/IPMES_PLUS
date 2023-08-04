@@ -4,15 +4,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
-import java.util.HashMap;
-
 public class Join {
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
+    // store the match result of the whole pattern
     ArrayList<MatchResult> answer;
+    // table for joining result
     HashSet<MatchResult> expansionTable;
+    // store the realtionships of sub TC Queries
     Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
-    int time;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
             Map<Integer, ArrayList<TCQueryRelation>> TCQRelation) {
@@ -21,7 +21,6 @@ public class Join {
         this.answer = new ArrayList<MatchResult>();
         this.expansionTable = new HashSet<MatchResult>();
         this.TCQRelation = TCQRelation;
-        this.time = -1;
     }
 
     /**
@@ -100,17 +99,13 @@ public class Join {
         ArrayList<MatchResult> buffer = new ArrayList<>();
         // join
         for (MatchResult entry : this.expansionTable) {
-            if (!entry.hasShareEdge(result)) {
+            if (!entry.hasShareEdge(result)) { // can use bitwise operation.
                 for (TCQueryRelation relationship : this.TCQRelation.get(tcQueryId)) {
                     if (entry.containsPattern(relationship.idOfEntry)) {
-                        for (MatchEdge tmpEdge : result.matchEdges()) {
-                            if (!tmpEdge.matched.getId().equals(relationship.idOfResult))
-                                continue;
-                            if (!(checkRelation(tmpEdge, entry.get(relationship.idOfEntry))
-                                    && checkTime(tmpEdge, entry.get(relationship.idOfEntry)))) {
-                                fit = false;
-                                break;
-                            }
+                        if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                                && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
+                            fit = false;
+                            break;
                         }
                         if (!fit)
                             break;
