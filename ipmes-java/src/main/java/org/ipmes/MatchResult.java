@@ -1,9 +1,6 @@
 package org.ipmes;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 
 public class MatchResult {
     int hash;

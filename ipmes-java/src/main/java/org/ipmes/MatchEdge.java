@@ -49,14 +49,7 @@ public class MatchEdge {
 
     @Override
     public String toString() {
-        return String.format(
-                "DataEdge {dataId: %d, timestamp: %d, startId: %d, endId: %d, matchId: %d}",
-                this.dataId,
-                this.timestamp,
-                this.startId,
-                this.endId,
-                this.matched.getId()
-        );
+        return this.dataId.toString();
     }
 
     @Override
@@ -64,8 +57,6 @@ public class MatchEdge {
         if (obj == this) return true;
         if (!(obj instanceof MatchEdge)) return false;
         MatchEdge other = (MatchEdge) obj;
-        return this.dataId.equals(other.dataId) && this.timestamp.equals(other.timestamp)
-                && this.startId.equals(other.startId) && this.endId.equals(other.endId)
-                && this.matched.getId().equals(other.matched.getId());
+        return this.dataId.equals(other.dataId);
     }
 }
