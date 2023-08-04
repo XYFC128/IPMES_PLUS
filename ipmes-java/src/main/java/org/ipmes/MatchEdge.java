@@ -66,6 +66,6 @@ public class MatchEdge {
         MatchEdge other = (MatchEdge) obj;
         return this.dataId.equals(other.dataId) && this.timestamp.equals(other.timestamp)
                 && this.startId.equals(other.startId) && this.endId.equals(other.endId)
-                && this.matched.equals(other.matched);
+                && this.matched.getId().equals(other.matched.getId());
     }
 }
