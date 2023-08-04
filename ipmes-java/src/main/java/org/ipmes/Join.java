@@ -12,10 +12,10 @@ public class Join {
     // table for joining result
     HashSet<MatchResult> expansionTable;
     // store the realtionships of sub TC Queries
-    Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
+    ArrayList<TCQueryRelation>[] TCQRelation;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
-            Map<Integer, ArrayList<TCQueryRelation>> TCQRelation) {
+            ArrayList<TCQueryRelation>[] TCQRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
@@ -100,7 +100,7 @@ public class Join {
         // join
         for (MatchResult entry : this.expansionTable) {
             if (!entry.hasShareEdge(result)) { // can use bitwise operation.
-                for (TCQueryRelation relationship : this.TCQRelation.get(tcQueryId)) {
+                for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
                     if (entry.containsPattern(relationship.idOfEntry)) {
                         if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
                                 && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {

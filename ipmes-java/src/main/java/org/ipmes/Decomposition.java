@@ -1,5 +1,6 @@
 package org.ipmes;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Decomposition {
@@ -7,12 +8,11 @@ public class Decomposition {
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
     // TCQueryId, relation of edges
-    Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
+    ArrayList<TCQueryRelation>[] TCQRelation;
 
     public Decomposition(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
-        this.TCQRelation = new HashMap<Integer, ArrayList<TCQueryRelation>>();
     }
 
     boolean hasSharedNode(PatternEdge edge, ArrayList<PatternEdge> parents) {
@@ -93,9 +93,12 @@ public class Decomposition {
         return selectedTCQ;
     }
 
-    private void proprocessRelation(ArrayList<TCQuery> selectedTcQueries) {
-        for (TCQuery TCQ1 : selectedTcQueries) {
-            for (TCQuery TCQ2 : selectedTcQueries) {
+    ArrayList<TCQueryRelation>[] genRelations(ArrayList<TCQuery> selected) {
+        ArrayList<TCQueryRelation>[] relations = (ArrayList<TCQueryRelation>[])new ArrayList[selected.size()];
+        for (int i = 0; i < relations.length; ++i)
+            relations[i] = new ArrayList<>();
+        for (TCQuery TCQ1 : selected) {
+            for (TCQuery TCQ2 : selected) {
                 // skip the same TCQ when iterating
                 if (TCQ1.equals(TCQ2))
                     continue;
@@ -107,12 +110,13 @@ public class Decomposition {
                             TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();
-                            this.TCQRelation.get(TCQ1.getId()).add(tempRelation);
+                            relations[TCQ1.getId()].add(tempRelation);
                         }
                     }
                 }
             }
         }
+        return relations;
     }
 
     /**
@@ -131,14 +135,13 @@ public class Decomposition {
         ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
         for (int i = 0; i < selected.size(); ++i) {
             selected.get(i).setId(i);
-            ArrayList<TCQueryRelation> tempRel = new ArrayList<TCQueryRelation>();
-            this.TCQRelation.put(i, tempRel);
         }
-        proprocessRelation(selected);
+
+        this.TCQRelation = genRelations(selected);
         return selected;
     }
 
-    public Map<Integer, ArrayList<TCQueryRelation>> getTCQRelation() {
+    public ArrayList<TCQueryRelation>[] getTCQRelation() {
         return this.TCQRelation;
     }
 }

@@ -29,7 +29,7 @@ public class Main {
         // Decomposition
         Decomposition d = new Decomposition(dep, pattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        Map<Integer, ArrayList<TCQueryRelation>> TCQRelation = d.getTCQRelation();
+        ArrayList<TCQueryRelation>[] TCQRelation = d.getTCQRelation();
         TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, tcQueries);
         gen.setUseRegex(useRegex);
 
