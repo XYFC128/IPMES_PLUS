@@ -73,56 +73,6 @@ public class Join {
     }
 
     /**
-     * save match result of TC sub-queries
-     * <p>
-     * When we want to join the match result, we check the following constraints:
-     * <ol>
-     * <li>the two match results do not overlap</li>
-     * <li>the spatial relation of the two match results are fine</li>
-     * <li>the temporal relation of the two match results are fine</li>
-     * </ol>
-     * If all constraints are followed, create a new entry and add it to
-     * expansionTable.
-     * If the entry contains every edge, it is one of the match results of the whole
-     * pattern.
-     * <\p>
-     * 
-     * @return the match results of the whole pattern
-     */
-
-    /**
-     * Detect whether any edge in subTCQ appear in entry
-     * 
-     * @param entry  the matched entry
-     * @param result the match result of TC subquery
-     * @return true if no overlapping between entry and result
-     */
-
-    boolean checkNoOverlap(Map<Integer, MatchEdge> entry, ArrayList<MatchEdge> result) {
-        for (MatchEdge edge : result) {
-            if (entry.containsKey(edge.matched.getId()))
-                return false;
-        }
-        return true;
-    }
-
-    /**
-     * add match result to the Map combineTo, and add combineTo to expansionTable.
-     * 
-     * @param combineTo the Map we want to add result to
-     * @param result    the match result of TC subquery
-     * 
-     */
-    void combineResult(Map<Integer, MatchEdge> combineTo, ArrayList<MatchEdge> result) {
-//        for (MatchEdge edge : result) {
-//            combineTo.put(edge.matched.getId(), edge);
-//        }
-//        if (combineTo.size() == this.spatialRelation.numEdges())
-//            this.answer.add(combineTo);
-//        return;
-    }
-
-    /**
      * Consume the match result and start the streaming join algorithm.
      * <p>
      * TODO: preprocess which edges' relationships need to be checked.
