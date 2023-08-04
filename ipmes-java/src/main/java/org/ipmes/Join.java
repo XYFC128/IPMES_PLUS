@@ -1,6 +1,7 @@
 package org.ipmes;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 
 import java.util.HashMap;
@@ -8,8 +9,8 @@ import java.util.HashMap;
 public class Join {
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
-    ArrayList<Map<Integer, MatchEdge>> answer;
-    ArrayList<Map<Integer, MatchEdge>> expansionTable;
+    ArrayList<MatchResult> answer;
+    HashSet<MatchResult> expansionTable;
     Map<Integer, ArrayList<TCQueryRelation>> TCQRelation;
     int time;
 
@@ -17,8 +18,8 @@ public class Join {
             Map<Integer, ArrayList<TCQueryRelation>> TCQRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
-        this.answer = new ArrayList<Map<Integer, MatchEdge>>();
-        this.expansionTable = new ArrayList<Map<Integer, MatchEdge>>();
+        this.answer = new ArrayList<MatchResult>();
+        this.expansionTable = new HashSet<MatchResult>();
         this.TCQRelation = TCQRelation;
         this.time = -1;
     }
@@ -113,12 +114,12 @@ public class Join {
      * 
      */
     void combineResult(Map<Integer, MatchEdge> combineTo, ArrayList<MatchEdge> result) {
-        for (MatchEdge edge : result) {
-            combineTo.put(edge.matched.getId(), edge);
-        }
-        if (combineTo.size() == this.spatialRelation.numEdges())
-            this.answer.add(combineTo);
-        return;
+//        for (MatchEdge edge : result) {
+//            combineTo.put(edge.matched.getId(), edge);
+//        }
+//        if (combineTo.size() == this.spatialRelation.numEdges())
+//            this.answer.add(combineTo);
+//        return;
     }
 
     /**
@@ -142,15 +143,17 @@ public class Join {
      * @param result    the match result
      * @param tcQueryId the TC-Query id of the result
      */
-    public void addMatchResult(ArrayList<MatchEdge> result, Integer tcQueryId) {
+    public void addMatchResult(MatchResult result, Integer tcQueryId) {
+        if (this.expansionTable.contains(result))
+            return;
         boolean fit = true;
-        ArrayList<Map<Integer, MatchEdge>> buffer = new ArrayList<Map<Integer, MatchEdge>>();
+        ArrayList<MatchResult> buffer = new ArrayList<>();
         // join
-        for (Map<Integer, MatchEdge> entry : this.expansionTable) {
-            if (checkNoOverlap(entry, result)) {
+        for (MatchResult entry : this.expansionTable) {
+            if (!entry.hasShareEdge(result)) {
                 for (TCQueryRelation relationship : this.TCQRelation.get(tcQueryId)) {
-                    if (entry.containsKey(relationship.idOfEntry)) {
-                        for (MatchEdge tmpEdge : result) {
+                    if (entry.containsPattern(relationship.idOfEntry)) {
+                        for (MatchEdge tmpEdge : result.matchEdges()) {
                             if (!tmpEdge.matched.getId().equals(relationship.idOfResult))
                                 continue;
                             if (!(checkRelation(tmpEdge, entry.get(relationship.idOfEntry))
@@ -164,30 +167,26 @@ public class Join {
                     }
                 }
                 if (fit) {
-                    Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>(entry);
-                    combineResult(temp, result);
-                    buffer.add(temp);
+                    buffer.add(result.merge(entry));
                 }
             }
             fit = true;
         }
         // insert
-        Map<Integer, MatchEdge> temp = new HashMap<Integer, MatchEdge>();
-        combineResult(temp, result);
-        this.expansionTable.add(temp);
-        this.expansionTable.addAll(buffer);
-        buffer.clear();
+        buffer.add(result);
+        int ansSize = this.spatialRelation.numEdges();
+        for (MatchResult newEntry : buffer) {
+            if (newEntry.size() == ansSize)
+                answer.add(newEntry);
+            else
+                expansionTable.add(newEntry);
+        }
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
         ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<ArrayList<MatchEdge>>();
-        int len = this.spatialRelation.numEdges();
-        for (Map<Integer, MatchEdge> entry : this.answer) {
-            ArrayList<MatchEdge> temp = new ArrayList<MatchEdge>();
-            for (int i = 0; i < len; i++) {
-                temp.add(entry.get(i));
-            }
-            ret.add(temp);
+        for (MatchResult result : this.answer) {
+            ret.add(new ArrayList<>(result.matchEdges()));
         }
         this.answer.clear();
         return ret;
