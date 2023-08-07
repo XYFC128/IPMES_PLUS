@@ -1,7 +1,14 @@
-package org.ipmes;
+package org.ipmes.siddhi;
 
 import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.output.StreamCallback;
+import org.ipmes.Join;
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.match.MatchEdge;
+import org.ipmes.match.MatchResult;
+import org.ipmes.pattern.PatternEdge;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.pattern.PatternNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;

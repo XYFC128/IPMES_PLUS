@@ -1,4 +1,9 @@
-package org.ipmes;
+package org.ipmes.siddhi;
+
+import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.PatternEdge;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.pattern.PatternNode;
 
 /**
  * The old siddhi app generator.

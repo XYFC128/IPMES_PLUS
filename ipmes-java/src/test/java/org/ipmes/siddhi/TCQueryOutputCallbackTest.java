@@ -1,6 +1,13 @@
-package org.ipmes;
+package org.ipmes.siddhi;
 
 import io.siddhi.core.event.Event;
+import org.ipmes.TTPGenerator;
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.match.MatchEdge;
+import org.ipmes.match.MatchResult;
+import org.ipmes.pattern.PatternEdge;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.siddhi.TCQueryOutputCallback;
 import org.junit.Test;
 
 import java.io.StringReader;

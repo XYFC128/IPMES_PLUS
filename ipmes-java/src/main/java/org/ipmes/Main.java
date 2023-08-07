@@ -3,12 +3,19 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.siddhi.core.SiddhiAppRuntime;
 import io.siddhi.core.SiddhiManager;
 import io.siddhi.core.stream.input.InputHandler;
+import org.ipmes.decomposition.Decomposition;
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.decomposition.TCQueryRelation;
+import org.ipmes.match.MatchEdge;
+import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.siddhi.TCQueryOutputCallback;
+import org.ipmes.siddhi.TCSiddhiAppGenerator;
 
 public class Main {
     public static void main(String[] args) throws Exception {

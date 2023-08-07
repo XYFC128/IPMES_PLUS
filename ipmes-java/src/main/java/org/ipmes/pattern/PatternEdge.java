@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
 public class PatternEdge {
     Integer id;
@@ -22,7 +22,7 @@ public class PatternEdge {
         this.endNode = endNode;
     }
 
-    Integer[] getEndpoints() {
+    public Integer[] getEndpoints() {
         return new Integer[] {this.getStartId(), this.getEndId()};
     }
 

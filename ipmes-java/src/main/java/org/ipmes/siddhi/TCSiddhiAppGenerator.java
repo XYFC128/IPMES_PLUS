@@ -1,4 +1,10 @@
-package org.ipmes;
+package org.ipmes.siddhi;
+
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.PatternEdge;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.pattern.PatternNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;

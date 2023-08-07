@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.decomposition;
 
 /**
  * A tuple struct representing there is a relation between idOfResult and idOfEntry.

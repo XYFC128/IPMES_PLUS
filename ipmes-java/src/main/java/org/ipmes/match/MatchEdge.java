@@ -1,4 +1,6 @@
-package org.ipmes;
+package org.ipmes.match;
+
+import org.ipmes.pattern.PatternEdge;
 
 /**
  * Match edge is an edge in streaming data graph. Also, it's an edge in a partial
@@ -35,7 +37,11 @@ public class MatchEdge {
         return this.matched;
     }
 
-    MatchEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
+    public Integer matchId() {
+        return this.matched.getId();
+    }
+
+    public MatchEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
         this.dataId = dataId;
         this.timestamp = timestamp;
         this.startId = startId;

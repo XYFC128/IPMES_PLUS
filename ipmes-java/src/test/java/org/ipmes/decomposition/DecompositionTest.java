@@ -1,10 +1,16 @@
-package org.ipmes;
+package org.ipmes.decomposition;
 
 import io.siddhi.core.SiddhiAppRuntime;
 import io.siddhi.core.SiddhiManager;
 import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.input.InputHandler;
 import io.siddhi.core.stream.output.StreamCallback;
+import org.ipmes.TTPGenerator;
+import org.ipmes.decomposition.Decomposition;
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.PatternGraph;
+import org.ipmes.siddhi.TCSiddhiAppGenerator;
 import org.junit.Test;
 
 import java.io.StringReader;

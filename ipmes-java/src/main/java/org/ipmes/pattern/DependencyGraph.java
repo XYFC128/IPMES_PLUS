@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,7 +36,7 @@ public class DependencyGraph {
     ArrayList<ArrayList<Integer>> parents;
     ArrayList<ArrayList<Integer>> child;
 
-    DependencyGraph(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> child) {
+    public DependencyGraph(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> child) {
         this.parents = parents;
         this.child = child;
     }

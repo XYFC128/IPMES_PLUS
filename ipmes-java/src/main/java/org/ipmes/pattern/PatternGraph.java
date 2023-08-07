@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
 import java.io.BufferedReader;
 import java.io.Reader;

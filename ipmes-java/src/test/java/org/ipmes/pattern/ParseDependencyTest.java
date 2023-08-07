@@ -1,5 +1,7 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
+import org.ipmes.TTPGenerator;
+import org.ipmes.pattern.DependencyGraph;
 import org.junit.Test;
 
 import java.io.StringReader;

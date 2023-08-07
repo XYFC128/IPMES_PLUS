@@ -1,5 +1,6 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
+import org.ipmes.pattern.Preprocess;
 import org.json.JSONObject;
 import org.junit.Test;
 

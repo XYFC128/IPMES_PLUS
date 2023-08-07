@@ -1,5 +1,8 @@
 package org.ipmes;
 
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.pattern.PatternEdge;
+
 import java.util.ArrayList;
 
 /**

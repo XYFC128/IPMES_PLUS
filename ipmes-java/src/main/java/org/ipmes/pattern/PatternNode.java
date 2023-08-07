@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.pattern;
 
 public class PatternNode {
     Integer id;

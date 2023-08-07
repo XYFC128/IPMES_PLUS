@@ -1,8 +1,13 @@
 package org.ipmes;
 
+import org.ipmes.decomposition.TCQueryRelation;
+import org.ipmes.match.MatchEdge;
+import org.ipmes.match.MatchResult;
+import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.PatternGraph;
+
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 
 public class Join {
     DependencyGraph temporalRelation;
@@ -50,8 +55,8 @@ public class Join {
 
     private boolean checkRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Integer[][] arr = {
-                edgeInMatchResult.matched.getEndpoints(),
-                edgeInTable.matched.getEndpoints(),
+                edgeInMatchResult.getMatched().getEndpoints(),
+                edgeInTable.getMatched().getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
                 edgeInTable.getEndpoints()
         };
@@ -59,16 +64,16 @@ public class Join {
     }
 
     private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
-        return (this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
-                .contains(edgeInTable.matched.getId()) && edgeInMatchResult.timestamp >= edgeInTable.timestamp)
+        return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
+                .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
                 ||
-                (this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
-                        .contains(edgeInTable.matched.getId()) && edgeInMatchResult.timestamp <= edgeInTable.timestamp)
+                (this.temporalRelation.getChildren(edgeInMatchResult.matchId())
+                        .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() <= edgeInTable.getTimestamp())
                 ||
-                (!this.temporalRelation.getChildren(edgeInMatchResult.matched.getId())
-                        .contains(edgeInTable.matched.getId())
-                        && !this.temporalRelation.getParents(edgeInMatchResult.matched.getId())
-                                .contains(edgeInTable.matched.getId()));
+                (!this.temporalRelation.getChildren(edgeInMatchResult.matchId())
+                        .contains(edgeInTable.matchId())
+                        && !this.temporalRelation.getParents(edgeInMatchResult.matchId())
+                                .contains(edgeInTable.matchId()));
     }
 
     /**

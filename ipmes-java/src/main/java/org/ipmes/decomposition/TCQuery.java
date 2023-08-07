@@ -1,4 +1,7 @@
-package org.ipmes;
+package org.ipmes.decomposition;
+
+import org.ipmes.pattern.PatternEdge;
+import org.ipmes.pattern.PatternNode;
 
 import java.util.*;
 
