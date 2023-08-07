@@ -99,21 +99,21 @@ public class Join {
         ArrayList<MatchResult> buffer = new ArrayList<>();
         // join
         for (MatchResult entry : this.expansionTable) {
-            if (!entry.hasShareEdge(result)) { // can use bitwise operation.
-                for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
-                    if (entry.containsPattern(relationship.idOfEntry)) {
-                        if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
-                                && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
-                            fit = false;
-                            break;
-                        }
+            if (entry.hasShareEdge(result))
+                continue;
+            fit = true;
+            for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
+                if (entry.containsPattern(relationship.idOfEntry)) {
+                    if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                            && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
+                        fit = false;
+                        break;
                     }
                 }
-                if (fit) {
-                    buffer.add(result.merge(entry));
-                }
             }
-            fit = true;
+            if (fit) {
+                buffer.add(result.merge(entry));
+            }
         }
         // insert
         buffer.add(result);
