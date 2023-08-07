@@ -6,16 +6,24 @@ public class MatchResult {
     int hash;
     HashMap<Integer, MatchEdge> results;
     BitSet resultContains;
+    MatchResult next;
+    int earliestTime;
+    int latestTime;
 
     public MatchResult() {
         this.hash = 0;
+        this.earliestTime = Integer.MAX_VALUE;
+        this.latestTime = Integer.MIN_VALUE;
         this.results = new HashMap<>();
         this.resultContains = new BitSet();
+        this.next = null;
     }
 
     public void addMatchEdge(MatchEdge m) {
         Integer matchId = m.matched.getId();
         this.hash += m.getDataId() * matchId;
+        this.earliestTime = Math.min(this.earliestTime, m.timestamp);
+        this.latestTime = Math.max(this.latestTime, m.timestamp);
         this.results.put(matchId, m);
         this.resultContains.set(matchId);
     }
@@ -31,6 +39,8 @@ public class MatchResult {
         res.hash = this.hash + other.hash;
         res.resultContains.or(this.resultContains);
         res.resultContains.or(other.resultContains);
+        res.earliestTime = Math.min(this.earliestTime, other.earliestTime);
+        res.latestTime = Math.max(this.latestTime, other.latestTime);
         return res;
     }
 
@@ -48,6 +58,23 @@ public class MatchResult {
 
     public int size() {
         return this.results.size();
+    }
+
+    public int getEarliestTime() {
+        return this.earliestTime;
+    }
+
+    public int getLatestTime() {
+        return this.latestTime;
+    }
+
+    public MatchResult getNext() {
+        return this.next;
+    }
+
+    public void setNext(MatchResult next) {
+        this.next = next;
+        return;
     }
 
     @Override
