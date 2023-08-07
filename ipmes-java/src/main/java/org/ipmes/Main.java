@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import io.siddhi.core.SiddhiAppRuntime;
 import io.siddhi.core.SiddhiManager;
 import io.siddhi.core.stream.input.InputHandler;
-import org.ipmes.decomposition.Decomposition;
+import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.match.MatchEdge;
@@ -34,7 +34,7 @@ public class Main {
         DependencyGraph dep = DependencyGraph.parse(new FileReader(orelsFile)).get();
 
         // Decomposition
-        Decomposition d = new Decomposition(dep, pattern);
+        TCQGenerator d = new TCQGenerator(dep, pattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
         ArrayList<TCQueryRelation>[] TCQRelation = d.getTCQRelation();
         TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, tcQueries);
@@ -63,18 +63,18 @@ public class Main {
         while (line != null) {
             EventEdge event = new EventEdge(line);
             if (!timeBuffer.isEmpty() && !event.timestamp.equals(timeBuffer.get(0).timestamp)) {
-                ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
-                for (EventEdge edge : sorted)
-                    inputHandler.send(edge.toEventData());
+                ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
+                for (Object[] data : sorted)
+                    inputHandler.send(data);
                 timeBuffer.clear();
             }
             timeBuffer.add(event);
             line = inputReader.readLine();
         }
         if (!timeBuffer.isEmpty()) {
-            ArrayList<EventEdge> sorted = sorter.rearrange(timeBuffer);
-            for (EventEdge edge : sorted)
-                inputHandler.send(edge.toEventData());
+            ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
+            for (Object[] data : sorted)
+                inputHandler.send(data);
         }
 
         System.out.println("Match Results:");

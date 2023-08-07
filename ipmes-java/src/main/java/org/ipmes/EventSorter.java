@@ -2,6 +2,7 @@ package org.ipmes;
 
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.pattern.PatternEdge;
+import java.util.regex.Pattern;
 
 import java.util.ArrayList;
 
@@ -14,12 +15,22 @@ import java.util.ArrayList;
 public class EventSorter {
     ArrayList<PatternEdge> totalOrder;
     boolean useRegex;
+    ArrayList<Pattern> regexPatterns;
     public EventSorter(ArrayList<TCQuery> tcQueries, boolean useRegex) {
         this.totalOrder = new ArrayList<>();
         for (TCQuery q : tcQueries) {
             totalOrder.addAll(q.getEdges());
         }
         this.useRegex = useRegex;
+        if (useRegex)
+            compileRegex();
+    }
+
+    public void compileRegex() {
+        this.regexPatterns = new ArrayList<>();
+        for (PatternEdge edge : this.totalOrder) {
+            this.regexPatterns.add(Pattern.compile(edge.getSignature()));
+        }
     }
 
     /**
@@ -33,13 +44,19 @@ public class EventSorter {
      * @param events the events with the same timestamp
      * @return the sorted events
      */
-    public ArrayList<EventEdge> rearrange(ArrayList<EventEdge> events) {
-        ArrayList<EventEdge> sorted = new ArrayList<>(events.size());
+    public ArrayList<Object[]> rearrangeToEventData(ArrayList<EventEdge> events) {
+        ArrayList<Object[]> sorted = new ArrayList<>(events.size());
 
-        for (PatternEdge pattern : this.totalOrder) {
+        for (int i = 0; i < this.totalOrder.size(); ++i) {
             for (EventEdge event : events) {
-                if (match(pattern, event))
-                    sorted.add(event);
+                if (match(i, event))
+                    sorted.add(new Object[]{
+                            event.timestamp,
+                            totalOrder.get(i).getId(),
+                            event.edgeId,
+                            event.startId,
+                            event.endId
+                    });
             }
         }
 
@@ -48,16 +65,13 @@ public class EventSorter {
 
     /**
      * Compare the signatures.
-     * TODO: support regex matching
-     * @param patternEdge the pattern edge
+     * @param ord use i-th pattern in total order
      * @param eventEdge the event edge
      * @return true if the signatures match, false otherwise
      */
-    static boolean match(PatternEdge patternEdge, EventEdge eventEdge) {
-        String startSig = patternEdge.getStartNode().getSignature();
-        String endSig = patternEdge.getEndNode().getSignature();
-        return patternEdge.getSignature().equals(eventEdge.edgeSignature) &&
-                startSig.equals(eventEdge.startSignature) &&
-                endSig.equals(eventEdge.endSignature);
+    boolean match(int ord, EventEdge eventEdge) {
+        if (this.useRegex)
+            return regexPatterns.get(ord).matcher(eventEdge.signature).find();
+        return totalOrder.get(ord).getSignature().equals(eventEdge.signature);
     }
 }

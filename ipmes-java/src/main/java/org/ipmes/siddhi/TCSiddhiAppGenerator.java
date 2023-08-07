@@ -89,7 +89,7 @@ public class TCSiddhiAppGenerator {
      * @return the stream definitions, with an end-of-line character at the end
      */
     String genStreamDefinition() {
-        String def = "define Stream InputStream (timestamp string, eid string, esig string, start_id string, start_sig string, end_id string, end_sig string);\n";
+        String def = "define Stream InputStream (timestamp string, match_id int, eid string, start_id string, end_id string);\n";
         for (TCQuery q : this.tcQueries)
             def += genTCQueryStreamDefinition(q);
         return def;
@@ -137,22 +137,7 @@ public class TCSiddhiAppGenerator {
 
         PatternNode startNode = this.patternGraph.getNode(edge.getStartId());
         PatternNode endNode = this.patternGraph.getNode(edge.getEndId());
-        String signatureCondition;
-        if (this.useRegex) {
-            signatureCondition = String.format(
-                    "regex:matches(\"%s\", esig) and regex:matches(\"%s\", start_sig) and regex:matches(\"%s\", end_sig)",
-                    edge.getSignature(),
-                    startNode.getSignature(),
-                    endNode.getSignature()
-            );
-        } else {
-            signatureCondition = String.format(
-                    "esig == \"%s\" and start_sig == \"%s\" and end_sig == \"%s\"",
-                    edge.getSignature(),
-                    startNode.getSignature(),
-                    endNode.getSignature()
-            );
-        }
+        String signatureCondition = String.format("match_id == %d", edge.getId());
         if (sharedNodeCondition.isEmpty())
             return signatureCondition;
         return sharedNodeCondition + " and " + signatureCondition;

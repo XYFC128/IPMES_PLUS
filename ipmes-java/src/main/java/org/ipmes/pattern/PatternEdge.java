@@ -17,7 +17,7 @@ public class PatternEdge {
 
     public PatternEdge(Integer id, String signature, PatternNode startNode, PatternNode endNode) {
         this.id = id;
-        this.signature = signature;
+        this.signature = String.format("%s#%s#%s", signature, startNode.signature, endNode.signature);
         this.startNode = startNode;
         this.endNode = endNode;
     }

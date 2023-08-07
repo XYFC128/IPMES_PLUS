@@ -6,8 +6,6 @@ import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.input.InputHandler;
 import io.siddhi.core.stream.output.StreamCallback;
 import org.ipmes.TTPGenerator;
-import org.ipmes.decomposition.Decomposition;
-import org.ipmes.decomposition.TCQuery;
 import org.ipmes.pattern.DependencyGraph;
 import org.ipmes.pattern.PatternGraph;
 import org.ipmes.siddhi.TCSiddhiAppGenerator;
@@ -19,7 +17,7 @@ import java.util.ArrayList;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
 
-public class DecompositionTest {
+public class TCQGeneratorTest {
     @Test
     public void testTCQueryStructure() {
         String nodes = TTPGenerator.genTTP11Nodes();
@@ -28,7 +26,7 @@ public class DecompositionTest {
         String orels = TTPGenerator.genTTP11Orels();
         DependencyGraph dep = DependencyGraph.parse(new StringReader(orels)).get();
 
-        Decomposition d = new Decomposition(dep, pattern);
+        TCQGenerator d = new TCQGenerator(dep, pattern);
         ArrayList<TCQuery> queries = d.decompose();
 
         assertFalse(queries.isEmpty());
@@ -47,7 +45,7 @@ public class DecompositionTest {
         DependencyGraph dep = DependencyGraph.parse(new StringReader(orels)).get();
 
         // Decomposition
-        Decomposition d = new Decomposition(dep, pattern);
+        TCQGenerator d = new TCQGenerator(dep, pattern);
         TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, d.decompose());
 
         // Generate CEP app and runtime

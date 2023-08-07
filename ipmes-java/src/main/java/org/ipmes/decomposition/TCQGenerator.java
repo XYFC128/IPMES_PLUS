@@ -6,14 +6,14 @@ import org.ipmes.pattern.PatternGraph;
 
 import java.util.*;
 
-public class Decomposition {
+public class TCQGenerator {
 
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
     // TCQueryId, relation of edges
     ArrayList<TCQueryRelation>[] TCQRelation;
 
-    public Decomposition(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
+    public TCQGenerator(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
     }
