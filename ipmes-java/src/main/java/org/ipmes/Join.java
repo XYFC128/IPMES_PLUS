@@ -8,6 +8,8 @@ import org.ipmes.pattern.PatternGraph;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class Join {
     DependencyGraph temporalRelation;
@@ -18,14 +20,19 @@ public class Join {
     HashSet<MatchResult> expansionTable;
     // store the realtionships of sub TC Queries
     ArrayList<TCQueryRelation>[] TCQRelation;
+    // use SortedMap<TimeStamp, entry> to maintain window
+    SortedMap<Integer, MatchResult> mapForWindow;
+    int windowSize;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
-            ArrayList<TCQueryRelation>[] TCQRelation) {
+            ArrayList<TCQueryRelation>[] TCQRelation, int windowSize) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
         this.expansionTable = new HashSet<MatchResult>();
         this.TCQRelation = TCQRelation;
+        this.mapForWindow = new TreeMap<Integer, MatchResult>();
+        this.windowSize = windowSize;
     }
 
     /**
@@ -68,7 +75,8 @@ public class Join {
                 .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matchId())
-                        .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() <= edgeInTable.getTimestamp())
+                        .contains(edgeInTable.matchId())
+                        && edgeInMatchResult.getTimestamp() <= edgeInTable.getTimestamp())
                 ||
                 (!this.temporalRelation.getChildren(edgeInMatchResult.matchId())
                         .contains(edgeInTable.matchId())
@@ -100,6 +108,16 @@ public class Join {
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
         if (this.expansionTable.contains(result))
             return;
+        while (result.getLatestTime() - this.windowSize > this.mapForWindow.firstKey()) {
+            MatchResult nextToRemove = this.mapForWindow.get(this.mapForWindow.firstKey());
+            while (nextToRemove != null) {
+                MatchResult tmp = nextToRemove;
+                nextToRemove = nextToRemove.getNext();
+                this.expansionTable.remove(tmp);
+            }
+            // remove from FIFO
+            // this.mapForWindow.remove(tcQueryId, nextToRemove)
+        }
         boolean fit = true;
         ArrayList<MatchResult> buffer = new ArrayList<>();
         // join
@@ -126,9 +144,14 @@ public class Join {
         for (MatchResult newEntry : buffer) {
             if (newEntry.size() == ansSize)
                 answer.add(newEntry);
-            else
+            else {
                 expansionTable.add(newEntry);
+                if (this.mapForWindow.containsKey(newEntry.getEarliestTime()))
+                    newEntry.setNext(this.mapForWindow.get(newEntry.getEarliestTime()));
+                this.mapForWindow.put(newEntry.getEarliestTime(), newEntry);
+            }
         }
+
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {

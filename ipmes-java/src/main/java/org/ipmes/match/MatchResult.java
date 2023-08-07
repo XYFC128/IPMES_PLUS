@@ -72,6 +72,11 @@ public class MatchResult {
         return this.next;
     }
 
+    public void setNext(MatchResult next) {
+        this.next = next;
+        return;
+    }
+
     @Override
     public int hashCode() {
         return this.hash;
