@@ -33,4 +33,9 @@ public class EventEdge {
     public Object[] toEventData() {
         return new Object[]{timestamp, edgeId, startId, endId};
     }
+
+    @Override
+    public String toString() {
+        return String.format("EventEdge <%s> {sig: %s, id: %s}", this.timestamp, this.signature, this.edgeId);
+    }
 }

@@ -29,7 +29,7 @@ public class PatternEdge {
     @Override
     public String toString() {
         return String.format(
-                "Edge {id: %d, signature: %s, startId: %d, endId: %d}",
+                "PatternEdge {id: %d, signature: %s, startId: %d, endId: %d}",
                 this.id,
                 this.signature,
                 this.getStartId(),
