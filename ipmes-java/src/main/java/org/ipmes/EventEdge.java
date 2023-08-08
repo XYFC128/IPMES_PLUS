@@ -13,18 +13,12 @@ public class EventEdge {
     public long startId;
     public long endId;
 
-    static long parseTimestamp(String tsStr) {
-        double toNum = Double.parseDouble(tsStr);
-        return Math.round(toNum * 1000);
-    }
-
-    public EventEdge(String csvRow) {
-        String[] fields = csvRow.split(",");
-        this.timestamp = parseTimestamp(fields[0]);
-        this.signature = fields[1];
-        this.edgeId    = Long.parseLong(fields[2]);
-        this.startId   = Long.parseLong(fields[3]);
-        this.endId     = Long.parseLong(fields[4]);
+    public EventEdge(long timestamp, String signature, long edgeId, long startId, long endId) {
+        this.timestamp = timestamp;
+        this.signature = signature;
+        this.edgeId    = edgeId;
+        this.startId   = startId;
+        this.endId     = endId;
     }
 
     public EventEdge(EventEdge other) {
