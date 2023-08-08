@@ -30,9 +30,9 @@ public class TCQueryOutputCallback extends StreamCallback {
         }
     }
 
-    static Integer parseTimestamp(String tsStr) {
-        float toNum = Float.parseFloat(tsStr);
-        return Math.round(toNum * 1000);
+    static long parseTimestamp(String tsStr) {
+        double toNum = Double.parseDouble(tsStr);
+        return Math.round(toNum*1000);
     }
 
     MatchResult toMatchResult(Event e) {
@@ -42,7 +42,7 @@ public class TCQueryOutputCallback extends StreamCallback {
 
         MatchResult res = new MatchResult();
         for (int i = 0; i < patternEdges.size(); ++i) {
-            Integer ts = parseTimestamp((String)data[numNodes + i * 2]);
+            long ts = parseTimestamp((String)data[numNodes + i * 2]);
             String eid = (String)data[numNodes + i * 2 + 1];
             PatternEdge matched = patternEdges.get(i);
             Integer startIdx = this.node2FieldIdx.get(matched.getStartId());

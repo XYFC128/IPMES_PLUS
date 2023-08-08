@@ -7,13 +7,13 @@ public class MatchResult {
     HashMap<Integer, MatchEdge> results;
     BitSet resultContains;
     MatchResult next;
-    int earliestTime;
-    int latestTime;
+    long earliestTime;
+    long latestTime;
 
     public MatchResult() {
         this.hash = 0;
-        this.earliestTime = Integer.MAX_VALUE;
-        this.latestTime = Integer.MIN_VALUE;
+        this.earliestTime = Long.MAX_VALUE;
+        this.latestTime = Long.MIN_VALUE;
         this.results = new HashMap<>();
         this.resultContains = new BitSet();
         this.next = null;
@@ -60,11 +60,11 @@ public class MatchResult {
         return this.results.size();
     }
 
-    public int getEarliestTime() {
+    public long getEarliestTime() {
         return this.earliestTime;
     }
 
-    public int getLatestTime() {
+    public long getLatestTime() {
         return this.latestTime;
     }
 

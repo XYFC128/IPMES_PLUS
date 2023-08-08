@@ -12,8 +12,8 @@ public class MatchEdge {
         return this.dataId;
     }
 
-    Integer timestamp;
-    public Integer getTimestamp() {
+    long timestamp;
+    public long getTimestamp() {
         return this.timestamp;
     }
 
@@ -41,7 +41,7 @@ public class MatchEdge {
         return this.matched.getId();
     }
 
-    public MatchEdge(Integer dataId, Integer timestamp, Integer startId, Integer endId, PatternEdge matched) {
+    public MatchEdge(Integer dataId, long timestamp, Integer startId, Integer endId, PatternEdge matched) {
         this.dataId = dataId;
         this.timestamp = timestamp;
         this.startId = startId;

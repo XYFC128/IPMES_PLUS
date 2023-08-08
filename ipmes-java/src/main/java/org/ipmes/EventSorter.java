@@ -48,11 +48,12 @@ public class EventSorter {
         ArrayList<Object[]> sorted = new ArrayList<>(events.size());
 
         for (int i = 0; i < this.totalOrder.size(); ++i) {
+            int patternId = totalOrder.get(i).getId();
             for (EventEdge event : events) {
                 if (match(i, event))
                     sorted.add(new Object[]{
                             event.timestamp,
-                            totalOrder.get(i).getId(),
+                            patternId,
                             event.edgeId,
                             event.startId,
                             event.endId
