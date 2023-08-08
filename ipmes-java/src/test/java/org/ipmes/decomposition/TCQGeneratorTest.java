@@ -69,16 +69,11 @@ public class TCQGeneratorTest {
 
         InputHandler inputHandler = runtime.getInputHandler("InputStream");
         runtime.start();
-        // inputHandler.send(new Object[]{"ts", "eid", "esig", "start_id", "start_sig", "end_id", "end_sig"});
-        inputHandler.send(new Object[]{"ts", "0", "fork",   "0", "Process::hello.sh",                     "1", "Process::hello.sh"});
-        inputHandler.send(new Object[]{"ts", "1", "execve", "1", "Process::hello.sh",                     "2", "Process::journalctl"});
-        inputHandler.send(new Object[]{"ts", "2", "load",   "3", "Artifact::file::/usr/bin/journalctl",   "2", "Process::journalctl"});
-        inputHandler.send(new Object[]{"ts", "3", "open",   "4", "Artifact::directory::/var/log/journal", "2", "Process::journalctl"});
-
-        inputHandler.send(new Object[]{"ts", "4", "fork",   "5", "Process::hello.sh",                      "6", "Process::hello.sh"});
-        inputHandler.send(new Object[]{"ts", "5", "execve", "7", "Process::hello.sh",                      "8", "Process::journalctl"});
-        inputHandler.send(new Object[]{"ts", "6", "load",   "9", "Artifact::file::/usr/bin/journalctl",    "10", "Process::journalctl"});
-        inputHandler.send(new Object[]{"ts", "7", "open",   "11", "Artifact::directory::/var/log/journal", "12", "Process::journalctl"});
+        // inputHandler.send(new Object[]{"ts", "match_id", "eid", "start_id", "end_id"});
+        inputHandler.send(new Object[]{"ts", 0, "0", "0", "1"});
+        inputHandler.send(new Object[]{"ts", 1, "1", "1", "2"});
+        inputHandler.send(new Object[]{"ts", 2, "2", "3", "2"});
+        inputHandler.send(new Object[]{"ts", 3, "3", "4", "2"});
 
         runtime.shutdown();
         siddhiManager.shutdown();
