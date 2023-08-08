@@ -7,19 +7,24 @@ import org.json.JSONObject;
  * EventEdge represent an event about to be fed into CEP tool
  */
 public class EventEdge {
-    public String timestamp;
-    public String edgeId;
+    public long timestamp;
+    public long edgeId;
     public String signature;
-    public String startId;
-    public String endId;
+    public long startId;
+    public long endId;
+
+    static long parseTimestamp(String tsStr) {
+        double toNum = Double.parseDouble(tsStr);
+        return Math.round(toNum * 1000);
+    }
 
     public EventEdge(String csvRow) {
         String[] fields = csvRow.split(",");
-        this.timestamp = fields[0];
+        this.timestamp = parseTimestamp(fields[0]);
         this.signature = fields[1];
-        this.edgeId    = fields[2];
-        this.startId   = fields[3];
-        this.endId     = fields[4];
+        this.edgeId    = Long.parseLong(fields[2]);
+        this.startId   = Long.parseLong(fields[3]);
+        this.endId     = Long.parseLong(fields[4]);
     }
 
     public EventEdge(EventEdge other) {

@@ -62,7 +62,7 @@ public class Main {
         ArrayList<EventEdge> timeBuffer = new ArrayList<>();
         while (line != null) {
             EventEdge event = new EventEdge(line);
-            if (!timeBuffer.isEmpty() && !event.timestamp.equals(timeBuffer.get(0).timestamp)) {
+            if (!timeBuffer.isEmpty() && event.timestamp != timeBuffer.get(0).timestamp) {
                 ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
                 for (Object[] data : sorted)
                     inputHandler.send(data);
@@ -83,7 +83,7 @@ public class Main {
             System.out.print("[");
             System.out.print(
                     result.stream()
-                            .map(edge -> edge.getDataId().toString())
+                            .map(edge -> Long.toString(edge.getDataId()))
                             .collect(Collectors.joining(",")));
             System.out.println("]");
         }

@@ -70,10 +70,10 @@ public class TCSiddhiAppGenerator {
 
         String fields = "";
         for (PatternNode nd : q.getNodes()) {
-            fields += String.format("n%d_id string, ", nd.getId());
+            fields += String.format("n%d_id long, ", nd.getId());
         }
         for (PatternEdge edge : q.getEdges()) {
-            fields += String.format("e%1$d_ts string, e%1$d_id string, ", edge.getId());
+            fields += String.format("e%1$d_ts long, e%1$d_id long, ", edge.getId());
         }
 
         if (!fields.isEmpty())
@@ -89,7 +89,7 @@ public class TCSiddhiAppGenerator {
      * @return the stream definitions, with an end-of-line character at the end
      */
     String genStreamDefinition() {
-        String def = "define Stream InputStream (timestamp string, match_id int, eid string, start_id string, end_id string);\n";
+        String def = "define Stream InputStream (timestamp long, match_id int, eid long, start_id long, end_id long);\n";
         for (TCQuery q : this.tcQueries)
             def += genTCQueryStreamDefinition(q);
         return def;
