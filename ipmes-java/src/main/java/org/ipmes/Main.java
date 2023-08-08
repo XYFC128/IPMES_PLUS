@@ -61,7 +61,7 @@ public class Main {
         EventSorter sorter = new EventSorter(tcQueries, useRegex);
         EventSender sender = new EventSender(inputHandler, sorter);
         while (line != null) {
-            sender.addLine(line);
+            sender.sendLine(line);
             line = inputReader.readLine();
         }
         sender.flushBuffers();

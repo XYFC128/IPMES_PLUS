@@ -6,6 +6,20 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+/**
+ * EventSender handles the sending and buffering of events.
+ * <p>
+ * Since the input event's time is an interval, we duplicate the event into
+ * 2 events with the original start time and end time as their timestamp
+ * respectively. Because the input is sorted by the start time, we can be
+ * sure that the events prior to current start time can be sent.
+ * </p>
+ * <p>
+ * Also, we will re-order and filter the events with the same timestamp
+ * by the total order of pattern, so CEP won't need to worry about the
+ * out-of-order events.
+ * </p>
+ */
 public class EventSender {
     InputHandler inputHandler;
     EventSorter sorter;
@@ -23,7 +37,11 @@ public class EventSender {
         return Math.round(toNum * 1000);
     }
 
-    public void addLine(String line) throws InterruptedException {
+    /**
+     * Sends the given line. The line is preprocessed csv format of the original event data.
+     * @param line the csv row
+     */
+    public void sendLine(String line) throws InterruptedException {
         String[] fields = line.split(",");
         long startTime   = parseTimestamp(fields[0]);
         long endTime     = parseTimestamp(fields[1]);
@@ -44,6 +62,10 @@ public class EventSender {
         popQueueUntil(startTime);
     }
 
+    /**
+     * Send all event in the buffer prior to the given value.
+     * @param time the timestamp
+     */
     void popQueueUntil(long time) throws InterruptedException {
         while (!eventPriorityQueue.isEmpty() && eventPriorityQueue.peek().timestamp < time) {
             EventEdge event = eventPriorityQueue.poll();
@@ -54,6 +76,9 @@ public class EventSender {
         }
     }
 
+    /**
+     * Sort the time buffer by total order and send to CEP.
+     */
     void flushTimeBuffer() throws InterruptedException {
         ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
         for (Object[] data : sorted)
@@ -61,6 +86,9 @@ public class EventSender {
         timeBuffer.clear();
     }
 
+    /**
+     * Flush out all the buffered events.
+     */
     public void flushBuffers() throws InterruptedException {
         popQueueUntil(Long.MAX_VALUE);
     }
