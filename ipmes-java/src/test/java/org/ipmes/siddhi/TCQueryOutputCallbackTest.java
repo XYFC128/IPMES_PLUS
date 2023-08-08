@@ -18,9 +18,9 @@ import static org.junit.Assert.*;
 public class TCQueryOutputCallbackTest {
     @Test
     public void testParseTimestamp() {
-        assertEquals(1234, TCQueryOutputCallback.parseTimestamp("1.234").longValue());
-        assertEquals(1000, TCQueryOutputCallback.parseTimestamp("1.0").longValue());
-        assertEquals(2147483647, TCQueryOutputCallback.parseTimestamp("2147483.647").longValue());
+        assertEquals(1234L, TCQueryOutputCallback.parseTimestamp("1.234"));
+        assertEquals(1000L, TCQueryOutputCallback.parseTimestamp("1.0"));
+        assertEquals(2147483648L, TCQueryOutputCallback.parseTimestamp("2147483.648"));
     }
 
     @Test

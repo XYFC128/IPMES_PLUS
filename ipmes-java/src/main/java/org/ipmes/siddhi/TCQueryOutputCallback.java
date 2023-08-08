@@ -32,7 +32,7 @@ public class TCQueryOutputCallback extends StreamCallback {
 
     static long parseTimestamp(String tsStr) {
         double toNum = Double.parseDouble(tsStr);
-        return Math.round(toNum*1000);
+        return Math.round(toNum * 1000);
     }
 
     MatchResult toMatchResult(Event e) {
