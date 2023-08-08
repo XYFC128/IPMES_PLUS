@@ -23,8 +23,8 @@ def extract_edge_signature(edge_obj: dict) -> str:
     return edge_obj['properties']['operation']
 
 
-def extract_timestamp(edge_obj: dict) -> str:
-    return edge_obj['properties']['lastest']
+def extract_timestamps(edge_obj: dict) -> tuple[str, str]:
+    return edge_obj['properties']['earliest'], edge_obj['properties']['lastest']
 
 
 def extract_fields(inp: str) -> list[str]:
@@ -39,7 +39,7 @@ def extract_fields(inp: str) -> list[str]:
     """
 
     inp_obj = json.loads(inp)
-    ts = extract_timestamp(inp_obj['r'])
+    start_time, end_time = extract_timestamps(inp_obj['r'])
     eid = inp_obj['r']['id']
     start_id = inp_obj['m']['id']
     end_id = inp_obj['n']['id']
@@ -49,7 +49,7 @@ def extract_fields(inp: str) -> list[str]:
         extract_node_signature(inp_obj['n'])
     )
 
-    return [ts, event_sig, eid, start_id, end_id]
+    return [start_time, end_time, event_sig, eid, start_id, end_id]
 
 
 if __name__ == '__main__':
@@ -61,12 +61,13 @@ if __name__ == '__main__':
         python preprocess.py < 12hour_attack_08_18.json > output.csv
     
     The fields in the output csv:
-        timestamp, event_sig, eid, start_id, end_id:
-        - timestamp: timestamp
-        - event_sig: event signature
-        - eid:       edge id
-        - start_id:  id of the start node
-        - end_id:    id of the end node
+        start_time, end_time, event_sig, eid, start_id, end_id:
+        - start_time: the event start time
+        - end_time:   the event end time
+        - event_sig:  event signature
+        - eid:        edge id
+        - start_id:   id of the start node
+        - end_id:     id of the end node
     """
 
     import fileinput

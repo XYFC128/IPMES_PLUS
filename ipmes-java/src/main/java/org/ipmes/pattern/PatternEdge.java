@@ -22,8 +22,8 @@ public class PatternEdge {
         this.endNode = endNode;
     }
 
-    public Integer[] getEndpoints() {
-        return new Integer[] {this.getStartId(), this.getEndId()};
+    public Long[] getEndpoints() {
+        return new Long[] {this.getStartId().longValue(), this.getEndId().longValue()};
     }
 
     @Override

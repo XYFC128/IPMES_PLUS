@@ -7,8 +7,8 @@ import org.ipmes.pattern.PatternEdge;
  * match result, so there must be a pattern edge that matched the data edge.
  */
 public class MatchEdge {
-    Integer dataId;
-    public Integer getDataId() {
+    long dataId;
+    public long getDataId() {
         return this.dataId;
     }
 
@@ -17,13 +17,13 @@ public class MatchEdge {
         return this.timestamp;
     }
 
-    Integer startId;
-    public Integer getStartId() {
+    long startId;
+    public long getStartId() {
         return this.startId;
     }
 
-    Integer endId;
-    public Integer getEndId() {
+    long endId;
+    public long getEndId() {
         return this.endId;
     }
 
@@ -41,7 +41,7 @@ public class MatchEdge {
         return this.matched.getId();
     }
 
-    public MatchEdge(Integer dataId, long timestamp, Integer startId, Integer endId, PatternEdge matched) {
+    public MatchEdge(long dataId, long timestamp, long startId, long endId, PatternEdge matched) {
         this.dataId = dataId;
         this.timestamp = timestamp;
         this.startId = startId;
@@ -49,13 +49,13 @@ public class MatchEdge {
         this.matched = matched;
     }
 
-    public Integer[] getEndpoints() {
-        return new Integer[] {this.startId, this.endId};
+    public Long[] getEndpoints() {
+        return new Long[] {this.startId, this.endId};
     }
 
     @Override
     public String toString() {
-        return this.dataId.toString();
+        return Long.toString(this.dataId);
     }
 
     @Override
@@ -63,6 +63,6 @@ public class MatchEdge {
         if (obj == this) return true;
         if (!(obj instanceof MatchEdge)) return false;
         MatchEdge other = (MatchEdge) obj;
-        return this.dataId.equals(other.dataId);
+        return this.dataId == other.dataId;
     }
 }

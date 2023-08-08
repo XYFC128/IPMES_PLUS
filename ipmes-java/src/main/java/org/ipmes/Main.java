@@ -59,23 +59,12 @@ public class Main {
         runtime.start();
 
         EventSorter sorter = new EventSorter(tcQueries, useRegex);
-        ArrayList<EventEdge> timeBuffer = new ArrayList<>();
+        EventSender sender = new EventSender(inputHandler, sorter);
         while (line != null) {
-            EventEdge event = new EventEdge(line);
-            if (!timeBuffer.isEmpty() && !event.timestamp.equals(timeBuffer.get(0).timestamp)) {
-                ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
-                for (Object[] data : sorted)
-                    inputHandler.send(data);
-                timeBuffer.clear();
-            }
-            timeBuffer.add(event);
+            sender.sendLine(line);
             line = inputReader.readLine();
         }
-        if (!timeBuffer.isEmpty()) {
-            ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
-            for (Object[] data : sorted)
-                inputHandler.send(data);
-        }
+        sender.flushBuffers();
 
         System.out.println("Match Results:");
         ArrayList<ArrayList<MatchEdge>> results = join.extractAnswer();
@@ -83,7 +72,7 @@ public class Main {
             System.out.print("[");
             System.out.print(
                     result.stream()
-                            .map(edge -> edge.getDataId().toString())
+                            .map(edge -> Long.toString(edge.getDataId()))
                             .collect(Collectors.joining(",")));
             System.out.println("]");
         }

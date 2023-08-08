@@ -52,10 +52,10 @@ public class Join {
      * @param m endpoints of another edge
      * @return the relationship type
      */
-    private byte relationType(Integer n[], Integer m[]) {
+    private byte relationType(Long[] n, Long[] m) {
         byte ret = 0;
-        for (int i : n) {
-            for (int j : m) {
+        for (long i : n) {
+            for (long j : m) {
                 if (i == j)
                     ret |= 1;
                 ret <<= 1;
@@ -74,7 +74,7 @@ public class Join {
      */
 
     private boolean checkRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
-        Integer[][] arr = {
+        Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
                 edgeInTable.getMatched().getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
