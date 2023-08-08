@@ -45,7 +45,7 @@ public class Main {
         System.out.println(appStr);
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-        Join join = new Join(dep, pattern, TCQRelation, 1800);
+        Join join = new Join(dep, pattern, TCQRelation, 10);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),

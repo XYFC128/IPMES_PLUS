@@ -21,7 +21,7 @@ public class Join {
     // store the realtionships of sub TC Queries
     ArrayList<TCQueryRelation>[] TCQRelation;
     // use SortedMap<TimeStamp, entry> to maintain window
-    SortedMap<Integer, MatchResult> mapForWindow;
+    TreeMap<Integer, MatchResult> mapForWindow;
     int windowSize;
 
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
@@ -108,15 +108,16 @@ public class Join {
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
         if (this.expansionTable.contains(result))
             return;
-        while (result.getLatestTime() - this.windowSize > this.mapForWindow.firstKey()) {
-            MatchResult nextToRemove = this.mapForWindow.get(this.mapForWindow.firstKey());
+        while (!this.mapForWindow.isEmpty()
+                && result.getLatestTime() - this.windowSize > this.mapForWindow.firstKey()) {
+            MatchResult nextToRemove = this.mapForWindow.firstEntry().getValue();
             while (nextToRemove != null) {
                 MatchResult tmp = nextToRemove;
                 nextToRemove = nextToRemove.getNext();
                 this.expansionTable.remove(tmp);
             }
             // remove from FIFO
-            // this.mapForWindow.remove(tcQueryId, nextToRemove)
+            this.mapForWindow.pollFirstEntry();
         }
         boolean fit = true;
         ArrayList<MatchResult> buffer = new ArrayList<>();
