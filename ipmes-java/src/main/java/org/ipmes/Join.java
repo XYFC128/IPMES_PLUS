@@ -8,7 +8,6 @@ import org.ipmes.pattern.PatternGraph;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class Join {
@@ -23,7 +22,11 @@ public class Join {
     // use SortedMap<TimeStamp, entry> to maintain window
     TreeMap<Long, MatchResult> mapForWindow;
     long windowSize;
+    // all the new entry will be stored in bufferForPartialMatch,
+    // and add to table at the end of addMatchResult
+    ArrayList<MatchResult> bufferForPartialMatch;
 
+    // constructor
     public Join(DependencyGraph temporalRelation, PatternGraph spatialRelation,
             ArrayList<TCQueryRelation>[] TCQRelation, long windowSize) {
         this.temporalRelation = temporalRelation;
@@ -33,6 +36,7 @@ public class Join {
         this.TCQRelation = TCQRelation;
         this.mapForWindow = new TreeMap<Long, MatchResult>();
         this.windowSize = windowSize;
+        this.bufferForPartialMatch = new ArrayList<MatchResult>();
     }
 
     /**
@@ -60,6 +64,15 @@ public class Join {
         return ret;
     }
 
+    /**
+     * check edge spatial relation
+     * 
+     * @param edgeInMatchResult
+     * @param edgeInTable
+     * @return true if spatial relation between dataEdge and patternEdge is the
+     *         same, otherwise, false.
+     */
+
     private boolean checkRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Integer[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
@@ -69,6 +82,15 @@ public class Join {
         };
         return relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]);
     }
+
+    /**
+     * check edge temporal relation
+     * 
+     * @param edgeInMatchResult
+     * @param edgeInTable
+     * @return true if temporal relation between dataEdge and patternEdge is the
+     *         same, otherwise, false.
+     */
 
     private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
@@ -82,6 +104,70 @@ public class Join {
                         .contains(edgeInTable.matchId())
                         && !this.temporalRelation.getParents(edgeInMatchResult.matchId())
                                 .contains(edgeInTable.matchId()));
+    }
+
+    /**
+     * use Timeout Window to clean up out-of-date entry.
+     * <p>
+     * we use linked list to link all the entry with the same earliestTime,
+     * so when one is out-of-date, we can easily remove all the entry in the linked
+     * list.
+     * </p>
+     * 
+     * @param time the timestamp we are processing
+     */
+    private void cleanExpansionTable(long time) {
+        while (!this.mapForWindow.isEmpty()) {
+            if ((time - this.windowSize) < this.mapForWindow.firstKey())
+                break;
+            MatchResult nextToRemove = this.mapForWindow.firstEntry().getValue();
+            while (nextToRemove != null) {
+                MatchResult tmp = nextToRemove;
+                nextToRemove = nextToRemove.getNext();
+                this.expansionTable.remove(tmp);
+            }
+            // remove from FIFO
+            this.mapForWindow.pollFirstEntry();
+        }
+        return;
+    }
+
+    void joinMatchResult(MatchResult result, int tcQueryId) {
+        boolean fit = true;
+        for (MatchResult entry : this.expansionTable) {
+            // check whether entry and result overlap
+            if (entry.hasShareEdge(result))
+                continue;
+            fit = true;
+            // if any pair of edges in entry and result break the rules,
+            // change fit to false and break(the result doesn't fit in the entry)
+            for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
+                if (entry.containsPattern(relationship.idOfEntry)) {
+                    if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                            && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
+                        fit = false;
+                        break;
+                    }
+                }
+            }
+            if (fit) {
+                this.bufferForPartialMatch.add(result.merge(entry));
+            }
+        }
+    }
+
+    private void insertToTable() {
+        int ansSize = this.spatialRelation.numEdges();
+        for (MatchResult entry : this.bufferForPartialMatch) {
+            if (entry.size() == ansSize)
+                this.answer.add(entry);
+            else {
+                this.expansionTable.add(entry);
+                if (this.mapForWindow.containsKey(entry.getEarliestTime()))
+                    entry.setNext(this.mapForWindow.get(entry.getEarliestTime()));
+                this.mapForWindow.put(entry.getEarliestTime(), entry);
+            }
+        }
     }
 
     /**
@@ -106,54 +192,17 @@ public class Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
+        // check uniqueness of the MatchResult
         if (this.expansionTable.contains(result))
             return;
-        while (!this.mapForWindow.isEmpty()) {
-            if ((result.getLatestTime() - this.windowSize) < this.mapForWindow.firstKey())
-                break;
-            MatchResult nextToRemove = this.mapForWindow.firstEntry().getValue();
-            while (nextToRemove != null) {
-                MatchResult tmp = nextToRemove;
-                nextToRemove = nextToRemove.getNext();
-                this.expansionTable.remove(tmp);
-            }
-            // remove from FIFO
-            this.mapForWindow.pollFirstEntry();
-        }
-        boolean fit = true;
-        ArrayList<MatchResult> buffer = new ArrayList<>();
+        // use Timeout Window to clean useless entry
+        cleanExpansionTable(result.getLatestTime());
         // join
-        for (MatchResult entry : this.expansionTable) {
-            if (entry.hasShareEdge(result))
-                continue;
-            fit = true;
-            for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
-                if (entry.containsPattern(relationship.idOfEntry)) {
-                    if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
-                            && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
-                        fit = false;
-                        break;
-                    }
-                }
-            }
-            if (fit) {
-                buffer.add(result.merge(entry));
-            }
-        }
-        // insert
-        buffer.add(result);
-        int ansSize = this.spatialRelation.numEdges();
-        for (MatchResult newEntry : buffer) {
-            if (newEntry.size() == ansSize)
-                answer.add(newEntry);
-            else {
-                expansionTable.add(newEntry);
-                if (this.mapForWindow.containsKey(newEntry.getEarliestTime()))
-                    newEntry.setNext(this.mapForWindow.get(newEntry.getEarliestTime()));
-                this.mapForWindow.put(newEntry.getEarliestTime(), newEntry);
-            }
-        }
-
+        joinMatchResult(result, tcQueryId);
+        this.bufferForPartialMatch.add(result);
+        // add the entry in bufferForPartialMatch to the expansionTable
+        insertToTable();
+        this.bufferForPartialMatch.clear();
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
