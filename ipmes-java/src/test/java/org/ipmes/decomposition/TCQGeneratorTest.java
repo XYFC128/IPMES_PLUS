@@ -70,10 +70,10 @@ public class TCQGeneratorTest {
         InputHandler inputHandler = runtime.getInputHandler("InputStream");
         runtime.start();
         // inputHandler.send(new Object[]{"ts", "match_id", "eid", "start_id", "end_id"});
-        inputHandler.send(new Object[]{"ts", 0, "0", "0", "1"});
-        inputHandler.send(new Object[]{"ts", 1, "1", "1", "2"});
-        inputHandler.send(new Object[]{"ts", 2, "2", "3", "2"});
-        inputHandler.send(new Object[]{"ts", 3, "3", "4", "2"});
+        inputHandler.send(new Object[]{0L, 0, 0L, 0L, 1L});
+        inputHandler.send(new Object[]{100L, 1, 1L, 1L, 2L});
+        inputHandler.send(new Object[]{200L, 2, 2L, 3L, 2L});
+        inputHandler.send(new Object[]{300L, 3, 3L, 4L, 2L});
 
         runtime.shutdown();
         siddhiManager.shutdown();
