@@ -102,9 +102,10 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    void checkAndMerge(MatchResult from, MatchResult to, int haveRelId, ArrayList<MatchResult> ret) {
+    void checkAndMerge(MatchResult from, MatchResult to, int fromBufferId, ArrayList<MatchResult> ret) {
         boolean fit = true;
-        for (TCQueryRelation relation : this.TCQRelation[haveRelId]) {
+        int tcQueryId = toTCQueryId(fromBufferId);
+        for (TCQueryRelation relation : this.TCQRelation[tcQueryId]) {
             if (to.containsPattern(relation.idOfEntry)) {
                 if (!(checkSpatialRelation(from.get(relation.idOfResult),
                         to.get(relation.idOfEntry))
@@ -126,12 +127,12 @@ public class PriorityJoin implements Join {
         ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
         Collection<MatchResult> sourceBuffer, targetBuffer;
         if (bufferId % 2 == 0) {
-            sourceBuffer = toProcess;
-            targetBuffer = this.partialMatchResult[siblingId];
-            haveRelId = siblingId;
-        } else {
             sourceBuffer = this.partialMatchResult[siblingId];
             targetBuffer = toProcess;
+            haveRelId = siblingId;
+        } else {
+            sourceBuffer = toProcess;
+            targetBuffer = this.partialMatchResult[siblingId];
             haveRelId = bufferId;
         }
         for (MatchResult from : sourceBuffer) {
