@@ -2,8 +2,8 @@ package org.ipmes.pattern;
 
 import org.json.*;
 
-public class Preprocess {
-    public static String extractNodeSignature(JSONObject nodeObj) {
+public class SimPatternExtractor implements SigExtractor {
+    public String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");
         String type = properties.getString("type");
         String signature = String.format("%s::", type);
@@ -24,11 +24,7 @@ public class Preprocess {
         return signature;
     }
 
-    public static String extractEdgeSignature(JSONObject edgeObj) {
+    public String extractEdgeSignature(JSONObject edgeObj) {
         return edgeObj.getJSONObject("properties").getString("operation");
-    }
-
-    public static String extractTimestamp(JSONObject edgeObj) {
-        return edgeObj.getJSONObject("properties").getString("lastest");
     }
 }

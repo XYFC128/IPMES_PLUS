@@ -24,7 +24,7 @@ public class PatternGraph {
         this.edges = edges;
     }
 
-    public static Optional<PatternGraph> parse(Reader nodeReader, Reader edgeReader) {
+    public static Optional<PatternGraph> parse(Reader nodeReader, Reader edgeReader, SigExtractor extractor) {
         ArrayList<PatternNode> nodes = new ArrayList<>();
         ArrayList<PatternEdge> edges = new ArrayList<>();
         HashMap<String, Integer> idConvert = new HashMap<String, Integer>();
@@ -36,7 +36,7 @@ public class PatternGraph {
                 JSONObject nodeObj = obj.getJSONObject("node");
                 String rawId = nodeObj.getString("id");
                 idConvert.put(rawId, i);
-                String signature = Preprocess.extractNodeSignature(nodeObj);
+                String signature = extractor.extractNodeSignature(nodeObj);
 
                 nodes.add(new PatternNode(i, signature));
                 line = nodeBuf.readLine();
@@ -50,7 +50,7 @@ public class PatternGraph {
                 JSONObject edgeObj = obj.getJSONObject("edge");
                 String raw_start = edgeObj.getJSONObject("start").getString("id");
                 String raw_end = edgeObj.getJSONObject("end").getString("id");
-                String signature = Preprocess.extractEdgeSignature(edgeObj);
+                String signature = extractor.extractEdgeSignature(edgeObj);
                 Integer startId = idConvert.get(raw_start);
                 Integer endId = idConvert.get(raw_end);
 
