@@ -10,7 +10,6 @@ package org.ipmes.decomposition;
 public class TCQueryRelation {
     public Integer idOfResult;
     public Integer idOfEntry;
-    public byte relationType;
 
     @Override
     public boolean equals(Object o) {
@@ -19,7 +18,6 @@ public class TCQueryRelation {
         else if (!(o instanceof TCQueryRelation))
             return false;
         TCQueryRelation other = (TCQueryRelation) o;
-        return this.idOfResult.equals(other.idOfResult) && this.idOfEntry.equals(other.idOfEntry)
-                && this.relationType == other.relationType;
+        return this.idOfResult.equals(other.idOfResult) && this.idOfEntry.equals(other.idOfEntry);
     }
 }

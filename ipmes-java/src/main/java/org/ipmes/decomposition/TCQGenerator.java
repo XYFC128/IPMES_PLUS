@@ -123,15 +123,10 @@ public class TCQGenerator {
         return selectedTCQ;
     }
 
-    private byte identifyRelation(PatternEdge edge1, PatternEdge edge2) {
-        byte ret = 0;
-        if (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty())
-            ret |= 4;
-        if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId()))
-            ret |= 2;
-        if (this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId()))
-            ret |= 1;
-        return ret;
+    boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
+        return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
+                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
+                || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty());
     }
 
     /**
@@ -153,12 +148,10 @@ public class TCQGenerator {
                     continue;
                 for (PatternEdge edge1 : selected.get(i).edges) {
                     for (PatternEdge edge2 : selected.get(j).edges) {
-                        byte rel = identifyRelation(edge1, edge2);
-                        if (rel != 0) {
+                        if (hasRelations(edge1, edge2)) {
                             TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();
-                            tempRelation.relationType = rel;
                             relations[i].add(tempRelation);
                         }
                     }

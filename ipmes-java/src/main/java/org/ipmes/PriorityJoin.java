@@ -113,24 +113,6 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    // private boolean checkRelation(MatchResult result, MatchResult entry,
-    // TCQueryRelation rel) {
-    // boolean ret = true;
-    // if ((rel.relationType & 4) == 4) {
-    // ret &= checkSpatialRelation(result.get(rel.idOfResult),
-    // entry.get(rel.idOfEntry));
-    // }
-    // if ((rel.relationType & 2) == 2) {
-    // ret &= this.temporalRelation.getParents(result.get(rel.idOfResult).matchId())
-    // .contains(entry.get(rel.idOfEntry).matchId());
-    // }
-    // if ((rel.relationType & 1) == 1) {
-    // ret &=
-    // this.temporalRelation.getChildren(result.get(rel.idOfResult).matchId())
-    // .contains(entry.get(rel.idOfEntry).matchId());
-    // }
-    // }
-
     private void joinTwoTable(PriorityQueue<MatchResult> pqWithoutRel, PriorityQueue<MatchResult> pqWithRel, int id) {
         boolean fit = true;
         for (MatchResult result : pqWithRel) {
