@@ -1,8 +1,5 @@
 package org.ipmes;
 
-import org.ipmes.pattern.Preprocess;
-import org.json.JSONObject;
-
 /**
  * EventEdge represent an event about to be fed into CEP tool
  */
