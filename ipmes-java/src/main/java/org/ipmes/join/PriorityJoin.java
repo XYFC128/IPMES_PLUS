@@ -163,6 +163,13 @@ public class PriorityJoin implements Join {
         return bufferId + 2;
     }
 
+    void cleanBuffer(long latestTime, int siblingId) {
+        while (!this.partialMatchResult[siblingId].isEmpty() &&
+                latestTime - this.windowSize > this.partialMatchResult[siblingId].peek().getEarliestTime())
+            this.partialMatchResult[siblingId].poll();
+        return;
+    }
+
     /**
      * Consume the match result and start the streaming join algorithm.
      * <p>
@@ -189,6 +196,7 @@ public class PriorityJoin implements Join {
         if (this.expansionTable.contains(result))
             return;
         this.expansionTable.add(result);
+        long latestTime = result.getLatestTime();
         // join
         // cleanOutOfDate(result.getEarliestTime(), tcQueryId);
         int bufferId = toBufferIdx(tcQueryId);
@@ -200,6 +208,7 @@ public class PriorityJoin implements Join {
                 break;
             }
             this.partialMatchResult[bufferId].addAll(toProcess);
+            cleanBuffer(latestTime, getSibling(bufferId));
             if (bufferId == 0)
                 break;
             toProcess = mergeTwoBuffer(toProcess, bufferId);
