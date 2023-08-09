@@ -105,35 +105,58 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    // Collection<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int targetBufferId)
-    private void joinTwoTable(PriorityQueue<MatchResult> pqWithoutRel, PriorityQueue<MatchResult> pqWithRel, int id) {
+    void checkAndMerge(MatchResult left, MatchResult right, int haveRelId, ArrayList<MatchResult> ret) {
         boolean fit = true;
-        for (MatchResult result : pqWithRel) {
-            for (MatchResult entry : pqWithoutRel) {
-                fit = true;
-                for (TCQueryRelation relationship : this.TCQRelation[(id + 1) / 2]) {
-                    if (entry.containsPattern(relationship.idOfEntry)) {
-                        if (!(checkSpatialRelation(result.get(relationship.idOfResult),
-                                entry.get(relationship.idOfEntry))
-                                && checkTemporalRelation(result.get(relationship.idOfResult),
-                                        entry.get(relationship.idOfEntry)))) {
-                            fit = false;
-                            break;
-                        }
-                    }
-                }
-                if (fit) {
-                    addMatchResult(result.merge(entry), id + 1);
+        for (TCQueryRelation relation : this.TCQRelation[haveRelId]) {
+            if (left.containsPattern(relation.idOfEntry)) {
+                if (!(checkSpatialRelation(right.get(relation.idOfResult),
+                        left.get(relation.idOfEntry))
+                        && checkTemporalRelation(right.get(relation.idOfResult),
+                                left.get(relation.idOfEntry)))) {
+                    fit = false;
+                    break;
                 }
             }
         }
-        return;
+        if (fit)
+            ret.add(left.merge(right));
+    }
+
+    // Collection<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int
+    ArrayList<MatchResult> process(ArrayList<MatchResult> toProcess, int bufferId) {
+        int siblingId = getSibling(bufferId), haveRelId;
+        ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
+        for (MatchResult result : toProcess) {
+            this.partialMatchResult[bufferId].add(result);
+            if (bufferId == 0)
+                continue;
+            if (bufferId == 2 * TCQRelation.length - 2) {
+                this.answer.add(result);
+                continue;
+            }
+            if (bufferId % 2 == 0) {
+                for (MatchResult right : this.partialMatchResult[siblingId]) {
+                    haveRelId = toTCQueryId(siblingId);
+                    checkAndMerge(result, right, haveRelId, ret);
+                }
+            } else {
+                for (MatchResult left : this.partialMatchResult[siblingId]) {
+                    haveRelId = toTCQueryId(bufferId);
+                    checkAndMerge(left, result, haveRelId, ret);
+                }
+            }
+        }
+        return ret;
     }
 
     int toBufferIdx(int tcQueryId) {
         if (tcQueryId == 0)
             return 0;
         return tcQueryId * 2 - 1;
+    }
+
+    int toTCQueryId(int bufferId) {
+        return (bufferId + 1) / 2;
     }
 
     int getSibling(int bufferId) {
@@ -176,21 +199,13 @@ public class PriorityJoin implements Join {
         this.expansionTable.add(result);
         // join
         // cleanOutOfDate(result.getEarliestTime(), tcQueryId);
-        if (tcQueryId == 2 * this.TCQRelation.length - 2) {
-            this.answer.add(result);
-            return;
+        int bufferId = toBufferIdx(tcQueryId);
+        ArrayList<MatchResult> toProcess = new ArrayList<MatchResult>();
+        toProcess.add(result);
+        while (!toProcess.isEmpty()) {
+            toProcess = process(toProcess, bufferId);
+            bufferId = getParent(bufferId);
         }
-        this.partialMatchResult[tcQueryId].add(result);
-        if (tcQueryId == 0)
-            return;
-        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<>(
-                Comparator.comparingLong(MatchResult::getEarliestTime));
-        pqForNew.add(result);
-
-        if (tcQueryId % 2 == 0)
-            joinTwoTable(pqForNew, this.partialMatchResult[tcQueryId + 1], tcQueryId + 1);
-        else
-            joinTwoTable(this.partialMatchResult[tcQueryId - 1], pqForNew, tcQueryId);
         return;
     }
 
