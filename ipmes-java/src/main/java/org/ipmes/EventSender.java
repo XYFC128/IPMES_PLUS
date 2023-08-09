@@ -29,7 +29,7 @@ public class EventSender {
         this.inputHandler = handler;
         this.sorter = sorter;
         this.timeBuffer = new ArrayList<>();
-        this.eventPriorityQueue = new PriorityQueue<>((Comparator.comparingLong(e -> e.timestamp)));
+        this.eventPriorityQueue = new PriorityQueue<>(Comparator.comparingLong(e -> e.timestamp));
     }
 
     static long parseTimestamp(String tsStr) {

@@ -34,15 +34,7 @@ public class PriorityJoin implements Join {
         this.windowSize = windowSize;
         this.partialMatchResult = (PriorityQueue<MatchResult>[]) new PriorityQueue[2 * TCQRelation.length - 1];
         for (int i = 0; i < 2 * TCQRelation.length - 1; i++) {
-            this.partialMatchResult[i] = new PriorityQueue<MatchResult>(new Comparator<MatchResult>() {
-                public int compare(MatchResult result1, MatchResult result2) {
-                    if (result1.getEarliestTime() > result2.getEarliestTime())
-                        return 1;
-                    else if (result1.getEarliestTime() == result2.getEarliestTime())
-                        return 0;
-                    return -1;
-                }
-            });
+            this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
     }
 
@@ -173,15 +165,7 @@ public class PriorityJoin implements Join {
         this.partialMatchResult[tcQueryId].add(result);
         if (tcQueryId == 0)
             return;
-        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<MatchResult>(new Comparator<MatchResult>() {
-            public int compare(MatchResult result1, MatchResult result2) {
-                if (result1.getEarliestTime() > result2.getEarliestTime())
-                    return 1;
-                else if (result1.getEarliestTime() == result2.getEarliestTime())
-                    return 0;
-                return -1;
-            }
-        });
+        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         pqForNew.add(result);
 
         if (tcQueryId % 2 == 0)
