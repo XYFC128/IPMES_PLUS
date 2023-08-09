@@ -122,35 +122,43 @@ public class TCQGenerator {
         return selectedTCQ;
     }
 
-    boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
-        return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
-                || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
-                || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty());
+    private byte identifyRelation(PatternEdge edge1, PatternEdge edge2) {
+        byte ret = 0;
+        if (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty())
+            ret |= 4;
+        if (this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId()))
+            ret |= 2;
+        if (this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId()))
+            ret |= 1;
+        return ret;
     }
 
     /**
-     * Generate relations for all selected TC Query. This method will collect all relations
-     * related with all edges in a tc Query, including temporal relations and spatial relations.
+     * Generate relations for all selected TC Query. This method will collect all
+     * relations
+     * related with all edges in a tc Query, including temporal relations and
+     * spatial relations.
+     * 
      * @param selected selected TC-Query
-     * @return an array of relations, i-th element is the relations for i-th TC-Query
+     * @return an array of relations, i-th element is the relations for i-th
+     *         TC-Query
      */
     ArrayList<TCQueryRelation>[] genRelations(ArrayList<TCQuery> selected) {
-        ArrayList<TCQueryRelation>[] relations = (ArrayList<TCQueryRelation>[])new ArrayList[selected.size()];
-        for (int i = 0; i < relations.length; ++i)
+        ArrayList<TCQueryRelation>[] relations = (ArrayList<TCQueryRelation>[]) new ArrayList[selected.size()];
+        for (int i = 0; i < relations.length; i++) {
             relations[i] = new ArrayList<>();
-
-        for (TCQuery TCQ1 : selected) {
-            for (TCQuery TCQ2 : selected) {
-                // skip the same TCQ when iterating
-                if (TCQ1.equals(TCQ2))
+            for (int j = 0; j < relations.length; j++) {
+                if (i == j)
                     continue;
-                for (PatternEdge edge1 : TCQ1.edges) {
-                    for (PatternEdge edge2 : TCQ2.edges) {
-                        if (hasRelations(edge1, edge2)) {
+                for (PatternEdge edge1 : selected.get(i).edges) {
+                    for (PatternEdge edge2 : selected.get(j).edges) {
+                        byte rel = identifyRelation(edge1, edge2);
+                        if (rel != 0) {
                             TCQueryRelation tempRelation = new TCQueryRelation();
                             tempRelation.idOfResult = edge1.getId();
                             tempRelation.idOfEntry = edge2.getId();
-                            relations[TCQ1.getId()].add(tempRelation);
+                            tempRelation.relationType = rel;
+                            relations[i].add(tempRelation);
                         }
                     }
                 }

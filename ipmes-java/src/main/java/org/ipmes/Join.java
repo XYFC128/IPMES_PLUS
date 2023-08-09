@@ -52,7 +52,7 @@ public class Join {
      * @param m endpoints of another edge
      * @return the relationship type
      */
-    private byte relationType(Long[] n, Long[] m) {
+    private byte spatialRelationType(Long[] n, Long[] m) {
         byte ret = 0;
         for (long i : n) {
             for (long j : m) {
@@ -73,14 +73,14 @@ public class Join {
      *         same, otherwise, false.
      */
 
-    private boolean checkRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
                 edgeInTable.getMatched().getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
                 edgeInTable.getEndpoints()
         };
-        return relationType(arr[0], arr[1]) == relationType(arr[2], arr[3]);
+        return spatialRelationType(arr[0], arr[1]) == spatialRelationType(arr[2], arr[3]);
     }
 
     /**
@@ -143,7 +143,7 @@ public class Join {
             // change fit to false and break(the result doesn't fit in the entry)
             for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
                 if (entry.containsPattern(relationship.idOfEntry)) {
-                    if (!(checkRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                    if (!(checkTemporalRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
                             && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
                         fit = false;
                         break;
@@ -192,6 +192,7 @@ public class Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
+        int relationId = (tcQueryId + 1) / 2;
         // check uniqueness of the MatchResult
         if (this.expansionTable.contains(result))
             return;
