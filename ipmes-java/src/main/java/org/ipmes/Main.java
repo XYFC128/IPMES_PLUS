@@ -99,7 +99,7 @@ public class Main {
         String appStr = gen.generate();
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-        Join join = new Join(dep, pattern, TCQRelation, windowSize * 1000);
+        PriorityJoin join = new PriorityJoin(dep, pattern, TCQRelation, windowSize * 1000);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),
