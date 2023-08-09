@@ -2,7 +2,7 @@ package org.ipmes.siddhi;
 
 import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.output.StreamCallback;
-import org.ipmes.Join;
+import org.ipmes.PriorityJoin;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
@@ -16,9 +16,10 @@ import java.util.HashMap;
 public class TCQueryOutputCallback extends StreamCallback {
     TCQuery query;
     PatternGraph patternGraph;
-    Join join;
+    PriorityJoin join;
     HashMap<Integer, Integer> node2FieldIdx;
-    public TCQueryOutputCallback(TCQuery query, PatternGraph patternGraph, Join join) {
+
+    public TCQueryOutputCallback(TCQuery query, PatternGraph patternGraph, PriorityJoin join) {
         this.query = query;
         this.patternGraph = patternGraph;
         this.join = join;
@@ -37,21 +38,20 @@ public class TCQueryOutputCallback extends StreamCallback {
 
         MatchResult res = new MatchResult();
         for (int i = 0; i < patternEdges.size(); ++i) {
-            long ts = (long)data[numNodes + i * 2];
-            long eid = (long)data[numNodes + i * 2 + 1];
+            long ts = (long) data[numNodes + i * 2];
+            long eid = (long) data[numNodes + i * 2 + 1];
             PatternEdge matched = patternEdges.get(i);
             Integer startIdx = this.node2FieldIdx.get(matched.getStartId());
-            long startMatch = (long)data[startIdx];
+            long startMatch = (long) data[startIdx];
             Integer endIdx = this.node2FieldIdx.get(matched.getEndId());
-            long endMatch = (long)data[endIdx];
+            long endMatch = (long) data[endIdx];
 
             res.addMatchEdge(new MatchEdge(
                     eid,
                     ts,
                     startMatch,
                     endMatch,
-                    matched
-            ));
+                    matched));
         }
         return res;
     }
