@@ -91,7 +91,7 @@ public class PriorityJoin implements Join {
      *         same, otherwise, false.
      */
 
-    private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
                 .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
                 ||
@@ -114,7 +114,7 @@ public class PriorityJoin implements Join {
                     if (entry.containsPattern(relationship.idOfEntry)) {
                         if (!(checkSpatialRelation(result.get(relationship.idOfResult),
                                 entry.get(relationship.idOfEntry))
-                                && checkTime(result.get(relationship.idOfResult),
+                                && checkTemporalRelation(result.get(relationship.idOfResult),
                                         entry.get(relationship.idOfEntry)))) {
                             fit = false;
                             break;
@@ -156,7 +156,6 @@ public class PriorityJoin implements Join {
             return;
         this.expansionTable.add(result);
         // join
-
         // cleanOutOfDate(result.getEarliestTime(), tcQueryId);
         if (tcQueryId == 2 * this.TCQRelation.length - 2) {
             this.answer.add(result);
@@ -165,7 +164,8 @@ public class PriorityJoin implements Join {
         this.partialMatchResult[tcQueryId].add(result);
         if (tcQueryId == 0)
             return;
-        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
+        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<>(
+                Comparator.comparingLong(MatchResult::getEarliestTime));
         pqForNew.add(result);
 
         if (tcQueryId % 2 == 0)
