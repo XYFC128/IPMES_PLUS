@@ -2,6 +2,7 @@ package org.ipmes.siddhi;
 
 import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.output.StreamCallback;
+import org.ipmes.Join;
 import org.ipmes.PriorityJoin;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.match.MatchEdge;
@@ -16,10 +17,10 @@ import java.util.HashMap;
 public class TCQueryOutputCallback extends StreamCallback {
     TCQuery query;
     PatternGraph patternGraph;
-    PriorityJoin join;
+    Join join;
     HashMap<Integer, Integer> node2FieldIdx;
 
-    public TCQueryOutputCallback(TCQuery query, PatternGraph patternGraph, PriorityJoin join) {
+    public TCQueryOutputCallback(TCQuery query, PatternGraph patternGraph, Join join) {
         this.query = query;
         this.patternGraph = patternGraph;
         this.join = join;
