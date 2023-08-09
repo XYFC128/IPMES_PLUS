@@ -74,7 +74,7 @@ public class NaiveJoin implements Join {
      *         same, otherwise, false.
      */
 
-    private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
                 edgeInTable.getMatched().getEndpoints(),
@@ -144,7 +144,7 @@ public class NaiveJoin implements Join {
             // change fit to false and break(the result doesn't fit in the entry)
             for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
                 if (entry.containsPattern(relationship.idOfEntry)) {
-                    if (!(checkTemporalRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                    if (!(checkSpatialRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
                             && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
                         fit = false;
                         break;

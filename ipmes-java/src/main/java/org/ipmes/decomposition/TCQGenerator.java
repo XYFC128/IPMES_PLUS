@@ -32,9 +32,8 @@ public class TCQGenerator {
         }
 
         ArrayList<TCQuery> selected = selectTCSubQueries(subQueries);
-        selected.get(0).setId(0);
-        for (int i = 1; i < selected.size(); ++i) {
-            selected.get(i).setId(2 * i - 1);
+        for (int i = 0; i < selected.size(); ++i) {
+            selected.get(i).setId(i);
         }
 
         this.TCQRelation = genRelations(selected);
