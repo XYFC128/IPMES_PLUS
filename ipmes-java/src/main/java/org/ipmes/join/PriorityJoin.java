@@ -120,24 +120,22 @@ public class PriorityJoin implements Join {
             ret.add(to.merge(from));
     }
 
-    // ArrayList<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int
-    // targetBufferId)
     ArrayList<MatchResult> mergeTwoBuffer(ArrayList<MatchResult> toProcess, int bufferId) {
-        int siblingId = getSibling(bufferId), haveRelId;
+        int siblingId = getSibling(bufferId), fromBufferId;
         ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
         Collection<MatchResult> sourceBuffer, targetBuffer;
         if (bufferId % 2 == 0) {
             sourceBuffer = this.partialMatchResult[siblingId];
             targetBuffer = toProcess;
-            haveRelId = siblingId;
+            fromBufferId = siblingId;
         } else {
             sourceBuffer = toProcess;
             targetBuffer = this.partialMatchResult[siblingId];
-            haveRelId = bufferId;
+            fromBufferId = bufferId;
         }
         for (MatchResult from : sourceBuffer) {
             for (MatchResult to : targetBuffer) {
-                checkAndMerge(from, to, haveRelId, ret);
+                checkAndMerge(from, to, fromBufferId, ret);
             }
         }
         return ret;
@@ -207,7 +205,6 @@ public class PriorityJoin implements Join {
             toProcess = mergeTwoBuffer(toProcess, bufferId);
             bufferId = getParent(bufferId);
         }
-        return;
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
