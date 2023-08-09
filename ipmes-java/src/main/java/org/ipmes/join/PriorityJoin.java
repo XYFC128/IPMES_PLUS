@@ -119,28 +119,23 @@ public class PriorityJoin implements Join {
             ret.add(to.merge(from));
     }
 
-    // ArrayList<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int targetBufferId)
-    ArrayList<MatchResult> process(ArrayList<MatchResult> toProcess, int bufferId) {
+    // ArrayList<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int
+    // targetBufferId)
+    ArrayList<MatchResult> mergeTwoBuffer(ArrayList<MatchResult> toProcess, int bufferId) {
         int siblingId = getSibling(bufferId), haveRelId;
         ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
         Collection<MatchResult> sourceBuffer, targetBuffer;
         if (bufferId % 2 == 0) {
             sourceBuffer = toProcess;
             targetBuffer = this.partialMatchResult[siblingId];
+            haveRelId = siblingId;
         } else {
             sourceBuffer = this.partialMatchResult[siblingId];
             targetBuffer = toProcess;
+            haveRelId = bufferId;
         }
         for (MatchResult from : sourceBuffer) {
-            this.partialMatchResult[bufferId].add(from);
-            if (bufferId == 0)
-                continue;
-            if (bufferId == 2 * TCQRelation.length - 2) {
-                this.answer.add(from);
-                continue;
-            }
             for (MatchResult to : targetBuffer) {
-                haveRelId = toTCQueryId(bufferId);
                 checkAndMerge(from, to, haveRelId, ret);
             }
         }
@@ -201,7 +196,14 @@ public class PriorityJoin implements Join {
         ArrayList<MatchResult> toProcess = new ArrayList<MatchResult>();
         toProcess.add(result);
         while (!toProcess.isEmpty()) {
-            toProcess = process(toProcess, bufferId);
+            if (bufferId == 2 * TCQRelation.length - 2) {
+                this.answer.addAll(toProcess);
+                break;
+            }
+            this.partialMatchResult[bufferId].addAll(toProcess);
+            if (bufferId == 0)
+                break;
+            toProcess = mergeTwoBuffer(toProcess, bufferId);
             bufferId = getParent(bufferId);
         }
         return;
