@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.join;
 
 import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.match.MatchEdge;
@@ -7,35 +7,37 @@ import org.ipmes.pattern.DependencyGraph;
 import org.ipmes.pattern.PatternGraph;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.PriorityQueue;
+import java.util.TreeMap;
 
-public class PriorityJoin implements Join {
+public class NaiveJoin implements Join {
+
     DependencyGraph temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
     ArrayList<MatchResult> answer;
-    HashSet<MatchResult> expansionTable;
     // table for joining result
-    PriorityQueue<MatchResult>[] partialMatchResult;
+    HashSet<MatchResult> expansionTable;
     // store the realtionships of sub TC Queries
     ArrayList<TCQueryRelation>[] TCQRelation;
+    // use SortedMap<TimeStamp, entry> to maintain window
+    TreeMap<Long, MatchResult> mapForWindow;
     long windowSize;
+    // all the new entry will be stored in bufferForPartialMatch,
+    // and add to table at the end of addMatchResult
+    ArrayList<MatchResult> bufferForPartialMatch;
 
     // constructor
-    public PriorityJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation,
+    public NaiveJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation,
             ArrayList<TCQueryRelation>[] TCQRelation, long windowSize) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
-        this.TCQRelation = TCQRelation;
         this.expansionTable = new HashSet<MatchResult>();
+        this.TCQRelation = TCQRelation;
+        this.mapForWindow = new TreeMap<Long, MatchResult>();
         this.windowSize = windowSize;
-        this.partialMatchResult = (PriorityQueue<MatchResult>[]) new PriorityQueue[2 * TCQRelation.length - 1];
-        for (int i = 0; i < 2 * TCQRelation.length - 1; i++) {
-            this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
-        }
+        this.bufferForPartialMatch = new ArrayList<MatchResult>();
     }
 
     /**
@@ -105,28 +107,68 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    private void joinTwoTable(PriorityQueue<MatchResult> pqWithoutRel, PriorityQueue<MatchResult> pqWithRel, int id) {
-        boolean fit = true;
-        for (MatchResult result : pqWithRel) {
-            for (MatchResult entry : pqWithoutRel) {
-                fit = true;
-                for (TCQueryRelation relationship : this.TCQRelation[(id + 1) / 2]) {
-                    if (entry.containsPattern(relationship.idOfEntry)) {
-                        if (!(checkSpatialRelation(result.get(relationship.idOfResult),
-                                entry.get(relationship.idOfEntry))
-                                && checkTime(result.get(relationship.idOfResult),
-                                        entry.get(relationship.idOfEntry)))) {
-                            fit = false;
-                            break;
-                        }
-                    }
-                }
-                if (fit) {
-                    addMatchResult(result.merge(entry), id + 1);
-                }
+    /**
+     * use Timeout Window to clean up out-of-date entry.
+     * <p>
+     * we use linked list to link all the entry with the same earliestTime,
+     * so when one is out-of-date, we can easily remove all the entry in the linked
+     * list.
+     * </p>
+     * 
+     * @param time the timestamp we are processing
+     */
+    private void cleanExpansionTable(long time) {
+        while (!this.mapForWindow.isEmpty()) {
+            if ((time - this.windowSize) < this.mapForWindow.firstKey())
+                break;
+            MatchResult nextToRemove = this.mapForWindow.firstEntry().getValue();
+            while (nextToRemove != null) {
+                MatchResult tmp = nextToRemove;
+                nextToRemove = nextToRemove.getNext();
+                this.expansionTable.remove(tmp);
             }
+            // remove from FIFO
+            this.mapForWindow.pollFirstEntry();
         }
         return;
+    }
+
+    void joinMatchResult(MatchResult result, int tcQueryId) {
+        boolean fit = true;
+        for (MatchResult entry : this.expansionTable) {
+            // check whether entry and result overlap
+            if (entry.hasShareEdge(result))
+                continue;
+            fit = true;
+            // if any pair of edges in entry and result break the rules,
+            // change fit to false and break(the result doesn't fit in the entry)
+            for (TCQueryRelation relationship : this.TCQRelation[tcQueryId]) {
+                if (entry.containsPattern(relationship.idOfEntry)) {
+                    if (!(checkSpatialRelation(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry))
+                            && checkTime(result.get(relationship.idOfResult), entry.get(relationship.idOfEntry)))) {
+                        fit = false;
+                        break;
+                    }
+                }
+            }
+            if (fit) {
+                this.bufferForPartialMatch.add(result.merge(entry));
+            }
+        }
+    }
+
+    private void insertToTable() {
+        int ansSize = this.spatialRelation.numEdges();
+        for (MatchResult entry : this.bufferForPartialMatch) {
+            if (entry.size() == ansSize)
+                this.answer.add(entry);
+            else {
+                this.expansionTable.add(entry);
+                if (this.mapForWindow.containsKey(entry.getEarliestTime()))
+                    entry.setNext(this.mapForWindow.get(entry.getEarliestTime()));
+                this.mapForWindow.put(entry.getEarliestTime(), entry);
+            }
+        }
     }
 
     /**
@@ -154,26 +196,14 @@ public class PriorityJoin implements Join {
         // check uniqueness of the MatchResult
         if (this.expansionTable.contains(result))
             return;
-        this.expansionTable.add(result);
+        // use Timeout Window to clean useless entry
+        cleanExpansionTable(result.getLatestTime());
         // join
-
-        // cleanOutOfDate(result.getEarliestTime(), tcQueryId);
-        if (tcQueryId == 2 * this.TCQRelation.length - 2) {
-            this.answer.add(result);
-            return;
-        }
-        this.partialMatchResult[tcQueryId].add(result);
-        if (tcQueryId == 0)
-            return;
-        PriorityQueue<MatchResult> pqForNew = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
-        pqForNew.add(result);
-
-        if (tcQueryId % 2 == 0)
-            joinTwoTable(pqForNew, this.partialMatchResult[tcQueryId + 1], tcQueryId +
-                    1);
-        else
-            joinTwoTable(this.partialMatchResult[tcQueryId - 1], pqForNew, tcQueryId);
-        return;
+        joinMatchResult(result, tcQueryId);
+        this.bufferForPartialMatch.add(result);
+        // add the entry in bufferForPartialMatch to the expansionTable
+        insertToTable();
+        this.bufferForPartialMatch.clear();
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
@@ -184,4 +214,5 @@ public class PriorityJoin implements Join {
         this.answer.clear();
         return ret;
     }
+
 }

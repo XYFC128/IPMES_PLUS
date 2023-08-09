@@ -1,4 +1,4 @@
-package org.ipmes;
+package org.ipmes.join;
 
 import java.util.ArrayList;
 
