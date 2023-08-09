@@ -6,10 +6,7 @@ import org.ipmes.match.MatchResult;
 import org.ipmes.pattern.DependencyGraph;
 import org.ipmes.pattern.PatternGraph;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.PriorityQueue;
+import java.util.*;
 
 public class PriorityJoin implements Join {
     DependencyGraph temporalRelation;
@@ -105,45 +102,46 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    void checkAndMerge(MatchResult left, MatchResult right, int haveRelId, ArrayList<MatchResult> ret) {
+    void checkAndMerge(MatchResult from, MatchResult to, int haveRelId, ArrayList<MatchResult> ret) {
         boolean fit = true;
         for (TCQueryRelation relation : this.TCQRelation[haveRelId]) {
-            if (left.containsPattern(relation.idOfEntry)) {
-                if (!(checkSpatialRelation(right.get(relation.idOfResult),
-                        left.get(relation.idOfEntry))
-                        && checkTemporalRelation(right.get(relation.idOfResult),
-                                left.get(relation.idOfEntry)))) {
+            if (to.containsPattern(relation.idOfEntry)) {
+                if (!(checkSpatialRelation(from.get(relation.idOfResult),
+                        to.get(relation.idOfEntry))
+                        && checkTemporalRelation(from.get(relation.idOfResult),
+                                to.get(relation.idOfEntry)))) {
                     fit = false;
                     break;
                 }
             }
         }
         if (fit)
-            ret.add(left.merge(right));
+            ret.add(to.merge(from));
     }
 
-    // Collection<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int
+    // ArrayList<MatchResult> joinTwoTable(Collection<MatchResult> newResults, int targetBufferId)
     ArrayList<MatchResult> process(ArrayList<MatchResult> toProcess, int bufferId) {
         int siblingId = getSibling(bufferId), haveRelId;
         ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
-        for (MatchResult result : toProcess) {
-            this.partialMatchResult[bufferId].add(result);
+        Collection<MatchResult> sourceBuffer, targetBuffer;
+        if (bufferId % 2 == 0) {
+            sourceBuffer = toProcess;
+            targetBuffer = this.partialMatchResult[siblingId];
+        } else {
+            sourceBuffer = this.partialMatchResult[siblingId];
+            targetBuffer = toProcess;
+        }
+        for (MatchResult from : sourceBuffer) {
+            this.partialMatchResult[bufferId].add(from);
             if (bufferId == 0)
                 continue;
             if (bufferId == 2 * TCQRelation.length - 2) {
-                this.answer.add(result);
+                this.answer.add(from);
                 continue;
             }
-            if (bufferId % 2 == 0) {
-                for (MatchResult right : this.partialMatchResult[siblingId]) {
-                    haveRelId = toTCQueryId(siblingId);
-                    checkAndMerge(result, right, haveRelId, ret);
-                }
-            } else {
-                for (MatchResult left : this.partialMatchResult[siblingId]) {
-                    haveRelId = toTCQueryId(bufferId);
-                    checkAndMerge(left, result, haveRelId, ret);
-                }
+            for (MatchResult to : targetBuffer) {
+                haveRelId = toTCQueryId(bufferId);
+                checkAndMerge(from, to, haveRelId, ret);
             }
         }
         return ret;
