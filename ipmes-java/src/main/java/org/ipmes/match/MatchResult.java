@@ -19,9 +19,24 @@ public class MatchResult {
         this.next = null;
     }
 
+    /**
+     * Calculate a^n mod p
+     */
+    static long pow(long a, long n, long p) {
+        long res = 1;
+        long base = a;
+        while (n > 0) {
+            if ((n & 1) == 1)
+                res = (res * base) % p;
+            base = (base * base) % p;
+            n >>= 1;
+        }
+        return res;
+    }
+
     public void addMatchEdge(MatchEdge m) {
         Integer matchId = m.matched.getId();
-        this.hash += m.getDataId() * matchId;
+        this.hash += (int)(m.getDataId() * pow(7, matchId, Integer.MAX_VALUE) % Integer.MAX_VALUE);
         this.earliestTime = Math.min(this.earliestTime, m.timestamp);
         this.latestTime = Math.max(this.latestTime, m.timestamp);
         this.results.put(matchId, m);
@@ -36,7 +51,7 @@ public class MatchResult {
         MatchResult res = new MatchResult();
         res.results.putAll(this.results);
         res.results.putAll(other.results);
-        res.hash = this.hash + other.hash;
+        res.hash = (int)(((long)this.hash + (long)other.hash) % Integer.MAX_VALUE);
         res.resultContains.or(this.resultContains);
         res.resultContains.or(other.resultContains);
         res.earliestTime = Math.min(this.earliestTime, other.earliestTime);
