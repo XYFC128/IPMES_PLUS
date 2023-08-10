@@ -20,6 +20,7 @@ import org.ipmes.join.Join;
 import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.MatchEdge;
+import org.ipmes.match.MatchResult;
 import org.ipmes.pattern.*;
 import org.ipmes.siddhi.TCQueryOutputCallback;
 import org.ipmes.siddhi.TCSiddhiAppGenerator;
@@ -82,32 +83,34 @@ public class Main {
             extractor = new DarpaExtractor();
         else
             extractor = new SimPatternExtractor();
-        PatternGraph pattern = PatternGraph
+        PatternGraph spatialPattern = PatternGraph
                 .parse(
                         new FileReader(ttpPrefix + "_node.json"),
                         new FileReader(ttpPrefix + "_edge.json"),
-                        extractor)
-                .get();
-        DependencyGraph dep = DependencyGraph.parse(new FileReader(orelsFile)).get();
+                        extractor).get();
+        DependencyGraph temporalPattern = DependencyGraph.parse(new FileReader(orelsFile)).get();
+
+        MatchResult.MAX_NUM_EDGES = spatialPattern.numEdges();
+        MatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
         System.out.println("Patterns:");
-        pattern.getEdges().forEach(System.out::println);
+        spatialPattern.getEdges().forEach(System.out::println);
 
         // Decomposition
-        TCQGenerator d = new TCQGenerator(dep, pattern);
+        TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, tcQueries);
+        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(spatialPattern, temporalPattern, tcQueries);
         gen.setUseRegex(useRegex);
 
         // Generate CEP app and runtime
         String appStr = gen.generate();
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-        Join join = new PriorityJoin(dep, pattern, windowSize * 1000, tcQueries);
+        Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize * 1000, tcQueries);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),
-                    new TCQueryOutputCallback(q, pattern, join));
+                    new TCQueryOutputCallback(q, spatialPattern, join));
         }
 
         BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
