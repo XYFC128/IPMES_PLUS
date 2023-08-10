@@ -13,7 +13,7 @@ public class PriorityJoin implements Join {
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
     ArrayList<MatchResult> answer;
-    HashSet<MatchResult> expansionTable;
+    HashSet<MatchResult> resultSet;
     // table for joining result
     PriorityQueue<MatchResult>[] partialMatchResult;
     // store the realtionships of sub TC Queries
@@ -27,12 +27,34 @@ public class PriorityJoin implements Join {
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
         this.TCQRelation = TCQRelation;
-        this.expansionTable = new HashSet<MatchResult>();
+        this.resultSet = new HashSet<MatchResult>();
         this.windowSize = windowSize;
         this.partialMatchResult = (PriorityQueue<MatchResult>[]) new PriorityQueue[2 * TCQRelation.length - 1];
         for (int i = 0; i < 2 * TCQRelation.length - 1; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
+    }
+
+    int toBufferIdx(int tcQueryId) {
+        if (tcQueryId == 0)
+            return 0;
+        return tcQueryId * 2 - 1;
+    }
+
+    int toTCQueryId(int bufferId) {
+        return (bufferId + 1) / 2;
+    }
+
+    int getSibling(int bufferId) {
+        if ((bufferId & 1) == 1)
+            return bufferId - 1;
+        return bufferId + 1;
+    }
+
+    int getParent(int bufferId) {
+        if ((bufferId & 1) == 1)
+            return bufferId + 1;
+        return bufferId + 2;
     }
 
     /**
@@ -68,7 +90,6 @@ public class PriorityJoin implements Join {
      * @return true if spatial relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
-
     private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
@@ -87,7 +108,6 @@ public class PriorityJoin implements Join {
      * @return true if temporal relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
-
     private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
                 .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
@@ -102,71 +122,48 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    void checkAndMerge(MatchResult from, MatchResult to, int fromBufferId, ArrayList<MatchResult> ret) {
-        boolean fit = true;
+    boolean checkRelations(MatchResult from, MatchResult to, int fromBufferId) {
         int tcQueryId = toTCQueryId(fromBufferId);
         for (TCQueryRelation relation : this.TCQRelation[tcQueryId]) {
             if (to.containsPattern(relation.idOfEntry)) {
                 if (!(checkSpatialRelation(from.get(relation.idOfResult),
                         to.get(relation.idOfEntry))
                         && checkTemporalRelation(from.get(relation.idOfResult),
-                                to.get(relation.idOfEntry)))) {
-                    fit = false;
-                    break;
+                        to.get(relation.idOfEntry)))) {
+                    return false;
                 }
             }
         }
-        if (fit)
-            ret.add(to.merge(from));
+        return true;
     }
 
-    ArrayList<MatchResult> mergeTwoBuffer(ArrayList<MatchResult> toProcess, int bufferId) {
+    ArrayList<MatchResult> joinWithSibling(ArrayList<MatchResult> newEntries, int bufferId) {
         int siblingId = getSibling(bufferId), fromBufferId;
-        ArrayList<MatchResult> ret = new ArrayList<MatchResult>();
+        ArrayList<MatchResult> ret = new ArrayList<>();
         Collection<MatchResult> sourceBuffer, targetBuffer;
         if (bufferId % 2 == 0) {
             sourceBuffer = this.partialMatchResult[siblingId];
-            targetBuffer = toProcess;
+            targetBuffer = newEntries;
             fromBufferId = siblingId;
         } else {
-            sourceBuffer = toProcess;
+            sourceBuffer = newEntries;
             targetBuffer = this.partialMatchResult[siblingId];
             fromBufferId = bufferId;
         }
+
         for (MatchResult from : sourceBuffer) {
             for (MatchResult to : targetBuffer) {
-                checkAndMerge(from, to, fromBufferId, ret);
+                if (checkRelations(from, to, fromBufferId))
+                    ret.add(from.merge(to));
             }
         }
         return ret;
     }
 
-    int toBufferIdx(int tcQueryId) {
-        if (tcQueryId == 0)
-            return 0;
-        return tcQueryId * 2 - 1;
-    }
-
-    int toTCQueryId(int bufferId) {
-        return (bufferId + 1) / 2;
-    }
-
-    int getSibling(int bufferId) {
-        if ((bufferId & 1) == 1)
-            return bufferId - 1;
-        return bufferId + 1;
-    }
-
-    int getParent(int bufferId) {
-        if ((bufferId & 1) == 1)
-            return bufferId + 1;
-        return bufferId + 2;
-    }
-
-    void cleanBuffer(long latestTime, int siblingId) {
-        while (!this.partialMatchResult[siblingId].isEmpty() &&
-                latestTime - this.windowSize > this.partialMatchResult[siblingId].peek().getEarliestTime())
-            this.partialMatchResult[siblingId].poll();
+    void clearExpired(long latestTime, int bufferId) {
+        while (!this.partialMatchResult[bufferId].isEmpty() &&
+                latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime())
+            this.partialMatchResult[bufferId].poll();
         return;
     }
 
@@ -193,31 +190,29 @@ public class PriorityJoin implements Join {
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
         // check uniqueness of the MatchResult
-        if (this.expansionTable.contains(result))
+        if (this.resultSet.contains(result))
             return;
-        this.expansionTable.add(result);
+        this.resultSet.add(result);
         long latestTime = result.getLatestTime();
+
         // join
-        // cleanOutOfDate(result.getEarliestTime(), tcQueryId);
         int bufferId = toBufferIdx(tcQueryId);
-        ArrayList<MatchResult> toProcess = new ArrayList<MatchResult>();
-        toProcess.add(result);
-        while (!toProcess.isEmpty()) {
+        ArrayList<MatchResult> newEntries = new ArrayList<>();
+        newEntries.add(result);
+        while (!newEntries.isEmpty()) {
             if (bufferId == 2 * TCQRelation.length - 2) {
-                this.answer.addAll(toProcess);
+                this.answer.addAll(newEntries);
                 break;
             }
-            this.partialMatchResult[bufferId].addAll(toProcess);
-            cleanBuffer(latestTime, getSibling(bufferId));
-            if (bufferId == 0)
-                break;
-            toProcess = mergeTwoBuffer(toProcess, bufferId);
+            this.partialMatchResult[bufferId].addAll(newEntries);
+            clearExpired(latestTime, getSibling(bufferId));
+            newEntries = joinWithSibling(newEntries, bufferId);
             bufferId = getParent(bufferId);
         }
     }
 
     public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
-        ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<ArrayList<MatchEdge>>();
+        ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<>();
         for (MatchResult result : this.answer) {
             ret.add(new ArrayList<>(result.matchEdges()));
         }
