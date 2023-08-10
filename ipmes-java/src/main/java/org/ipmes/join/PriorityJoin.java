@@ -1,5 +1,6 @@
 package org.ipmes.join;
 
+import org.ipmes.decomposition.TCQuery;
 import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
@@ -16,20 +17,21 @@ public class PriorityJoin implements Join {
     // table for joining result
     PriorityQueue<MatchResult>[] partialMatchResult;
     // store the realtionships of sub TC Queries
+    PriorityGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
     long windowSize;
 
     // constructor
-    public PriorityJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation,
-            ArrayList<TCQueryRelation>[] TCQRelation, long windowSize) {
+    public PriorityJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation, long windowSize,
+            ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
-        this.TCQRelation = TCQRelation;
-        this.resultSet = new HashSet<MatchResult>();
+        this.relationGenerator = new PriorityGenRel(temporalRelation, spatialRelation, subTCQueries);
+        this.TCQRelation = relationGenerator.getRelation();
         this.windowSize = windowSize;
         this.partialMatchResult = (PriorityQueue<MatchResult>[]) new PriorityQueue[2 * TCQRelation.length - 1];
-        for (int i = 0; i < 2 * TCQRelation.length - 1; i++) {
+        for (int i = 0; i < TCQRelation.length; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
     }
@@ -121,39 +123,25 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInTable.matchId()));
     }
 
-    boolean checkRelations(MatchResult from, MatchResult to, int fromBufferId) {
-        int tcQueryId = toTCQueryId(fromBufferId);
-        for (TCQueryRelation relation : this.TCQRelation[tcQueryId]) {
-            if (to.containsPattern(relation.idOfEntry)) {
-                if (!(checkSpatialRelation(from.get(relation.idOfResult),
-                        to.get(relation.idOfEntry))
-                        && checkTemporalRelation(from.get(relation.idOfResult),
-                        to.get(relation.idOfEntry)))) {
-                    return false;
-                }
+    boolean checkRelations(MatchResult result, MatchResult entry, int bufferId) {
+        for (TCQueryRelation relation : this.TCQRelation[bufferId]) {
+            if (!(checkSpatialRelation(result.get(relation.idOfResult),
+                    entry.get(relation.idOfEntry))
+                    && checkTemporalRelation(result.get(relation.idOfResult),
+                            entry.get(relation.idOfEntry)))) {
+                return false;
             }
         }
         return true;
     }
 
     ArrayList<MatchResult> joinWithSibling(ArrayList<MatchResult> newEntries, int bufferId) {
-        int siblingId = getSibling(bufferId), fromBufferId;
+        int siblingId = getSibling(bufferId);
         ArrayList<MatchResult> ret = new ArrayList<>();
-        Collection<MatchResult> sourceBuffer, targetBuffer;
-        if (bufferId % 2 == 0) {
-            sourceBuffer = this.partialMatchResult[siblingId];
-            targetBuffer = newEntries;
-            fromBufferId = siblingId;
-        } else {
-            sourceBuffer = newEntries;
-            targetBuffer = this.partialMatchResult[siblingId];
-            fromBufferId = bufferId;
-        }
-
-        for (MatchResult from : sourceBuffer) {
-            for (MatchResult to : targetBuffer) {
-                if (checkRelations(from, to, fromBufferId))
-                    ret.add(from.merge(to));
+        for (MatchResult result : newEntries) {
+            for (MatchResult entry : this.partialMatchResult[siblingId]) {
+                if (checkRelations(result, entry, bufferId))
+                    ret.add(entry.merge(result));
             }
         }
         return ret;
@@ -195,7 +183,7 @@ public class PriorityJoin implements Join {
         ArrayList<MatchResult> newEntries = new ArrayList<>();
         newEntries.add(result);
         while (!newEntries.isEmpty()) {
-            if (bufferId == 2 * TCQRelation.length - 2) {
+            if (bufferId == TCQRelation.length - 1) {
                 this.answer.addAll(newEntries);
                 break;
             }

@@ -51,6 +51,7 @@ public class Main {
                 .help("The path to the preprocessed data graph");
         return parser;
     }
+
     public static void main(String[] args) throws Exception {
         // parse argument
         ArgumentParser parser = getParser();
@@ -85,7 +86,8 @@ public class Main {
                 .parse(
                         new FileReader(ttpPrefix + "_node.json"),
                         new FileReader(ttpPrefix + "_edge.json"),
-                        extractor).get();
+                        extractor)
+                .get();
         DependencyGraph dep = DependencyGraph.parse(new FileReader(orelsFile)).get();
 
         System.out.println("Patterns:");
@@ -94,7 +96,6 @@ public class Main {
         // Decomposition
         TCQGenerator d = new TCQGenerator(dep, pattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        ArrayList<TCQueryRelation>[] TCQRelation = d.getTCQRelation();
         TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, tcQueries);
         gen.setUseRegex(useRegex);
 
@@ -102,7 +103,7 @@ public class Main {
         String appStr = gen.generate();
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-        Join join = new PriorityJoin(dep, pattern, TCQRelation, windowSize * 1000);
+        Join join = new PriorityJoin(dep, pattern, windowSize * 1000, tcQueries);
         for (TCQuery q : tcQueries) {
             runtime.addCallback(
                     String.format("TC%dOutput", q.getId()),

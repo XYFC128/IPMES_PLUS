@@ -5,6 +5,8 @@ import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
 import org.ipmes.pattern.DependencyGraph;
 import org.ipmes.pattern.PatternGraph;
+import org.ipmes.decomposition.TCQuery;
+import org.ipmes.join.NaiveGenRel;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,23 +20,25 @@ public class NaiveJoin implements Join {
     ArrayList<MatchResult> answer;
     // table for joining result
     HashSet<MatchResult> expansionTable;
-    // store the realtionships of sub TC Queries
-    ArrayList<TCQueryRelation>[] TCQRelation;
     // use SortedMap<TimeStamp, entry> to maintain window
     TreeMap<Long, MatchResult> mapForWindow;
     long windowSize;
     // all the new entry will be stored in bufferForPartialMatch,
     // and add to table at the end of addMatchResult
     ArrayList<MatchResult> bufferForPartialMatch;
+    // store the realtionships of sub TC Queries
+    NaiveGenRel relationGenerator;
+    ArrayList<TCQueryRelation>[] TCQRelation;
 
     // constructor
-    public NaiveJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation,
-            ArrayList<TCQueryRelation>[] TCQRelation, long windowSize) {
+    public NaiveJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation, long windowSize,
+            ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
         this.expansionTable = new HashSet<MatchResult>();
-        this.TCQRelation = TCQRelation;
+        this.relationGenerator = new NaiveGenRel(temporalRelation, spatialRelation, subTCQueries);
+        this.TCQRelation = relationGenerator.getRelation();
         this.mapForWindow = new TreeMap<Long, MatchResult>();
         this.windowSize = windowSize;
         this.bufferForPartialMatch = new ArrayList<MatchResult>();
