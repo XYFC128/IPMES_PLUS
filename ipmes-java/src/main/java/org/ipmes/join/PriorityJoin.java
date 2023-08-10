@@ -13,7 +13,6 @@ public class PriorityJoin implements Join {
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
     ArrayList<MatchResult> answer;
-    HashSet<MatchResult> resultSet;
     // table for joining result
     PriorityQueue<MatchResult>[] partialMatchResult;
     // store the realtionships of sub TC Queries
@@ -189,10 +188,6 @@ public class PriorityJoin implements Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
-        // check uniqueness of the MatchResult
-        if (this.resultSet.contains(result))
-            return;
-        this.resultSet.add(result);
         long latestTime = result.getLatestTime();
 
         // join
