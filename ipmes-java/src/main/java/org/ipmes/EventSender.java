@@ -50,12 +50,9 @@ public class EventSender {
         long startId     = Long.parseLong(fields[4]);
         long endId       = Long.parseLong(fields[5]);
 
-        if (startTime == endTime) {
-            EventEdge event = new EventEdge(startTime, signature, edgeId, startId, endId);
-            this.eventPriorityQueue.add(event);
-        } else {
-            EventEdge startEvent = new EventEdge(startTime, signature, edgeId, startId, endId);
-            this.eventPriorityQueue.add(startEvent);
+        EventEdge startEvent = new EventEdge(startTime, signature, edgeId, startId, endId);
+        this.eventPriorityQueue.add(startEvent);
+        if (startTime != endTime) {
             EventEdge endEvent = new EventEdge(endTime, signature, edgeId, startId, endId);
             this.eventPriorityQueue.add(endEvent);
         }

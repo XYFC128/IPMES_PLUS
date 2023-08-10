@@ -21,6 +21,7 @@ import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
+import org.ipmes.match.NewMatchResult;
 import org.ipmes.pattern.*;
 import org.ipmes.siddhi.TCQueryOutputCallback;
 import org.ipmes.siddhi.TCSiddhiAppGenerator;
@@ -90,8 +91,8 @@ public class Main {
                         extractor).get();
         DependencyGraph temporalPattern = DependencyGraph.parse(new FileReader(orelsFile)).get();
 
-        MatchResult.MAX_NUM_EDGES = spatialPattern.numEdges();
-        MatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
+        NewMatchResult.MAX_NUM_EDGES = spatialPattern.numEdges();
+        NewMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
         System.out.println("Patterns:");
         spatialPattern.getEdges().forEach(System.out::println);
