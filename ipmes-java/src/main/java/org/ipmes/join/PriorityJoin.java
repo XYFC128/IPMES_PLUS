@@ -19,7 +19,7 @@ public class PriorityJoin implements Join {
     // store the realtionships of sub TC Queries
     PriorityGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
-    HashSet<MatchResult> AlreadyIn;
+    HashSet<MatchResult> alreadyIn;
     long windowSize;
 
     // constructor
@@ -35,7 +35,7 @@ public class PriorityJoin implements Join {
         for (int i = 0; i < TCQRelation.length; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
-        this.AlreadyIn = new HashSet<MatchResult>();
+        this.alreadyIn = new HashSet<MatchResult>();
     }
 
     int toBufferIdx(int tcQueryId) {
@@ -153,7 +153,7 @@ public class PriorityJoin implements Join {
         while (!this.partialMatchResult[bufferId].isEmpty() &&
                 latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime()) {
             if (bufferId == 0 || bufferId % 2 == 1)
-                this.AlreadyIn.remove(this.partialMatchResult[bufferId].peek());
+                this.alreadyIn.remove(this.partialMatchResult[bufferId].peek());
             this.partialMatchResult[bufferId].poll();
         }
         return;
@@ -181,9 +181,9 @@ public class PriorityJoin implements Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
-        if (AlreadyIn.contains(result))
+        if (alreadyIn.contains(result))
             return;
-        AlreadyIn.add(result);
+        alreadyIn.add(result);
         long latestTime = result.getLatestTime();
         // join
         int bufferId = toBufferIdx(tcQueryId);
