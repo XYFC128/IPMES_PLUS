@@ -1,5 +1,6 @@
 package org.ipmes.match;
 
+import org.ipmes.EventEdge;
 import org.ipmes.pattern.PatternEdge;
 
 /**
@@ -49,8 +50,21 @@ public class MatchEdge {
         this.matched = matched;
     }
 
+    public MatchEdge(EventEdge event, PatternEdge matched) {
+        this.dataId = event.edgeId;
+        this.timestamp = event.timestamp;
+        this.startId = event.startId;
+        this.endId = event.endId;
+        this.matched = matched;
+    }
+
     public Long[] getEndpoints() {
         return new Long[] {this.startId, this.endId};
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(this.dataId);
     }
 
     @Override

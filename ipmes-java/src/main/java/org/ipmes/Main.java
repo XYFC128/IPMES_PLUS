@@ -5,9 +5,6 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import io.siddhi.core.SiddhiAppRuntime;
-import io.siddhi.core.SiddhiManager;
-import io.siddhi.core.stream.input.InputHandler;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -15,16 +12,11 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
-import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.join.Join;
-import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.MatchEdge;
-import org.ipmes.match.MatchResult;
-import org.ipmes.match.NewMatchResult;
+import org.ipmes.match.LightMatchResult;
 import org.ipmes.pattern.*;
-import org.ipmes.siddhi.TCQueryOutputCallback;
-import org.ipmes.siddhi.TCSiddhiAppGenerator;
 
 public class Main {
 
@@ -68,7 +60,7 @@ public class Main {
         Boolean isDarpa = ns.getBoolean("darpa");
         String ttpPrefix = ns.getString("pattern_prefix");
         String dataGraphPath = ns.getString("data_graph");
-        Long windowSize = ns.getLong("windowSize");
+        long windowSize = ns.getLong("windowSize") * 1000;
 
         // parse data
         String orelsFile;
@@ -91,8 +83,7 @@ public class Main {
                         extractor).get();
         DependencyGraph temporalPattern = DependencyGraph.parse(new FileReader(orelsFile)).get();
 
-        NewMatchResult.MAX_NUM_EDGES = spatialPattern.numEdges();
-        NewMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
+        LightMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
         System.out.println("Patterns:");
         spatialPattern.getEdges().forEach(System.out::println);
@@ -100,27 +91,14 @@ public class Main {
         // Decomposition
         TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(spatialPattern, temporalPattern, tcQueries);
-        gen.setUseRegex(useRegex);
 
-        // Generate CEP app and runtime
-        String appStr = gen.generate();
-        SiddhiManager siddhiManager = new SiddhiManager();
-        SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
-        Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize * 1000, tcQueries);
-        for (TCQuery q : tcQueries) {
-            runtime.addCallback(
-                    String.format("TC%dOutput", q.getId()),
-                    new TCQueryOutputCallback(q, spatialPattern, join));
-        }
+        Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
 
         BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
         String line = inputReader.readLine();
-        InputHandler inputHandler = runtime.getInputHandler("InputStream");
-        runtime.start();
 
-        EventSorter sorter = new EventSorter(tcQueries, useRegex);
-        EventSender sender = new EventSender(inputHandler, sorter);
+        TCMatcher matcher = new TCMatcher(tcQueries, useRegex, windowSize, join);
+        EventSender sender = new EventSender(matcher);
         while (line != null) {
             sender.sendLine(line);
             line = inputReader.readLine();
@@ -137,8 +115,5 @@ public class Main {
                             .collect(Collectors.joining(",")));
             System.out.println("]");
         }
-
-        runtime.shutdown();
-        siddhiManager.shutdown();
     }
 }

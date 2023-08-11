@@ -21,13 +21,11 @@ import java.util.PriorityQueue;
  * </p>
  */
 public class EventSender {
-    InputHandler inputHandler;
-    EventSorter sorter;
+    TCMatcher tcMatcher;
     ArrayList<EventEdge> timeBuffer;
     PriorityQueue<EventEdge> eventPriorityQueue;
-    EventSender(InputHandler handler, EventSorter sorter) {
-        this.inputHandler = handler;
-        this.sorter = sorter;
+    EventSender(TCMatcher matcher) {
+        this.tcMatcher = matcher;
         this.timeBuffer = new ArrayList<>();
         this.eventPriorityQueue = new PriorityQueue<>(Comparator.comparingLong(e -> e.timestamp));
     }
@@ -77,9 +75,7 @@ public class EventSender {
      * Sort the time buffer by total order and send to CEP.
      */
     void flushTimeBuffer() throws InterruptedException {
-        ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
-        for (Object[] data : sorted)
-            inputHandler.send(data);
+        tcMatcher.sendAll(timeBuffer);
         timeBuffer.clear();
     }
 
