@@ -7,7 +7,7 @@ import org.ipmes.match.LightMatchResult;
 import org.ipmes.pattern.PatternEdge;
 
 import java.util.*;
-import java.util.regex.Pattern;
+import com.google.re2j.Pattern;
 
 public class TCMatcher {
     ArrayList<PatternEdge> totalOrder;
