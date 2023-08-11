@@ -73,17 +73,17 @@ public class NaiveJoin implements Join {
      * check edge spatial relation
      * 
      * @param edgeInMatchResult
-     * @param edgeInTable
+     * @param edgeInEntry
      * @return true if spatial relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
 
-    private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInEntry) {
         Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
-                edgeInTable.getMatched().getEndpoints(),
+                edgeInEntry.getMatched().getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
-                edgeInTable.getEndpoints()
+                edgeInEntry.getEndpoints()
         };
         return spatialRelationType(arr[0], arr[1]) == spatialRelationType(arr[2], arr[3]);
     }
@@ -92,23 +92,23 @@ public class NaiveJoin implements Join {
      * check edge temporal relation
      * 
      * @param edgeInMatchResult
-     * @param edgeInTable
+     * @param edgeInEntry
      * @return true if temporal relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
 
-    private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkTime(MatchEdge edgeInMatchResult, MatchEdge edgeInEntry) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
-                .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
+                .contains(edgeInEntry.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInEntry.getTimestamp())
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matchId())
-                        .contains(edgeInTable.matchId())
-                        && edgeInMatchResult.getTimestamp() <= edgeInTable.getTimestamp())
+                        .contains(edgeInEntry.matchId())
+                        && edgeInMatchResult.getTimestamp() <= edgeInEntry.getTimestamp())
                 ||
                 (!this.temporalRelation.getChildren(edgeInMatchResult.matchId())
-                        .contains(edgeInTable.matchId())
+                        .contains(edgeInEntry.matchId())
                         && !this.temporalRelation.getParents(edgeInMatchResult.matchId())
-                                .contains(edgeInTable.matchId()));
+                                .contains(edgeInEntry.matchId()));
     }
 
     /**

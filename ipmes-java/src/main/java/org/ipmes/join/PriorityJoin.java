@@ -19,6 +19,7 @@ public class PriorityJoin implements Join {
     // store the realtionships of sub TC Queries
     PriorityGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
+    HashSet<MatchResult> alreadyIn;
     long windowSize;
 
     // constructor
@@ -34,6 +35,7 @@ public class PriorityJoin implements Join {
         for (int i = 0; i < TCQRelation.length; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
+        this.alreadyIn = new HashSet<MatchResult>();
     }
 
     int toBufferIdx(int tcQueryId) {
@@ -87,16 +89,16 @@ public class PriorityJoin implements Join {
      * check edge spatial relation
      * 
      * @param edgeInMatchResult
-     * @param edgeInTable
+     * @param edgeInEntry
      * @return true if spatial relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
-    private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkSpatialRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInEntry) {
         Long[][] arr = {
                 edgeInMatchResult.getMatched().getEndpoints(),
-                edgeInTable.getMatched().getEndpoints(),
+                edgeInEntry.getMatched().getEndpoints(),
                 edgeInMatchResult.getEndpoints(),
-                edgeInTable.getEndpoints()
+                edgeInEntry.getEndpoints()
         };
         return spatialRelationType(arr[0], arr[1]) == spatialRelationType(arr[2], arr[3]);
     }
@@ -105,22 +107,22 @@ public class PriorityJoin implements Join {
      * check edge temporal relation
      * 
      * @param edgeInMatchResult
-     * @param edgeInTable
+     * @param edgeInEntry
      * @return true if temporal relation between dataEdge and patternEdge is the
      *         same, otherwise, false.
      */
-    private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInTable) {
+    private boolean checkTemporalRelation(MatchEdge edgeInMatchResult, MatchEdge edgeInEntry) {
         return (this.temporalRelation.getParents(edgeInMatchResult.matchId())
-                .contains(edgeInTable.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInTable.getTimestamp())
+                .contains(edgeInEntry.matchId()) && edgeInMatchResult.getTimestamp() >= edgeInEntry.getTimestamp())
                 ||
                 (this.temporalRelation.getChildren(edgeInMatchResult.matchId())
-                        .contains(edgeInTable.matchId())
-                        && edgeInMatchResult.getTimestamp() <= edgeInTable.getTimestamp())
+                        .contains(edgeInEntry.matchId())
+                        && edgeInMatchResult.getTimestamp() <= edgeInEntry.getTimestamp())
                 ||
                 (!this.temporalRelation.getChildren(edgeInMatchResult.matchId())
-                        .contains(edgeInTable.matchId())
+                        .contains(edgeInEntry.matchId())
                         && !this.temporalRelation.getParents(edgeInMatchResult.matchId())
-                                .contains(edgeInTable.matchId()));
+                                .contains(edgeInEntry.matchId()));
     }
 
     boolean checkRelations(MatchResult result, MatchResult entry, int bufferId) {
@@ -149,8 +151,11 @@ public class PriorityJoin implements Join {
 
     void clearExpired(long latestTime, int bufferId) {
         while (!this.partialMatchResult[bufferId].isEmpty() &&
-                latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime())
+                latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime()) {
+            if (bufferId == 0 || bufferId % 2 == 1)
+                this.alreadyIn.remove(this.partialMatchResult[bufferId].peek());
             this.partialMatchResult[bufferId].poll();
+        }
         return;
     }
 
@@ -176,8 +181,10 @@ public class PriorityJoin implements Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
+        if (alreadyIn.contains(result))
+            return;
+        alreadyIn.add(result);
         long latestTime = result.getLatestTime();
-
         // join
         int bufferId = toBufferIdx(tcQueryId);
         ArrayList<MatchResult> newEntries = new ArrayList<>();
