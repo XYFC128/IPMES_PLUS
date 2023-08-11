@@ -1,6 +1,7 @@
 package org.ipmes.join;
 
 import org.ipmes.decomposition.TCQueryRelation;
+import org.ipmes.match.FullMatch;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
 import org.ipmes.pattern.TemporalRelation;
@@ -210,8 +211,8 @@ public class NaiveJoin implements Join {
         this.bufferForPartialMatch.clear();
     }
 
-    public Collection<long[]> extractAnswer() {
-        ArrayList<long[]> ret = new ArrayList<>();
+    public Collection<FullMatch> extractAnswer() {
+        ArrayList<FullMatch> ret = new ArrayList<>();
         for (MatchResult result : this.answer) {
             ret.add(result.toFullMatch());
         }

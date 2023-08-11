@@ -16,6 +16,7 @@ import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
 import org.ipmes.join.PriorityJoin;
+import org.ipmes.match.FullMatch;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.LightMatchResult;
 import org.ipmes.pattern.*;
@@ -108,8 +109,8 @@ public class Main {
         sender.flushBuffers();
 
         System.out.println("Match Results:");
-        Collection<long[]> results = join.extractAnswer();
-        for (long[] result : results)
-            System.out.println(Arrays.toString(result));
+        Collection<FullMatch> results = join.extractAnswer();
+        for (FullMatch result : results)
+            System.out.println(result);
     }
 }

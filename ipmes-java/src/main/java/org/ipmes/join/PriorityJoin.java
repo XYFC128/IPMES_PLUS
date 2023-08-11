@@ -2,6 +2,7 @@ package org.ipmes.join;
 
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.decomposition.TCQueryRelation;
+import org.ipmes.match.FullMatch;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
 import org.ipmes.pattern.TemporalRelation;
@@ -13,7 +14,7 @@ public class PriorityJoin implements Join {
     TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
-    HashSet<long[]> answer;
+    HashSet<FullMatch> answer;
     // table for joining result
     PriorityQueue<MatchResult>[] partialMatchResult;
     // store the realtionships of sub TC Queries
@@ -195,8 +196,8 @@ public class PriorityJoin implements Join {
         }
     }
 
-    public Collection<long[]> extractAnswer() {
-        Collection<long[]> res = this.answer;
+    public Collection<FullMatch> extractAnswer() {
+        Collection<FullMatch> res = this.answer;
         this.answer = new HashSet<>();
         return res;
     }
