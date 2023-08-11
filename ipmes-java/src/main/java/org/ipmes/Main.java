@@ -81,7 +81,7 @@ public class Main {
                         new FileReader(ttpPrefix + "_node.json"),
                         new FileReader(ttpPrefix + "_edge.json"),
                         extractor).get();
-        DependencyGraph temporalPattern = DependencyGraph.parse(new FileReader(orelsFile)).get();
+        TemporalRelation temporalPattern = TemporalRelation.parse(new FileReader(orelsFile)).get();
 
         LightMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 

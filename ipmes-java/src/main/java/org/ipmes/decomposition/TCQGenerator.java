@@ -1,6 +1,6 @@
 package org.ipmes.decomposition;
 
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternGraph;
 
@@ -8,12 +8,12 @@ import java.util.*;
 
 public class TCQGenerator {
 
-    DependencyGraph temporalRelation;
+    TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // TCQueryId, relation of edges
     ArrayList<TCQueryRelation>[] TCQRelation;
 
-    public TCQGenerator(DependencyGraph temporalRelation, PatternGraph spatialRelation) {
+    public TCQGenerator(TemporalRelation temporalRelation, PatternGraph spatialRelation) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
     }
@@ -57,7 +57,7 @@ public class TCQGenerator {
     }
 
     /**
-     * DFS on {@link DependencyGraph} to find out all possible TC sub-queries
+     * DFS on {@link TemporalRelation} to find out all possible TC sub-queries
      * starting at
      * the given node in the graph.
      * <p>

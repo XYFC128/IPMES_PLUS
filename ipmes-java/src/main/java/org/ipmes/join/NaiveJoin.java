@@ -3,10 +3,9 @@ package org.ipmes.join;
 import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternGraph;
 import org.ipmes.decomposition.TCQuery;
-import org.ipmes.join.NaiveGenRel;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,7 +13,7 @@ import java.util.TreeMap;
 
 public class NaiveJoin implements Join {
 
-    DependencyGraph temporalRelation;
+    TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
     ArrayList<MatchResult> answer;
@@ -31,8 +30,8 @@ public class NaiveJoin implements Join {
     ArrayList<TCQueryRelation>[] TCQRelation;
 
     // constructor
-    public NaiveJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation, long windowSize,
-            ArrayList<TCQuery> subTCQueries) {
+    public NaiveJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
+                     ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();

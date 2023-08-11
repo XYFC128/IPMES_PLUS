@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * DependencyGraph is a DAG describing the temporal relation of pattern edges.
+ * TemporalRelation is a DAG describing the temporal relation of pattern edges.
  * <p>
  * The meaning of the elements in the graph:
  * <ul>
@@ -32,11 +32,11 @@ import java.util.stream.Collectors;
  * </ul>
  * </p>
  */
-public class DependencyGraph {
+public class TemporalRelation {
     ArrayList<ArrayList<Integer>> parents;
     ArrayList<ArrayList<Integer>> child;
 
-    public DependencyGraph(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> child) {
+    public TemporalRelation(ArrayList<ArrayList<Integer>> parents, ArrayList<ArrayList<Integer>> child) {
         this.parents = parents;
         this.child = child;
     }
@@ -61,7 +61,7 @@ public class DependencyGraph {
      * @return an Optional of DependencyGraph if the parsing succeed, empty
      *         otherwise
      */
-    public static Optional<DependencyGraph> parse(Reader orelsReader) {
+    public static Optional<TemporalRelation> parse(Reader orelsReader) {
         HashMap<Integer, ArrayList<Integer>> parentsMap = new HashMap<>();
         HashMap<Integer, ArrayList<Integer>> childMap = new HashMap<>();
         try {
@@ -94,7 +94,7 @@ public class DependencyGraph {
             parentsList.add(i, parentsMap.get(i));
             childsList.add(i, childMap.get(i));
         }
-        return Optional.of(new DependencyGraph(parentsList, childsList));
+        return Optional.of(new TemporalRelation(parentsList, childsList));
     }
 
     /**

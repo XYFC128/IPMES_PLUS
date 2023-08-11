@@ -1,7 +1,7 @@
 package org.ipmes.siddhi;
 
 import org.ipmes.decomposition.TCQuery;
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternGraph;
 import org.ipmes.pattern.PatternNode;
@@ -21,12 +21,12 @@ import java.util.HashMap;
  */
 public class TCSiddhiAppGenerator {
     PatternGraph patternGraph;
-    DependencyGraph dependencyGraph;
+    TemporalRelation temporalRelation;
     ArrayList<TCQuery> tcQueries;
     boolean useRegex;
-    public TCSiddhiAppGenerator(PatternGraph patternGraph, DependencyGraph dependencyGraph, ArrayList<TCQuery> tcQueries) {
+    public TCSiddhiAppGenerator(PatternGraph patternGraph, TemporalRelation temporalRelation, ArrayList<TCQuery> tcQueries) {
         this.patternGraph = patternGraph;
-        this.dependencyGraph = dependencyGraph;
+        this.temporalRelation = temporalRelation;
         this.tcQueries = tcQueries;
         this.useRegex = false;
     }

@@ -1,7 +1,6 @@
 package org.ipmes.pattern;
 
 import org.ipmes.TTPGenerator;
-import org.ipmes.pattern.DependencyGraph;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -13,9 +12,9 @@ public class ParseDependencyTest {
     @Test
     public void parseTemporalRelation() {
         String orels = TTPGenerator.genTTP11Orels();
-        Optional<DependencyGraph> res = DependencyGraph.parse(new StringReader(orels));
+        Optional<TemporalRelation> res = TemporalRelation.parse(new StringReader(orels));
         assertTrue(res.isPresent());
-        DependencyGraph g = res.get();
+        TemporalRelation g = res.get();
 
         assertArrayEquals(
                 new Integer[] {},

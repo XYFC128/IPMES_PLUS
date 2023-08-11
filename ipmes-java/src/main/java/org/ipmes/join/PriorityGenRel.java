@@ -4,18 +4,18 @@ import java.util.ArrayList;
 
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.decomposition.TCQueryRelation;
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternGraph;
 
 public class PriorityGenRel {
 
-    DependencyGraph temporalRelation;
+    TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     ArrayList<TCQueryRelation>[] relations;
     ArrayList<TCQuery> subTCQueries;
 
-    public PriorityGenRel(DependencyGraph temporalRelation, PatternGraph spatialRelation, ArrayList<TCQuery> selected) {
+    public PriorityGenRel(TemporalRelation temporalRelation, PatternGraph spatialRelation, ArrayList<TCQuery> selected) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.subTCQueries = selected;

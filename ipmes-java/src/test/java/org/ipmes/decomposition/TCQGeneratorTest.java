@@ -6,7 +6,7 @@ import io.siddhi.core.event.Event;
 import io.siddhi.core.stream.input.InputHandler;
 import io.siddhi.core.stream.output.StreamCallback;
 import org.ipmes.TTPGenerator;
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternGraph;
 import org.ipmes.siddhi.TCSiddhiAppGenerator;
 import org.junit.Test;
@@ -24,7 +24,7 @@ public class TCQGeneratorTest {
         String edges = TTPGenerator.genTTP11Edges();
         PatternGraph pattern = PatternGraph.parse(new StringReader(nodes), new StringReader(edges)).get();
         String orels = TTPGenerator.genTTP11Orels();
-        DependencyGraph dep = DependencyGraph.parse(new StringReader(orels)).get();
+        TemporalRelation dep = TemporalRelation.parse(new StringReader(orels)).get();
 
         TCQGenerator d = new TCQGenerator(dep, pattern);
         ArrayList<TCQuery> queries = d.decompose();
@@ -42,7 +42,7 @@ public class TCQGeneratorTest {
         String edges = TTPGenerator.genTTP11Edges();
         PatternGraph pattern = PatternGraph.parse(new StringReader(nodes), new StringReader(edges)).get();
         String orels = TTPGenerator.genTTP11Orels();
-        DependencyGraph dep = DependencyGraph.parse(new StringReader(orels)).get();
+        TemporalRelation dep = TemporalRelation.parse(new StringReader(orels)).get();
 
         // Decomposition
         TCQGenerator d = new TCQGenerator(dep, pattern);

@@ -4,13 +4,13 @@ import org.ipmes.decomposition.TCQuery;
 import org.ipmes.decomposition.TCQueryRelation;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.MatchResult;
-import org.ipmes.pattern.DependencyGraph;
+import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternGraph;
 
 import java.util.*;
 
 public class PriorityJoin implements Join {
-    DependencyGraph temporalRelation;
+    TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
     HashSet<MatchResult> answer;
@@ -22,8 +22,8 @@ public class PriorityJoin implements Join {
     long windowSize;
 
     // constructor
-    public PriorityJoin(DependencyGraph temporalRelation, PatternGraph spatialRelation, long windowSize,
-            ArrayList<TCQuery> subTCQueries) {
+    public PriorityJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
+                        ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new HashSet<MatchResult>();
