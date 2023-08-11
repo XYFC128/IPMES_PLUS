@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from io import TextIOWrapper
 import subprocess
 from subprocess import PIPE, Popen
 import os
@@ -13,7 +14,7 @@ def parse_results(stdout: str) -> int:
     result_start = stdout.find('Match Results:')
     return stdout[result_start:].count('[')
 
-subprocess.run(['mvn', 'compile'])
+subprocess.run(['mvn', 'compile'], check=True)
 pattern_file = [
     ('DDP1', 'TTP1-1_regex'),
     ('DDP2', 'TTP1-2_regex'),
@@ -33,22 +34,23 @@ os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
 for pattern_name, file_prefix in pattern_file:
     print(f'Running pattern {pattern_name}')
-    processes: list[Popen] = []
+    pdata: list[tuple[Popen, TextIOWrapper]] = []
     for graph in darpa_graphs:
-        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
-        # args = ['bash', '-c', 'time -p -- mvn -q exec:java -Dexec.args="../data/patterns/TTP11 ../data/preprocessed/interval.csv"']
+        # args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv" &> {out_file}']
+        args = ['bash', '-c', 'time -p -- mvn -q exec:java -Dexec.args="../data/patterns/TTP11 ../data/preprocessed/interval.csv"']
         print(args)
-        processes.append(Popen(args, stdout=PIPE, stderr=PIPE))
+        out_file = open(f'../results/{pattern_name}_{graph}.out', 'w')
+        pdata.append((Popen(args, stdout=out_file, stderr=out_file), out_file))
         
     results = []
     cputime = []
-    for proc, graph in zip(processes, darpa_graphs):
+    for proc, out_file in pdata:
         proc.wait()
-        stderr = proc.stderr.read().decode()
-        stdout = proc.stdout.read().decode()
-        cputime.append(parse_cputime(stderr))
-        results.append(parse_results(stdout))
-        open(f'../results/{pattern_name}_{graph}.out', 'w').write(stderr + stdout)
+        out_file.close()
+    for graph in darpa_graphs:
+        output = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
+        results.append(parse_results(output))
+        cputime.append(parse_cputime(output))
     all_results.append(results)
     all_cputime.append(cputime)
 
