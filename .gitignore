@@ -1,6 +1,7 @@
 __pycache__/
 .venv/
 /data/
+/results/
 /siddhi-bin/
 project/target/
 .DS_Store
