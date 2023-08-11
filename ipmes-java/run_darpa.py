@@ -3,7 +3,7 @@ import subprocess
 from subprocess import PIPE, Popen
 import os
 
-os.environ['MAVEN_OPT'] = '-Xmx100'
+os.environ['MAVEN_OPT'] = '-Xmx100G'
 
 def parse_cputime(stderr: str) -> float:
     lines = stderr.strip().split('\n')
