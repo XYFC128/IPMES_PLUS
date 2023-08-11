@@ -8,6 +8,7 @@ import org.ipmes.pattern.PatternGraph;
 import org.ipmes.decomposition.TCQuery;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.TreeMap;
 
@@ -209,10 +210,10 @@ public class NaiveJoin implements Join {
         this.bufferForPartialMatch.clear();
     }
 
-    public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
-        ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<ArrayList<MatchEdge>>();
+    public Collection<long[]> extractAnswer() {
+        ArrayList<long[]> ret = new ArrayList<>();
         for (MatchResult result : this.answer) {
-            ret.add(new ArrayList<>(result.matchEdges()));
+            ret.add(result.toFullMatch());
         }
         this.answer.clear();
         return ret;

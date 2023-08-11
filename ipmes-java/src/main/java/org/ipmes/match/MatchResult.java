@@ -92,6 +92,13 @@ public class MatchResult {
         return;
     }
 
+    public long[] toFullMatch() {
+        long[] res = new long[this.results.size()];
+        for (Map.Entry<Integer, MatchEdge> entry : this.results.entrySet())
+            res[entry.getKey()] = entry.getValue().getDataId();
+        return res;
+    }
+
     @Override
     public int hashCode() {
         return this.hash;

@@ -13,7 +13,7 @@ public class PriorityJoin implements Join {
     TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
-    HashSet<MatchResult> answer;
+    HashSet<long[]> answer;
     // table for joining result
     PriorityQueue<MatchResult>[] partialMatchResult;
     // store the realtionships of sub TC Queries
@@ -26,7 +26,7 @@ public class PriorityJoin implements Join {
                         ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
-        this.answer = new HashSet<MatchResult>();
+        this.answer = new HashSet<>();
         this.relationGenerator = new PriorityGenRel(temporalRelation, spatialRelation, subTCQueries);
         this.TCQRelation = relationGenerator.getRelation();
         this.windowSize = windowSize;
@@ -184,7 +184,8 @@ public class PriorityJoin implements Join {
         newEntries.add(result);
         while (!newEntries.isEmpty()) {
             if (bufferId == TCQRelation.length - 1) {
-                this.answer.addAll(newEntries);
+                for (MatchResult res : newEntries)
+                    answer.add(res.toFullMatch());
                 break;
             }
             this.partialMatchResult[bufferId].addAll(newEntries);
@@ -194,12 +195,9 @@ public class PriorityJoin implements Join {
         }
     }
 
-    public ArrayList<ArrayList<MatchEdge>> extractAnswer() {
-        ArrayList<ArrayList<MatchEdge>> ret = new ArrayList<>();
-        for (MatchResult result : this.answer) {
-            ret.add(new ArrayList<>(result.matchEdges()));
-        }
-        this.answer.clear();
-        return ret;
+    public Collection<long[]> extractAnswer() {
+        Collection<long[]> res = this.answer;
+        this.answer = new HashSet<>();
+        return res;
     }
 }

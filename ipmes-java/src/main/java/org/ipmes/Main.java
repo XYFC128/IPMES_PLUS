@@ -3,6 +3,8 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -106,14 +108,8 @@ public class Main {
         sender.flushBuffers();
 
         System.out.println("Match Results:");
-        ArrayList<ArrayList<MatchEdge>> results = join.extractAnswer();
-        for (ArrayList<MatchEdge> result : results) {
-            System.out.print("[");
-            System.out.print(
-                    result.stream()
-                            .map(edge -> Long.toString(edge.getDataId()))
-                            .collect(Collectors.joining(",")));
-            System.out.println("]");
-        }
+        Collection<long[]> results = join.extractAnswer();
+        for (long[] result : results)
+            System.out.println(Arrays.toString(result));
     }
 }
