@@ -3,8 +3,6 @@ import subprocess
 from subprocess import PIPE, Popen
 import os
 
-os.environ['MAVEN_OPT'] = '-Xmx100G'
-
 def parse_cputime(stderr: str) -> float:
     lines = stderr.strip().split('\n')
     user_time = float(lines[-2].split()[1])
@@ -35,7 +33,7 @@ for pattern_name, file_prefix in pattern_file:
     print(f'Running pattern {pattern_name}')
     processes: list[Popen] = []
     for graph in darpa_graphs:
-        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
+        args = ['bash', '-c', f'MAVEN_OPT="-Xmx100G" time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
         # args = ['bash', '-c', 'time -p -- mvn -q exec:java -Dexec.args="../data/patterns/TTP11 ../data/preprocessed/interval.csv"']
         print(args)
         processes.append(Popen(args, stdout=PIPE, stderr=PIPE))
