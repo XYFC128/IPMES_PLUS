@@ -29,11 +29,13 @@ all_cputime = []
 if not os.path.exists('../results'):
     os.mkdir('../results')
 
+os.environ['MAVEN_OPTS'] = '-Xmx100G'
+
 for pattern_name, file_prefix in pattern_file:
     print(f'Running pattern {pattern_name}')
     processes: list[Popen] = []
     for graph in darpa_graphs:
-        args = ['bash', '-c', f'MAVEN_OPT="-Xmx100G" time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
+        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
         # args = ['bash', '-c', 'time -p -- mvn -q exec:java -Dexec.args="../data/patterns/TTP11 ../data/preprocessed/interval.csv"']
         print(args)
         processes.append(Popen(args, stdout=PIPE, stderr=PIPE))
