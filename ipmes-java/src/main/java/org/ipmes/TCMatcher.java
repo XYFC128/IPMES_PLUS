@@ -14,7 +14,7 @@ public class TCMatcher {
     boolean useRegex;
     long windowSize;
     ArrayList<Pattern> regexPatterns;
-    PriorityQueue<LightMatchResult>[] buffers;
+    ArrayDeque<LightMatchResult>[] buffers;
     int[] tcQueryId;
     Join join;
     public TCMatcher(Collection<TCQuery> tcQueries, boolean useRegex, long windowSize, Join join) {
@@ -34,14 +34,14 @@ public class TCMatcher {
 
     void initBuffers(Collection<TCQuery> tcQueries) {
         int len = this.totalOrder.size();
-        this.buffers = (PriorityQueue<LightMatchResult>[]) new PriorityQueue[len];
+        this.buffers = (ArrayDeque<LightMatchResult>[]) new ArrayDeque[len];
         this.tcQueryId = new int[len];
 
         int cur = 0;
         for (TCQuery q : tcQueries) {
             for (int i = cur; i < cur + q.numEdges(); ++i) {
                 this.tcQueryId[i] = q.getId();
-                this.buffers[i] = new PriorityQueue<>(Comparator.comparingLong(LightMatchResult::getEarliestTime));
+                this.buffers[i] = new ArrayDeque<>();
             }
             this.buffers[cur].add(new LightMatchResult());
             cur += q.numEdges();
@@ -56,9 +56,9 @@ public class TCMatcher {
     }
 
     void clearExpired(int bufferId, long before) {
-        PriorityQueue<LightMatchResult> buffer = this.buffers[bufferId];
-        while (!buffer.isEmpty() && buffer.peek().getEarliestTime() < before) {
-            buffer.poll();
+        ArrayDeque<LightMatchResult> buffer = this.buffers[bufferId];
+        while (!buffer.isEmpty() && buffer.peekFirst().getEarliestTime() < before) {
+            buffer.pollFirst();
         }
     }
 
@@ -74,18 +74,16 @@ public class TCMatcher {
     }
 
     void matchAgainst(Collection<EventEdge> events, int ord) {
+        if (this.buffers[ord].isEmpty())
+            return;
+
         final int numEdges = this.totalOrder.size();
         PatternEdge matched = totalOrder.get(ord);
         ArrayList<LightMatchResult> newResults = new ArrayList<>();
-        boolean cleared = false;
         for (EventEdge event : events) {
             if (!match(ord, event))
                 continue;
-            if (!cleared) {
-                long windowBound = event.timestamp - windowSize;
-                clearExpired(ord, windowBound);
-                cleared = true;
-            }
+
             MatchEdge match = new MatchEdge(event, matched);
             newResults.addAll(mergeWithBuffer(match, ord));
         }
@@ -99,7 +97,12 @@ public class TCMatcher {
     }
 
     public void sendAll(Collection<EventEdge> events) {
+        if (events.isEmpty())
+            return;
+        EventEdge first = events.iterator().next();
+        long windowBound = first.timestamp - windowSize;
         for (int i = 0; i < this.totalOrder.size(); ++i) {
+            clearExpired(i, windowBound);
             matchAgainst(events, i);
         }
     }
