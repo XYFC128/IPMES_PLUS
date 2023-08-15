@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 
     all_cputime = []
-
+    all_usage_count: dict[int, int] = {}
     print('Results: [NumResults, PeekPoolSize]')
     for pattern_name, _ in pattern_file:
         cputime = []
@@ -50,8 +50,16 @@ if __name__ == '__main__':
             cputime.append(parse_cputime(stderr))
 
             output = json.loads(stdout)
-            print('{}\t{}', output['NumResults'], output['PeekPoolSize'])
+            usage_count: dict = output['UsageCount']
+            for key, val in usage_count.items():
+                count = all_usage_count.get(key, 0)
+                all_usage_count[key] = count + val
+            print('{}\t {}'.format(output['NumResults'], output['PeekPoolSize']))
         all_cputime.append(cputime)
 
     print('CPU Time (sec):')
     print_methods[args.cpu_time](all_cputime)
+
+    print('TC-Query Trigger Count:')
+    for key, val in all_usage_count.items():
+        print('{}\t {}'.format(key, val))
