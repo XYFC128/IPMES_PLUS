@@ -12,14 +12,19 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+
+import org.apache.logging.log4j.core.net.Priority;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
+import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.FullMatch;
 import org.ipmes.match.MatchEdge;
 import org.ipmes.match.LightMatchResult;
 import org.ipmes.pattern.*;
+
+import com.google.common.collect.Interner;
 
 public class Main {
 
@@ -40,12 +45,17 @@ public class Main {
                 .dest("windowSize")
                 .setDefault(1800L)
                 .help("Time window size (sec) when joining.");
+        parser.addArgument("--debug")
+                .action(Arguments.storeTrue())
+                .setDefault(false)
+                .help("Output debug information.");
         parser.addArgument("pattern_prefix").type(String.class)
                 .required(true)
                 .help("The path prefix of pattern's files, e.g. ./data/patterns/TTP11");
         parser.addArgument("data_graph").type(String.class)
                 .required(true)
                 .help("The path to the preprocessed data graph");
+
         return parser;
     }
 
@@ -61,6 +71,7 @@ public class Main {
         }
         Boolean useRegex = ns.getBoolean("useRegex");
         Boolean isDarpa = ns.getBoolean("darpa");
+        Boolean isDebug = ns.getBoolean("debug");
         String ttpPrefix = ns.getString("pattern_prefix");
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
@@ -83,13 +94,16 @@ public class Main {
                 .parse(
                         new FileReader(ttpPrefix + "_node.json"),
                         new FileReader(ttpPrefix + "_edge.json"),
-                        extractor).get();
+                        extractor)
+                .get();
         TemporalRelation temporalPattern = TemporalRelation.parse(new FileReader(orelsFile)).get();
 
         LightMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
-        System.out.println("Patterns:");
-        spatialPattern.getEdges().forEach(System.out::println);
+        if (isDebug) {
+            System.out.println("Patterns:");
+            spatialPattern.getEdges().forEach(System.out::println);
+        }
 
         // Decomposition
         TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
@@ -108,9 +122,18 @@ public class Main {
         }
         sender.flushBuffers();
 
-        System.out.println("Match Results:");
+        System.out.println("peak pool size: " + join.getPeakPoolSize());
+        Integer[] usageCount = join.getUsageCount();
+        System.out.println("Usage Count:");
+        for (int i = 0; i < usageCount.length; i++) {
+            System.out.println(tcQueries.get(i).numEdges() + ": " + usageCount[i]);
+        }
         Collection<FullMatch> results = join.extractAnswer();
-        for (FullMatch result : results)
-            System.out.println(result);
+        if (isDebug) {
+            System.out.println("Match Results:");
+            for (FullMatch result : results)
+                System.out.println(result);
+        } else
+            System.out.println("Number of match results: " + results.size());
     }
 }

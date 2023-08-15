@@ -21,10 +21,13 @@ public class PriorityJoin implements Join {
     PriorityGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
     long windowSize;
+    int peakPoolSize;
+    int curPoolSize;
+    Integer[] usageCount;
 
     // constructor
     public PriorityJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
-                        ArrayList<TCQuery> subTCQueries) {
+            ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new HashSet<>();
@@ -34,6 +37,12 @@ public class PriorityJoin implements Join {
         this.partialMatchResult = (PriorityQueue<MatchResult>[]) new PriorityQueue[2 * TCQRelation.length - 1];
         for (int i = 0; i < TCQRelation.length; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
+        }
+        this.peakPoolSize = 0;
+        this.curPoolSize = 0;
+        this.usageCount = new Integer[subTCQueries.size()];
+        for (int i = 0; i < usageCount.length; i++) {
+            this.usageCount[i] = 0;
         }
     }
 
@@ -152,6 +161,7 @@ public class PriorityJoin implements Join {
         while (!this.partialMatchResult[bufferId].isEmpty() &&
                 latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime()) {
             this.partialMatchResult[bufferId].poll();
+            this.curPoolSize -= 1;
         }
         return;
     }
@@ -178,6 +188,7 @@ public class PriorityJoin implements Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
+        this.usageCount[tcQueryId] += 1;
         long latestTime = result.getLatestTime();
         // join
         int bufferId = toBufferIdx(tcQueryId);
@@ -190,7 +201,10 @@ public class PriorityJoin implements Join {
                 break;
             }
             this.partialMatchResult[bufferId].addAll(newEntries);
+            this.curPoolSize += newEntries.size();
             clearExpired(latestTime, getSibling(bufferId));
+            if (this.curPoolSize > this.peakPoolSize)
+                this.peakPoolSize = this.curPoolSize;
             newEntries = joinWithSibling(newEntries, bufferId);
             bufferId = getParent(bufferId);
         }
@@ -200,5 +214,13 @@ public class PriorityJoin implements Join {
         Collection<FullMatch> res = this.answer;
         this.answer = new HashSet<>();
         return res;
+    }
+
+    public int getPeakPoolSize() {
+        return this.peakPoolSize;
+    }
+
+    public Integer[] getUsageCount() {
+        return this.usageCount;
     }
 }

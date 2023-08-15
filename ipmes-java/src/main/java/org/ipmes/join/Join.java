@@ -11,4 +11,8 @@ public interface Join {
     public void addMatchResult(MatchResult result, Integer tcQueryId);
 
     public Collection<FullMatch> extractAnswer();
+
+    public int getPeakPoolSize();
+
+    public Integer[] getUsageCount();
 }

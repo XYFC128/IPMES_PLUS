@@ -30,10 +30,13 @@ public class NaiveJoin implements Join {
     // store the realtionships of sub TC Queries
     NaiveGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
+    int peakPoolSize;
+    int curPoolSize;
+    Integer[] usageCount;
 
     // constructor
     public NaiveJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
-                     ArrayList<TCQuery> subTCQueries) {
+            ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.answer = new ArrayList<MatchResult>();
@@ -43,6 +46,12 @@ public class NaiveJoin implements Join {
         this.mapForWindow = new TreeMap<Long, MatchResult>();
         this.windowSize = windowSize;
         this.bufferForPartialMatch = new ArrayList<MatchResult>();
+        this.peakPoolSize = 0;
+        this.curPoolSize = 0;
+        this.usageCount = new Integer[subTCQueries.size()];
+        for (int i = 0; i < usageCount.length; i++) {
+            this.usageCount[i] = 0;
+        }
     }
 
     /**
@@ -131,6 +140,7 @@ public class NaiveJoin implements Join {
                 MatchResult tmp = nextToRemove;
                 nextToRemove = nextToRemove.getNext();
                 this.expansionTable.remove(tmp);
+                this.curPoolSize -= 1;
             }
             // remove from FIFO
             this.mapForWindow.pollFirstEntry();
@@ -140,6 +150,7 @@ public class NaiveJoin implements Join {
 
     void joinMatchResult(MatchResult result, int tcQueryId) {
         boolean fit = true;
+        this.usageCount[tcQueryId] += 1;
         for (MatchResult entry : this.expansionTable) {
             // check whether entry and result overlap
             if (entry.hasShareEdge(result))
@@ -169,10 +180,14 @@ public class NaiveJoin implements Join {
                 this.answer.add(entry);
             else {
                 this.expansionTable.add(entry);
+                this.curPoolSize += 1;
                 if (this.mapForWindow.containsKey(entry.getEarliestTime()))
                     entry.setNext(this.mapForWindow.get(entry.getEarliestTime()));
                 this.mapForWindow.put(entry.getEarliestTime(), entry);
             }
+        }
+        if (this.curPoolSize > this.peakPoolSize) {
+            this.peakPoolSize = this.curPoolSize;
         }
     }
 
@@ -218,6 +233,14 @@ public class NaiveJoin implements Join {
         }
         this.answer.clear();
         return ret;
+    }
+
+    public int getPeakPoolSize() {
+        return this.peakPoolSize;
+    }
+
+    public Integer[] getUsageCount() {
+        return this.usageCount;
     }
 
 }
