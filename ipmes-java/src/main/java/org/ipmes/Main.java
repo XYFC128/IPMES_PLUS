@@ -135,9 +135,9 @@ public class Main {
         Collection<FullMatch> results = join.extractAnswer();
         output.put("NumResults", results.size());
         if (isDebug) {
-            System.out.println("Match Results:");
+            System.err.println("Match Results:");
             for (FullMatch result : results)
-                System.out.println(result);
+                System.err.println(result);
         }
 
         System.out.print(output.toString(2));
