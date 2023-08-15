@@ -140,6 +140,6 @@ public class Main {
                 System.err.println(result);
         }
 
-        System.out.print(output.toString(2));
+        System.out.println(output.toString(2));
     }
 }
