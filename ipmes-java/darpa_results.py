@@ -60,6 +60,6 @@ if __name__ == '__main__':
     print('CPU Time (sec):')
     print_methods[args.cpu_time](all_cputime)
 
-    print('TC-Query Trigger Count:')
-    for key, val in all_usage_count.items():
+    print('TC-Query Trigger Count: [TCQueryLen, Count]')
+    for key, val in sorted(all_usage_count.items()):
         print('{}\t {}'.format(key, val))
