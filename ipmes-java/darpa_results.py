@@ -52,6 +52,7 @@ if __name__ == '__main__':
             output = json.loads(stdout)
             usage_count: dict = output['UsageCount']
             for key, val in usage_count.items():
+                key = int(key)
                 count = all_usage_count.get(key, 0)
                 all_usage_count[key] = count + val
             print('{}\t {}'.format(output['NumResults'], output['PeekPoolSize']))
