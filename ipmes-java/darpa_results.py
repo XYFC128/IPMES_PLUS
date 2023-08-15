@@ -1,31 +1,12 @@
 from darpa import darpa_graphs, pattern_file
 import argparse
+import json
 
 def parse_cputime(stderr: str) -> float:
     lines = stderr.strip().split('\n')
     user_time = float(lines[-2].split()[1])
     sys_time = float(lines[-1].split()[1])
     return user_time + sys_time
-
-def parse_results(stdout: str) -> int:
-    result_start = stdout.find('Match Results:')
-    return stdout[result_start:].count('[')
-
-def read_results() -> tuple[list, list]:
-    all_results = []
-    all_cputime = []
-
-    for pattern_name, _ in pattern_file:
-        results = []
-        cputime = []
-        for graph in darpa_graphs:
-            output = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
-            results.append(parse_results(output))
-            cputime.append(parse_cputime(output))
-        all_results.append(results)
-        all_cputime.append(cputime)
-
-    return all_results, all_cputime
 
 def tabular_print(data: list[list]):
     for row in data:
@@ -51,10 +32,26 @@ if __name__ == '__main__':
                         choices=print_methods.keys(),
                         default='flatten',
                         help='The method to print the measured CPU time')
+    parser.add_argument('-p', '--pool-size',
+                        choices=print_methods.keys(),
+                        default='flatten',
+                        help='The method to print the measured CPU time')
     args = parser.parse_args()
-    all_results, all_cputime = read_results()
-    print('Results:')
-    print_methods[args.results](all_results)
+
+
+    all_cputime = []
+
+    print('Results: [NumResults, PeekPoolSize]')
+    for pattern_name, _ in pattern_file:
+        cputime = []
+        for graph in darpa_graphs:
+            stdout = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
+            stderr = open(f'../results/{pattern_name}_{graph}.err', 'r').read()
+            cputime.append(parse_cputime(stderr))
+
+            output = json.loads(stdout)
+            print('{}\t{}', output['NumResults'], output['PeekPoolSize'])
+        all_cputime.append(cputime)
 
     print('CPU Time (sec):')
     print_methods[args.cpu_time](all_cputime)
