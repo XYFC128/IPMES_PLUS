@@ -2,10 +2,7 @@ package org.ipmes;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
@@ -13,7 +10,6 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
-import org.apache.logging.log4j.core.net.Priority;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
@@ -24,7 +20,7 @@ import org.ipmes.match.MatchEdge;
 import org.ipmes.match.LightMatchResult;
 import org.ipmes.pattern.*;
 
-import com.google.common.collect.Interner;
+import org.json.JSONObject;
 
 public class Main {
 
@@ -101,8 +97,8 @@ public class Main {
         LightMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
         if (isDebug) {
-            System.out.println("Patterns:");
-            spatialPattern.getEdges().forEach(System.out::println);
+            System.err.println("Patterns:");
+            spatialPattern.getEdges().forEach(System.err::println);
         }
 
         // Decomposition
@@ -122,18 +118,28 @@ public class Main {
         }
         sender.flushBuffers();
 
-        System.out.println("peak pool size: " + join.getPeakPoolSize());
+        // output
+        JSONObject output = new JSONObject();
+
+        output.put("PeekPoolSize", join.getPeakPoolSize());
+
         Integer[] usageCount = join.getUsageCount();
-        System.out.println("Usage Count:");
+        Map<Integer, Integer> usageCountMap = new HashMap<>();
         for (int i = 0; i < usageCount.length; i++) {
-            System.out.println(tcQueries.get(i).numEdges() + ": " + usageCount[i]);
+            int len = tcQueries.get(i).numEdges();
+            int count = usageCountMap.getOrDefault(tcQueries.get(i).numEdges(), 0);
+            usageCountMap.put(len, count + usageCount[i]);
         }
+        output.put("UsageCount", usageCountMap);
+
         Collection<FullMatch> results = join.extractAnswer();
+        output.put("NumResults", results.size());
         if (isDebug) {
             System.out.println("Match Results:");
             for (FullMatch result : results)
                 System.out.println(result);
-        } else
-            System.out.println("Number of match results: " + results.size());
+        }
+
+        System.out.print(output.toString(2));
     }
 }
