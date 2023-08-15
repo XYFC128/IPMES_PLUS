@@ -57,4 +57,4 @@ if __name__ == '__main__':
     print_methods[args.results](all_results)
 
     print('CPU Time (sec):')
-    print_methods[args.cpu_time](all_results)
+    print_methods[args.cpu_time](all_cputime)
