@@ -13,11 +13,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
-import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.FullMatch;
-import org.ipmes.match.MatchEdge;
-import org.ipmes.match.LightMatchResult;
+import org.ipmes.match.LiteMatchResult;
 import org.ipmes.pattern.*;
 
 import org.json.JSONObject;
@@ -94,7 +92,7 @@ public class Main {
                 .get();
         TemporalRelation temporalPattern = TemporalRelation.parse(new FileReader(orelsFile)).get();
 
-        LightMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
+        LiteMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
         if (isDebug) {
             System.err.println("Patterns:");
@@ -121,7 +119,7 @@ public class Main {
         // output
         JSONObject output = new JSONObject();
 
-        output.put("PeekPoolSize", join.getPeakPoolSize());
+        output.put("PeekPoolSize", join.getPeakPoolSize() + matcher.getMaxPoolSize());
 
         Integer[] usageCount = join.getUsageCount();
         Map<Integer, Integer> usageCountMap = new HashMap<>();

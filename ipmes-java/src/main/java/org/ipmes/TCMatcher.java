@@ -3,7 +3,7 @@ package org.ipmes;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
 import org.ipmes.match.MatchEdge;
-import org.ipmes.match.LightMatchResult;
+import org.ipmes.match.LiteMatchResult;
 import org.ipmes.pattern.PatternEdge;
 
 import java.util.*;
@@ -14,9 +14,11 @@ public class TCMatcher {
     boolean useRegex;
     long windowSize;
     ArrayList<Pattern> regexPatterns;
-    ArrayDeque<LightMatchResult>[] buffers;
+    ArrayDeque<LiteMatchResult>[] buffers;
     int[] tcQueryId;
     Join join;
+    int poolSize;
+    int maxPoolSize;
     public TCMatcher(Collection<TCQuery> tcQueries, boolean useRegex, long windowSize, Join join) {
         this.windowSize = windowSize;
         this.join = join;
@@ -30,11 +32,13 @@ public class TCMatcher {
         this.useRegex = useRegex;
         if (useRegex)
             compileRegex();
+        this.poolSize = 0;
+        this.maxPoolSize = 0;
     }
 
     void initBuffers(Collection<TCQuery> tcQueries) {
         int len = this.totalOrder.size();
-        this.buffers = (ArrayDeque<LightMatchResult>[]) new ArrayDeque[len];
+        this.buffers = (ArrayDeque<LiteMatchResult>[]) new ArrayDeque[len];
         this.tcQueryId = new int[len];
 
         int cur = 0;
@@ -43,9 +47,13 @@ public class TCMatcher {
                 this.tcQueryId[i] = q.getId();
                 this.buffers[i] = new ArrayDeque<>();
             }
-            this.buffers[cur].add(new LightMatchResult());
+            this.buffers[cur].add(new LiteMatchResult());
             cur += q.numEdges();
         }
+    }
+
+    public int getMaxPoolSize() {
+        return this.maxPoolSize;
     }
 
     public void compileRegex() {
@@ -56,16 +64,28 @@ public class TCMatcher {
     }
 
     void clearExpired(int bufferId, long before) {
-        ArrayDeque<LightMatchResult> buffer = this.buffers[bufferId];
+        ArrayDeque<LiteMatchResult> buffer = this.buffers[bufferId];
+        int cleared = 0;
         while (!buffer.isEmpty() && buffer.peekFirst().getEarliestTime() < before) {
             buffer.pollFirst();
+            ++cleared;
+        }
+        this.poolSize -= cleared;
+    }
+
+    void putIntoBuffer(int bufferId, Collection<LiteMatchResult> newEntries) {
+        this.buffers[bufferId].addAll(newEntries);
+        int len = newEntries.size();
+        if (len > 0) {
+            this.poolSize += len;
+            this.maxPoolSize = Math.max(this.poolSize, this.maxPoolSize);
         }
     }
 
-    ArrayList<LightMatchResult> mergeWithBuffer(MatchEdge match, int bufferId) {
-        Collection<LightMatchResult> buffer = this.buffers[bufferId];
-        ArrayList<LightMatchResult> merged = new ArrayList<>();
-        for (LightMatchResult result : buffer) {
+    ArrayList<LiteMatchResult> mergeWithBuffer(MatchEdge match, int bufferId) {
+        Collection<LiteMatchResult> buffer = this.buffers[bufferId];
+        ArrayList<LiteMatchResult> merged = new ArrayList<>();
+        for (LiteMatchResult result : buffer) {
             if (result.hasNodeConflict(match) || result.contains(match))
                 continue;
             merged.add(result.cloneAndAdd(match));
@@ -79,7 +99,7 @@ public class TCMatcher {
 
         final int numEdges = this.totalOrder.size();
         PatternEdge matched = totalOrder.get(ord);
-        ArrayList<LightMatchResult> newResults = new ArrayList<>();
+        ArrayList<LiteMatchResult> newResults = new ArrayList<>();
         for (EventEdge event : events) {
             if (!match(ord, event))
                 continue;
@@ -89,10 +109,10 @@ public class TCMatcher {
         }
 
         if (ord == numEdges - 1 || tcQueryId[ord] != tcQueryId[ord + 1]) {
-            for (LightMatchResult res : newResults)
+            for (LiteMatchResult res : newResults)
                 join.addMatchResult(res.toMatchResult(), tcQueryId[ord]);
         } else {
-            this.buffers[ord + 1].addAll(newResults);
+            putIntoBuffer(ord + 1, newResults);
         }
     }
 
