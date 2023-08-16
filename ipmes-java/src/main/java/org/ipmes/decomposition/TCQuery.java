@@ -4,6 +4,7 @@ import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternNode;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Time-Connected Query.
@@ -81,5 +82,11 @@ public class TCQuery {
     // setter of TCQueryID
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        String edges = this.edges.stream().map((edge) -> edge.getId().toString()).collect(Collectors.joining(", "));
+        return String.format("%d: {%s}", this.id, edges);
     }
 }

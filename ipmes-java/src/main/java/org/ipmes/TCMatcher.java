@@ -107,7 +107,8 @@ public class TCMatcher {
 
         if (ord == numEdges - 1 || tcQueryId[ord] != tcQueryId[ord + 1]) {
             for (LiteMatchResult res : newResults)
-                join.addMatchResult(res.toMatchResult(), tcQueryId[ord]);
+                if (res.checkNodeUniqueness())
+                    join.addMatchResult(res.toMatchResult(), tcQueryId[ord]);
         } else {
             putIntoBuffer(ord + 1, newResults);
         }

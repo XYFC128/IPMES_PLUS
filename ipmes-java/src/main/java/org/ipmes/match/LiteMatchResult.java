@@ -37,6 +37,18 @@ public class LiteMatchResult {
         return false;
     }
 
+    public boolean checkNodeUniqueness() {
+        HashSet<Long> nodeSet = new HashSet<>();
+        for (long id : this.nodeIdMap) {
+            if (id == -1)
+                continue;
+            if (nodeSet.contains(id))
+                return false;
+            nodeSet.add(id);
+        }
+        return true;
+    }
+
     void addNodeId(long nodeId, int matchedId) {
         if (nodeIdMap[matchedId] == -1)
             ++numNodes;

@@ -103,6 +103,11 @@ public class Main {
         TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
 
+        if (isDebug) {
+            System.err.println("TC Queries:");
+            tcQueries.forEach(System.err::println);
+        }
+
         Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
 
         BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
