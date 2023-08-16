@@ -5,5 +5,5 @@ pattern_file = [
     ('DP4', 'TTP3_regex'),
     ('DP5', 'TTP4_regex'),
 ]
-darpa_graphs = ['dd1', 'dd2', 'dd3', 'dd4']
+graphs = ['dd1', 'dd2', 'dd3', 'dd4']
 
