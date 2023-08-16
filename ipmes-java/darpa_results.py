@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
             output = json.loads(stdout)
             usage_count: dict = output['UsageCount']
-            for key, val in pattern_usage_count.items():
+            for key, val in usage_count.items():
                 key = int(key)
                 count = pattern_usage_count.get(key, 0)
                 pattern_usage_count[key] = count + val
