@@ -18,7 +18,6 @@ public class TCMatcher {
     int[] tcQueryId;
     Join join;
     int poolSize;
-    int maxPoolSize;
     public TCMatcher(Collection<TCQuery> tcQueries, boolean useRegex, long windowSize, Join join) {
         this.windowSize = windowSize;
         this.join = join;
@@ -33,7 +32,6 @@ public class TCMatcher {
         if (useRegex)
             compileRegex();
         this.poolSize = 0;
-        this.maxPoolSize = 0;
     }
 
     void initBuffers(Collection<TCQuery> tcQueries) {
@@ -52,8 +50,8 @@ public class TCMatcher {
         }
     }
 
-    public int getMaxPoolSize() {
-        return this.maxPoolSize;
+    public int getPoolSize() {
+        return this.poolSize;
     }
 
     public void compileRegex() {
@@ -78,7 +76,6 @@ public class TCMatcher {
         int len = newEntries.size();
         if (len > 0) {
             this.poolSize += len;
-            this.maxPoolSize = Math.max(this.poolSize, this.maxPoolSize);
         }
     }
 

@@ -110,16 +110,18 @@ public class Main {
 
         TCMatcher matcher = new TCMatcher(tcQueries, useRegex, windowSize, join);
         EventSender sender = new EventSender(matcher);
+        int maxPoolSize = 0;
         while (line != null) {
             sender.sendLine(line);
             line = inputReader.readLine();
+            maxPoolSize = Math.max(maxPoolSize, join.getPoolSize() + matcher.getPoolSize());
         }
         sender.flushBuffers();
 
         // output
         JSONObject output = new JSONObject();
 
-        output.put("PeekPoolSize", join.getPeakPoolSize() + matcher.getMaxPoolSize());
+        output.put("PeekPoolSize", maxPoolSize);
 
         Integer[] usageCount = join.getUsageCount();
         Map<Integer, Integer> usageCountMap = new HashMap<>();

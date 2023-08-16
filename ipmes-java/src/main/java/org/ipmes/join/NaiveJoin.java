@@ -30,7 +30,6 @@ public class NaiveJoin implements Join {
     // store the realtionships of sub TC Queries
     NaiveGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
-    int peakPoolSize;
     int curPoolSize;
     Integer[] usageCount;
 
@@ -46,7 +45,6 @@ public class NaiveJoin implements Join {
         this.mapForWindow = new TreeMap<Long, MatchResult>();
         this.windowSize = windowSize;
         this.bufferForPartialMatch = new ArrayList<MatchResult>();
-        this.peakPoolSize = 0;
         this.curPoolSize = 0;
         this.usageCount = new Integer[subTCQueries.size()];
         for (int i = 0; i < usageCount.length; i++) {
@@ -186,9 +184,6 @@ public class NaiveJoin implements Join {
                 this.mapForWindow.put(entry.getEarliestTime(), entry);
             }
         }
-        if (this.curPoolSize > this.peakPoolSize) {
-            this.peakPoolSize = this.curPoolSize;
-        }
     }
 
     /**
@@ -235,8 +230,8 @@ public class NaiveJoin implements Join {
         return ret;
     }
 
-    public int getPeakPoolSize() {
-        return this.peakPoolSize;
+    public int getPoolSize() {
+        return this.curPoolSize;
     }
 
     public Integer[] getUsageCount() {

@@ -21,7 +21,6 @@ public class PriorityJoin implements Join {
     PriorityGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
     long windowSize;
-    int peakPoolSize;
     int curPoolSize;
     Integer[] usageCount;
 
@@ -38,7 +37,6 @@ public class PriorityJoin implements Join {
         for (int i = 0; i < TCQRelation.length; i++) {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
-        this.peakPoolSize = 0;
         this.curPoolSize = 0;
         this.usageCount = new Integer[subTCQueries.size()];
         for (int i = 0; i < usageCount.length; i++) {
@@ -203,8 +201,6 @@ public class PriorityJoin implements Join {
             this.partialMatchResult[bufferId].addAll(newEntries);
             this.curPoolSize += newEntries.size();
             clearExpired(latestTime, getSibling(bufferId));
-            if (this.curPoolSize > this.peakPoolSize)
-                this.peakPoolSize = this.curPoolSize;
             newEntries = joinWithSibling(newEntries, bufferId);
             bufferId = getParent(bufferId);
         }
@@ -216,8 +212,8 @@ public class PriorityJoin implements Join {
         return res;
     }
 
-    public int getPeakPoolSize() {
-        return this.peakPoolSize;
+    public int getPoolSize() {
+        return this.curPoolSize;
     }
 
     public Integer[] getUsageCount() {
