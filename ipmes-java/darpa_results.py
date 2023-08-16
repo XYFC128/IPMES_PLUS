@@ -24,15 +24,7 @@ print_methods = {
 if __name__ == '__main__':
     parser = parser = argparse.ArgumentParser(
                     description='Print the DARPA run results')
-    parser.add_argument('-r', '--results',
-                        choices=print_methods.keys(),
-                        default='tabular',
-                        help='The method to print the number of match results')
     parser.add_argument('-t', '--cpu-time',
-                        choices=print_methods.keys(),
-                        default='flatten',
-                        help='The method to print the measured CPU time')
-    parser.add_argument('-p', '--pool-size',
                         choices=print_methods.keys(),
                         default='flatten',
                         help='The method to print the measured CPU time')
@@ -40,10 +32,11 @@ if __name__ == '__main__':
 
 
     all_cputime = []
-    all_usage_count: dict[int, int] = {}
+    all_usage_count: list[dict[int, int]] = []
     print('Results: [NumResults, PeekPoolSize]')
     for pattern_name, _ in pattern_file:
         cputime = []
+        pattern_usage_count: dict[int, int] = {}
         for graph in darpa_graphs:
             stdout = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
             stderr = open(f'../results/{pattern_name}_{graph}.err', 'r').read()
@@ -51,16 +44,18 @@ if __name__ == '__main__':
 
             output = json.loads(stdout)
             usage_count: dict = output['UsageCount']
-            for key, val in usage_count.items():
+            for key, val in pattern_usage_count.items():
                 key = int(key)
-                count = all_usage_count.get(key, 0)
-                all_usage_count[key] = count + val
+                count = pattern_usage_count.get(key, 0)
+                pattern_usage_count[key] = count + val
             print('{}\t {}'.format(output['NumResults'], output['PeekPoolSize']))
+        all_usage_count.append(pattern_usage_count)
         all_cputime.append(cputime)
 
     print('CPU Time (sec):')
     print_methods[args.cpu_time](all_cputime)
 
     print('TC-Query Trigger Count: [TCQueryLen, Count]')
-    for key, val in sorted(all_usage_count.items()):
-        print('{}\t {}'.format(key, val))
+    for pattern_usage_count in all_usage_count:
+        for key, val in sorted(pattern_usage_count.items()):
+            print('{}\t {}'.format(key, val))
