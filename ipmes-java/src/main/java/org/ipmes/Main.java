@@ -126,7 +126,7 @@ public class Main {
         // output
         JSONObject output = new JSONObject();
 
-        output.put("PeekPoolSize", maxPoolSize);
+        output.put("PeakPoolSize", maxPoolSize);
 
         Integer[] usageCount = join.getUsageCount();
         Map<Integer, Integer> usageCountMap = new HashMap<>();
