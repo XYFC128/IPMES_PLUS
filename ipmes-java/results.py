@@ -1,4 +1,3 @@
-from darpa import darpa_graphs, pattern_file
 import argparse
 import json
 
@@ -23,13 +22,21 @@ print_methods = {
 
 if __name__ == '__main__':
     parser = parser = argparse.ArgumentParser(
-                    description='Print the DARPA run results')
+                    description='Print the run results')
     parser.add_argument('-t', '--cpu-time',
                         choices=print_methods.keys(),
                         default='flatten',
                         help='The method to print the measured CPU time')
+    parser.add_argument('-d', '--dataset',
+                        choices=['darpa', 'spade'],
+                        default='darpa',
+                        help='The dataset we ran on.')
     args = parser.parse_args()
 
+    if args.dataset == 'darpa':
+        from darpa import graphs, pattern_file
+    else:
+        from spade import graphs, pattern_file
 
     all_cputime = []
     all_usage_count: list[dict[int, int]] = []
@@ -37,7 +44,7 @@ if __name__ == '__main__':
     for pattern_name, _ in pattern_file:
         cputime = []
         pattern_usage_count: dict[int, int] = {}
-        for graph in darpa_graphs:
+        for graph in graphs:
             stdout = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
             stderr = open(f'../results/{pattern_name}_{graph}.err', 'r').read()
             cputime.append(parse_cputime(stderr))
