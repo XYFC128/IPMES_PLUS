@@ -8,8 +8,8 @@ pattern_file = [
     ('SP7', 'TTP7_regex'),
     ('SP8', 'TTP8_regex'),
     ('SP9', 'TTP9_regex'),
-    ('SP10', 'TTP10_regex'),
-    ('SP11', 'TTP11_regex'),
-    ('SP12', 'TTP12_regex'),
+    ('SP10', 'TTP9-2_regex'),
+    ('SP11', 'TTP10_regex'),
+    ('SP12', 'TTP11_regex'),
 ]
 graphs = ['attack', 'mix', 'benign']
