@@ -66,3 +66,4 @@ if __name__ == '__main__':
     for pattern_usage_count in all_usage_count:
         for key, val in sorted(pattern_usage_count.items()):
             print('{}\t {}'.format(key, val))
+        print()
