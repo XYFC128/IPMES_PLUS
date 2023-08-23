@@ -131,6 +131,14 @@ public class PriorityJoin implements Join {
                                 .contains(edgeInEntry.matchId()));
     }
 
+    /**
+     * check whether the result and the entry fit the relations.
+     * 
+     * @param result
+     * @param entry
+     * @param bufferId
+     * @return true if fit all the relations.
+     */
     boolean checkRelations(MatchResult result, MatchResult entry, int bufferId) {
         for (TCQueryRelation relation : this.TCQRelation[bufferId]) {
             if (!(checkSpatialRelation(result.get(relation.idOfResult),
@@ -143,6 +151,13 @@ public class PriorityJoin implements Join {
         return true;
     }
 
+    /**
+     * join new entries with sibling buffer
+     * 
+     * @param newEntries
+     * @param bufferId
+     * @return the results of join with sibling buffer
+     */
     ArrayList<MatchResult> joinWithSibling(ArrayList<MatchResult> newEntries, int bufferId) {
         int siblingId = getSibling(bufferId);
         ArrayList<MatchResult> ret = new ArrayList<>();
@@ -155,6 +170,12 @@ public class PriorityJoin implements Join {
         return ret;
     }
 
+    /**
+     * clean up expired partial matches
+     * 
+     * @param latestTime current time
+     * @param bufferId   the buffer we want to clean up
+     */
     void clearExpired(long latestTime, int bufferId) {
         while (!this.partialMatchResult[bufferId].isEmpty() &&
                 latestTime - this.windowSize > this.partialMatchResult[bufferId].peek().getEarliestTime()) {
@@ -206,6 +227,9 @@ public class PriorityJoin implements Join {
         }
     }
 
+    /**
+     * extract full match result.
+     */
     public Collection<FullMatch> extractAnswer() {
         Collection<FullMatch> res = this.answer;
         this.answer = new HashSet<>();

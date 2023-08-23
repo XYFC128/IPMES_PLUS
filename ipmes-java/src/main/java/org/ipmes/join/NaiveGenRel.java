@@ -24,6 +24,13 @@ public class NaiveGenRel {
         return this.relations;
     }
 
+    /**
+     * check whether two edges have any temporal or spatial relationship
+     * 
+     * @param edge1
+     * @param edge2
+     * @return true if have relation.
+     */
     boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
         return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
                 || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())

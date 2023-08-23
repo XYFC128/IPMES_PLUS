@@ -146,6 +146,12 @@ public class NaiveJoin implements Join {
         return;
     }
 
+    /**
+     * join matchResult to the table.
+     * 
+     * @param result    new match result we want to deal with
+     * @param tcQueryId id of the MatchResult
+     */
     void joinMatchResult(MatchResult result, int tcQueryId) {
         boolean fit = true;
         this.usageCount[tcQueryId] += 1;
@@ -170,6 +176,10 @@ public class NaiveJoin implements Join {
             }
         }
     }
+
+    /**
+     * add the MatchResults from bufferForPartialMatch to expansionTable
+     */
 
     private void insertToTable() {
         int ansSize = this.spatialRelation.numEdges();
@@ -221,6 +231,9 @@ public class NaiveJoin implements Join {
         this.bufferForPartialMatch.clear();
     }
 
+    /**
+     * extract full match result.
+     */
     public Collection<FullMatch> extractAnswer() {
         ArrayList<FullMatch> ret = new ArrayList<>();
         for (MatchResult result : this.answer) {

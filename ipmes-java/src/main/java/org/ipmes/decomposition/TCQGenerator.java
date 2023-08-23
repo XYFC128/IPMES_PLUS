@@ -44,6 +44,13 @@ public class TCQGenerator {
         return this.TCQRelation;
     }
 
+    /**
+     * Check whether edge and parents have share node
+     * 
+     * @param edge    the target edge
+     * @param parents parents of the edge
+     * @return true if have share node
+     */
     boolean hasSharedNode(PatternEdge edge, ArrayList<PatternEdge> parents) {
         if (parents.isEmpty())
             return true;
@@ -84,6 +91,14 @@ public class TCQGenerator {
         parents.remove(parents.size() - 1);
     }
 
+    /**
+     * check whether the target TCQuery contains edges already selected
+     * 
+     * @param subQuery       target TCQuery we want to check
+     * @param isEdgeSelected which edges are selected
+     * @return true if target TCQuery overlaps selected partial match result.
+     */
+
     boolean containsSelectedEdge(TCQuery subQuery, boolean[] isEdgeSelected) {
         for (PatternEdge e : subQuery.getEdges()) {
             if (isEdgeSelected[e.getId()]) {
@@ -122,6 +137,13 @@ public class TCQGenerator {
         return selectedTCQ;
     }
 
+    /**
+     * check whether two edges have any temporal or spatial relationship
+     * 
+     * @param edge1
+     * @param edge2
+     * @return true if have relation.
+     */
     boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
         return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
                 || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())

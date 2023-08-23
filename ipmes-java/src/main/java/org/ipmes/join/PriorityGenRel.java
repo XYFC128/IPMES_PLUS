@@ -15,7 +15,8 @@ public class PriorityGenRel {
     ArrayList<TCQueryRelation>[] relations;
     ArrayList<TCQuery> subTCQueries;
 
-    public PriorityGenRel(TemporalRelation temporalRelation, PatternGraph spatialRelation, ArrayList<TCQuery> selected) {
+    public PriorityGenRel(TemporalRelation temporalRelation, PatternGraph spatialRelation,
+            ArrayList<TCQuery> selected) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
         this.subTCQueries = selected;
@@ -26,12 +27,26 @@ public class PriorityGenRel {
         return this.relations;
     }
 
+    /**
+     * check whether two edges have any temporal or spatial relationship.
+     * 
+     * @param edge1
+     * @param edge2
+     * @return true if have relation.
+     */
     boolean hasRelations(PatternEdge edge1, PatternEdge edge2) {
         return this.temporalRelation.getParents(edge1.getId()).contains(edge2.getId())
                 || this.temporalRelation.getChildren(edge1.getId()).contains(edge2.getId())
                 || (!this.spatialRelation.getSharedNodes(edge1.getId(), edge2.getId()).isEmpty());
     }
 
+    /**
+     * use this method to record the relations between two methods.
+     * 
+     * @param resultId the selected TCQuery's bufferId
+     * @param entryId  bufferId of the entry the selected TCQuery want to join
+     * @return the relations between two TCQueries
+     */
     ArrayList<TCQueryRelation> helperForGenerate(int resultId, int entryId) {
         ArrayList<TCQueryRelation> ret = new ArrayList<TCQueryRelation>();
         for (PatternEdge edge1 : this.subTCQueries.get((resultId + 1) / 2).getEdges()) {
@@ -47,6 +62,13 @@ public class PriorityGenRel {
         return ret;
     }
 
+    /**
+     * Generate the relation of buffer and its sibling, if the bufferId is even,
+     * resultId would be 0, 1, 3, 5..., and entryId would be id+1
+     * 
+     * @param id the bufferId of the relations we want to generate.
+     * @return relations of buffer and its sibling.
+     */
     ArrayList<TCQueryRelation> evenGenRel(int id) {
         ArrayList<TCQueryRelation> ret = new ArrayList<TCQueryRelation>();
         int entryId = id + 1, resultId = 0;
@@ -56,6 +78,13 @@ public class PriorityGenRel {
         return ret;
     }
 
+    /**
+     * Generate the relation of buffer and its sibling, if the bufferId is odd,
+     * resultId would be id, and entryId would be 0, 1, 3, 5...
+     * 
+     * @param id the bufferId of the relations we want to generate.
+     * @return relations of buffer and its sibling.
+     */
     ArrayList<TCQueryRelation> oddGenRel(int id) {
         ArrayList<TCQueryRelation> ret = new ArrayList<TCQueryRelation>();
         int resultId = id, entryId = 0;
