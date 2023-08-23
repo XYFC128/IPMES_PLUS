@@ -3,6 +3,7 @@ package org.ipmes;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
+import java.lang.Runtime;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
@@ -116,10 +117,13 @@ public class Main {
         TCMatcher matcher = new TCMatcher(tcQueries, useRegex, windowSize, join);
         EventSender sender = new EventSender(matcher);
         int maxPoolSize = 0;
+        Runtime jvm = Runtime.getRuntime();
+        long maxHeapSize = jvm.totalMemory();
         while (line != null) {
             sender.sendLine(line);
             line = inputReader.readLine();
             maxPoolSize = Math.max(maxPoolSize, join.getPoolSize() + matcher.getPoolSize());
+            maxHeapSize = Math.max(maxHeapSize, jvm.totalMemory());
         }
         sender.flushBuffers();
 
@@ -127,6 +131,7 @@ public class Main {
         JSONObject output = new JSONObject();
 
         output.put("PeakPoolSize", maxPoolSize);
+        output.put("PeakHeapSize", maxHeapSize);
 
         Integer[] usageCount = join.getUsageCount();
         Map<Integer, Integer> usageCountMap = new HashMap<>();
