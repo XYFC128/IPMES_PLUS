@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     all_cputime = []
     all_usage_count: list[dict[int, int]] = []
-    print('Results: [NumResults, PeakPoolSize]')
+    print('Results: [NumResults, PeakPoolSize, PeakHeapSize]')
     for pattern_name, _ in pattern_file:
         cputime = []
         pattern_usage_count: dict[int, int] = {}
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 key = int(key)
                 count = pattern_usage_count.get(key, 0)
                 pattern_usage_count[key] = count + val
-            print('{}\t {}'.format(output['NumResults'], output['PeakPoolSize']))
+            print('{}\t {}\t {}'.format(output['NumResults'], output['PeakPoolSize'], output['PeakHeapSize']))
         all_usage_count.append(pattern_usage_count)
         all_cputime.append(cputime)
 
