@@ -32,6 +32,8 @@ expected output:
 
 #### Input format for pattern graph
 
+See the example at [TTP11_regex_edge](data/patterns/TTP11_regex_edge.json)
+
 #### Input format for pattern order relations
 
 The oRels file reprensents the order relations of the edges in the pattern.
@@ -58,15 +60,19 @@ The order relations is expressed in a connected DAG with a root. The root is a v
 
 In the DAG, the parents are the dependencies of it's childs, meaning the occurrence of a child must after all of it's parent.
 
+See the example at [TTP11_oRels](data/patterns/TTP11_oRels.json)
+
 #### Input format for provanence graph
 
-The fields in the csv: [`start_time`, `end_time`, `event_sig`, `eid`, `start_id`, `end_id`]
+In csv format. The columns in the csv: [`start_time`, `end_time`, `event_sig`, `eid`, `start_id`, `end_id`]
 - `start_time`: the event start time
 - `end_time`:   the event end time
 - `event_sig`:  event signature, a signature is in the format: `{edge label}#{start node label}#{end node label}`
 - `eid`:        edge id
 - `start_id`:   id of the start node
 - `end_id`:     id of the end node
+
+You can download the preprocessed provanence graph at [link](https://drive.google.com/file/d/1Iwydm_JaF1p2fls1KXazExIxfnjygUeY/view?usp=sharing)
 
 ### Solution
 The workflow of **IPMES** is
