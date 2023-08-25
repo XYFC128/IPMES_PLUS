@@ -132,3 +132,12 @@ named arguments:
                          Time window size (sec) when joining. (default: 1800)
   --debug                Output debug information. (default: false)
 ```
+
+## Directory Structure
+
+- `data/`: the example input data for the program
+    - `patterns/`: the patterns for the SPADE dataset
+    - `darpa_pattern/`: the patterns for the DARPA dataset
+- `ipmes-python/`: the Python implementation of IPMES which is deprecated now. The files are kept in the repository for data preprocessing.
+- `ipmes-java/`: the java implementation for IPMES
+    - For a more detailed description of the folder, please read the README in the folder
