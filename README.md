@@ -74,6 +74,24 @@ In csv format. The columns in the csv: [`start_time`, `end_time`, `event_sig`, `
 
 You can download the preprocessed provanence graph at [link](https://drive.google.com/file/d/1Iwydm_JaF1p2fls1KXazExIxfnjygUeY/view?usp=sharing)
 
+#### Output Format
+
+The output contains the number of matched subgraphs, memory usage and other metircs.
+The example output format is:
+```json
+{
+  "PeakHeapSize": 522190848,
+  "NumResults": 1000,
+  "UsageCount": {
+    "1": 7490,
+    "7": 1133
+  },
+  "PeakPoolSize": 2336
+}
+```
+
+If enable the debug options (--debug), the edge id of all edges in each matched subgraph will be printed to stderr.
+
 ### Solution
 The workflow of **IPMES** is
 1. Convert raw input data into DataEdges.
