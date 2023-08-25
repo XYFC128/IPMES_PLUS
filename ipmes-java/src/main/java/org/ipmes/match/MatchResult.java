@@ -2,6 +2,9 @@ package org.ipmes.match;
 
 import java.util.*;
 
+/**
+ * The partial match result for the entire pattern.
+ */
 public class MatchResult {
     int hash;
     HashMap<Integer, MatchEdge> results;

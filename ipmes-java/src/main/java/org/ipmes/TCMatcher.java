@@ -9,6 +9,9 @@ import org.ipmes.pattern.PatternEdge;
 import java.util.*;
 import com.google.re2j.Pattern;
 
+/**
+ * This class is responsible for matching TC-Queries.
+ */
 public class TCMatcher {
     ArrayList<PatternEdge> totalOrder;
     boolean useRegex;
@@ -37,7 +40,8 @@ public class TCMatcher {
     void initBuffers(Collection<TCQuery> tcQueries) {
         int len = this.totalOrder.size();
         this.buffers = (ArrayDeque<LiteMatchResult>[]) new ArrayDeque[len];
-        this.tcQueryId = new int[len];
+        this.tcQueryId = new int[len + 1];
+        tcQueryId[len] = -1;
 
         int cur = 0;
         for (TCQuery q : tcQueries) {
@@ -105,7 +109,7 @@ public class TCMatcher {
             newResults.addAll(mergeWithBuffer(match, ord));
         }
 
-        if (ord == numEdges - 1 || tcQueryId[ord] != tcQueryId[ord + 1]) {
+        if (tcQueryId[ord] != tcQueryId[ord + 1]) {
             for (LiteMatchResult res : newResults)
                 if (res.checkNodeUniqueness())
                     join.addMatchResult(res.toMatchResult(), tcQueryId[ord]);

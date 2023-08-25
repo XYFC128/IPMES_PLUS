@@ -2,6 +2,9 @@ package org.ipmes.pattern;
 
 import org.json.JSONObject;
 
+/**
+ * Extract signatures from the pattern in darpa dataset.
+ */
 public class DarpaExtractor implements SigExtractor {
     public String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");

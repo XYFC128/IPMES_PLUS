@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 public class SignatureExtractionTest {
     @Test
     public void nodeSignature() {
-        SigExtractor extractor = new SimPatternExtractor();
+        SigExtractor extractor = new SpadePatternExtractor();
         assertEquals(
                 "Process::hello.sh",
                 extractor.extractNodeSignature(new JSONObject("{\"properties\":{\"type\":\"Process\",\"subtype\":\"process\",\"name\":\"hello.sh\"}}"))

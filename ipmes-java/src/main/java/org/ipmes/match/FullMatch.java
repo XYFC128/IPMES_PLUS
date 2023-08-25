@@ -2,6 +2,9 @@ package org.ipmes.match;
 
 import java.util.Arrays;
 
+/**
+ * Holds the full match of a pattern.
+ */
 public class FullMatch {
     long[] matchData;
 

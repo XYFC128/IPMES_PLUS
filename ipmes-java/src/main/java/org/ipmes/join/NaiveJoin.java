@@ -13,6 +13,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.TreeMap;
 
+/**
+ * The naive way to join the partial matches with a huge table.
+ */
 public class NaiveJoin implements Join {
 
     TemporalRelation temporalRelation;

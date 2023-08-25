@@ -8,6 +8,9 @@ import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternGraph;
 
+/**
+ * Relation generator for NaiveJoin.
+ */
 public class NaiveGenRel {
 
     TemporalRelation temporalRelation;

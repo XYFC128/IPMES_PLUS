@@ -10,6 +10,9 @@ import org.ipmes.pattern.PatternGraph;
 
 import java.util.*;
 
+/**
+ * The organized table approach to join partial matches.
+ */
 public class PriorityJoin implements Join {
     TemporalRelation temporalRelation;
     PatternGraph spatialRelation;

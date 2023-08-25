@@ -8,6 +8,9 @@ import org.ipmes.pattern.TemporalRelation;
 import org.ipmes.pattern.PatternEdge;
 import org.ipmes.pattern.PatternGraph;
 
+/**
+ * Relation generator for the PriorityJoin.
+ */
 public class PriorityGenRel {
 
     TemporalRelation temporalRelation;

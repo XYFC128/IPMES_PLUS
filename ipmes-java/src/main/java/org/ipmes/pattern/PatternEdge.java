@@ -1,5 +1,8 @@
 package org.ipmes.pattern;
 
+/**
+ * An edge in pattern.
+ */
 public class PatternEdge {
     Integer id;
     public Integer getId() { return this.id; }

@@ -84,7 +84,7 @@ public class Main {
         if (isDarpa)
             extractor = new DarpaExtractor();
         else
-            extractor = new SimPatternExtractor();
+            extractor = new SpadePatternExtractor();
         PatternGraph spatialPattern = PatternGraph
                 .parse(
                         new FileReader(ttpPrefix + "_node.json"),

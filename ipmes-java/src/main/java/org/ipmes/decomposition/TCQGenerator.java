@@ -6,6 +6,9 @@ import org.ipmes.pattern.PatternGraph;
 
 import java.util.*;
 
+/**
+ * This class is responsible for the decomposition task.
+ */
 public class TCQGenerator {
 
     TemporalRelation temporalRelation;

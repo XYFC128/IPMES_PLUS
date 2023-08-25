@@ -2,6 +2,9 @@ package org.ipmes.match;
 
 import java.util.*;
 
+/**
+ * Holds partial match result for {@link org.ipmes.decomposition.TCQuery}
+ */
 public class LiteMatchResult {
     public static int MAX_NUM_NODES;
     HashSet<MatchEdge> matchEdges;

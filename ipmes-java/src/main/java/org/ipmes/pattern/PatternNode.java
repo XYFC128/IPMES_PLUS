@@ -1,5 +1,8 @@
 package org.ipmes.pattern;
 
+/**
+ * A node in a pattern. Typically accessed through {@link PatternEdge} or {@link PatternGraph}
+ */
 public class PatternNode {
     Integer id;
     public Integer getId() { return this.id; }

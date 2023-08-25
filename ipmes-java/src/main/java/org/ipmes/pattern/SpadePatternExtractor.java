@@ -2,7 +2,10 @@ package org.ipmes.pattern;
 
 import org.json.*;
 
-public class SimPatternExtractor implements SigExtractor {
+/**
+ * Signature extractor for patterns in the SPADE dataset.
+ */
+public class SpadePatternExtractor implements SigExtractor {
     public String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");
         String type = properties.getString("type");
