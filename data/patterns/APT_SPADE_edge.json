@@ -1,0 +1,7 @@
+{"edge":{"id": "4->0", "properties": {"correlation": "isSameProcess", "earliest": "0", "lastest": "0"}, "start": {"id": "4"}, "end": {"id": "0"}}}
+{"edge":{"id": "4->1", "properties": {"correlation": "isSameProcess", "earliest": "1", "lastest": "1"}, "start": {"id": "4"}, "end": {"id": "1"}}}
+{"edge":{"id": "4->2", "properties": {"correlation": "isSameProcess", "earliest": "2", "lastest": "2"}, "start": {"id": "4"}, "end": {"id": "2"}}}
+{"edge":{"id": "0->2", "properties": {"correlation": "isSameFile", "earliest": "3", "lastest": "3"}, "start": {"id": "0"}, "end": {"id": "2"}}}
+{"edge":{"id": "4->3", "properties": {"correlation": "isSameProcess", "earliest": "4", "lastest": "4"}, "start": {"id": "4"}, "end": {"id": "3"}}}
+{"edge":{"id": "2->3", "properties": {"correlation": "isSameFile", "earliest": "5", "lastest": "5"}, "start": {"id": "2"}, "end": {"id": "3"}}}
+{"edge":{"id": "4->5", "properties": {"correlation": "isSameProcess", "earliest": "6", "lastest": "6"}, "start": {"id": "4"}, "end": {"id": "5"}}}

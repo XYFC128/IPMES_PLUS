@@ -1,6 +1,10 @@
 __pycache__/
 .venv/
-/data/
+
+data/*
+!data/patterns
+!data/darpa_patterns
+
 /results/
 /siddhi-bin/
 project/target/
