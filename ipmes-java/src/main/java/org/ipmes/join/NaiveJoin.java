@@ -34,7 +34,6 @@ public class NaiveJoin implements Join {
     NaiveGenRel relationGenerator;
     ArrayList<TCQueryRelation>[] TCQRelation;
     int curPoolSize;
-    Integer[] usageCount;
 
     // constructor
     public NaiveJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
@@ -49,10 +48,6 @@ public class NaiveJoin implements Join {
         this.windowSize = windowSize;
         this.bufferForPartialMatch = new ArrayList<MatchResult>();
         this.curPoolSize = 0;
-        this.usageCount = new Integer[subTCQueries.size()];
-        for (int i = 0; i < usageCount.length; i++) {
-            this.usageCount[i] = 0;
-        }
     }
 
     /**
@@ -157,7 +152,6 @@ public class NaiveJoin implements Join {
      */
     void joinMatchResult(MatchResult result, int tcQueryId) {
         boolean fit = true;
-        this.usageCount[tcQueryId] += 1;
         for (MatchResult entry : this.expansionTable) {
             // check whether entry and result overlap
             if (entry.hasShareEdge(result))
@@ -248,10 +242,6 @@ public class NaiveJoin implements Join {
 
     public int getPoolSize() {
         return this.curPoolSize;
-    }
-
-    public Integer[] getUsageCount() {
-        return this.usageCount;
     }
 
 }

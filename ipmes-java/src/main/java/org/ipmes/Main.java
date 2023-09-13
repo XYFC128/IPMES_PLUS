@@ -133,14 +133,7 @@ public class Main {
         output.put("PeakPoolSize", maxPoolSize);
         output.put("PeakHeapSize", maxHeapSize);
 
-        Integer[] usageCount = join.getUsageCount();
-        Map<Integer, Integer> usageCountMap = new HashMap<>();
-        for (int i = 0; i < usageCount.length; i++) {
-            int len = tcQueries.get(i).numEdges();
-            int count = usageCountMap.getOrDefault(tcQueries.get(i).numEdges(), 0);
-            usageCountMap.put(len, count + usageCount[i]);
-        }
-        output.put("UsageCount", usageCountMap);
+        output.put("TriggerCounts", matcher.getTriggerCounts());
 
         Collection<FullMatch> results = join.extractAnswer();
         output.put("NumResults", results.size());

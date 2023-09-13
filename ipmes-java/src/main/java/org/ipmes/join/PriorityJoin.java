@@ -25,7 +25,6 @@ public class PriorityJoin implements Join {
     ArrayList<TCQueryRelation>[] TCQRelation;
     long windowSize;
     int curPoolSize;
-    Integer[] usageCount;
 
     // constructor
     public PriorityJoin(TemporalRelation temporalRelation, PatternGraph spatialRelation, long windowSize,
@@ -41,10 +40,6 @@ public class PriorityJoin implements Join {
             this.partialMatchResult[i] = new PriorityQueue<>(Comparator.comparingLong(MatchResult::getEarliestTime));
         }
         this.curPoolSize = 0;
-        this.usageCount = new Integer[subTCQueries.size()];
-        for (int i = 0; i < usageCount.length; i++) {
-            this.usageCount[i] = 0;
-        }
     }
 
     int toBufferIdx(int tcQueryId) {
@@ -210,7 +205,6 @@ public class PriorityJoin implements Join {
      * @param tcQueryId the TC-Query id of the result
      */
     public void addMatchResult(MatchResult result, Integer tcQueryId) {
-        this.usageCount[tcQueryId] += 1;
         long latestTime = result.getLatestTime();
         // join
         int bufferId = toBufferIdx(tcQueryId);
@@ -241,9 +235,5 @@ public class PriorityJoin implements Join {
 
     public int getPoolSize() {
         return this.curPoolSize;
-    }
-
-    public Integer[] getUsageCount() {
-        return this.usageCount;
     }
 }

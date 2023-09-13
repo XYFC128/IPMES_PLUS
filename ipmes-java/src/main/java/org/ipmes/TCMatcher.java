@@ -18,6 +18,7 @@ public class TCMatcher {
     long windowSize;
     ArrayList<Pattern> regexPatterns;
     ArrayDeque<LiteMatchResult>[] buffers;
+    long[] triggerCount;
     int[] tcQueryId;
     Join join;
     int poolSize;
@@ -42,6 +43,9 @@ public class TCMatcher {
         this.buffers = (ArrayDeque<LiteMatchResult>[]) new ArrayDeque[len];
         this.tcQueryId = new int[len + 1];
         tcQueryId[len] = -1;
+
+        this.triggerCount = new long[len];
+        Arrays.fill(this.triggerCount, 0);
 
         int cur = 0;
         for (TCQuery q : tcQueries) {
@@ -109,6 +113,8 @@ public class TCMatcher {
             newResults.addAll(mergeWithBuffer(match, ord));
         }
 
+        this.triggerCount[ord] += newResults.size();
+
         if (tcQueryId[ord] != tcQueryId[ord + 1]) {
             for (LiteMatchResult res : newResults)
                 if (res.checkNodeUniqueness())
@@ -139,5 +145,17 @@ public class TCMatcher {
         if (this.useRegex)
             return regexPatterns.get(ord).matcher(eventEdge.signature).find();
         return totalOrder.get(ord).getSignature().equals(eventEdge.signature);
+    }
+
+    ArrayList<long[]> getTriggerCounts() {
+        ArrayList<long[]> triggerCounts = new ArrayList<>();
+        int start = 0;
+        for (int i = 1; i < this.tcQueryId.length; ++i) {
+            if (this.tcQueryId[i] == this.tcQueryId[i - 1])
+                continue;
+            triggerCounts.add(Arrays.copyOfRange(this.triggerCount, start, i));
+            start = i;
+        }
+        return triggerCounts;
     }
 }

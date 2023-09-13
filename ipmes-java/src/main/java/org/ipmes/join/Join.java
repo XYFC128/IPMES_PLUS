@@ -14,6 +14,4 @@ public interface Join {
     public Collection<FullMatch> extractAnswer();
 
     public int getPoolSize();
-
-    public Integer[] getUsageCount();
 }
