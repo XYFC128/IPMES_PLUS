@@ -14,7 +14,7 @@ def get_trigger_counts(pattern_file, graphs) -> list:
 
 trigger_counts: list[list[int]] = []
 trigger_counts += get_trigger_counts(darpa.pattern_file, darpa.graphs)
-trigger_counts += get_trigger_counts(spade.pattern_file, darpa.spade)
+trigger_counts += get_trigger_counts(spade.pattern_file, spade.graphs)
 
 for counts in trigger_counts:
     max_count = max(counts)
