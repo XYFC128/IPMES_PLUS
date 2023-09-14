@@ -17,5 +17,5 @@ trigger_counts += get_trigger_counts(darpa.pattern_file, darpa.graphs)
 trigger_counts += get_trigger_counts(spade.pattern_file, spade.graphs)
 
 for counts in trigger_counts:
-    max_count = max(counts)
+    max_count = max(*counts, 1)
     print(' \t'.join([str(c / max_count) for c in counts]))
