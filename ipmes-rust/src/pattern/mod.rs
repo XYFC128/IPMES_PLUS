@@ -1,7 +1,7 @@
-mod darpa;
+pub mod darpa;
 pub mod order_relation;
-mod spade;
-mod parser;
+pub mod spade;
+pub mod parser;
 
 use order_relation::OrderRelation;
 
