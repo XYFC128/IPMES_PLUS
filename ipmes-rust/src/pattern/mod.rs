@@ -9,10 +9,10 @@ use clap::ValueEnum;
 use std::io::BufRead;
 
 pub struct Edge {
-    id: usize,
-    signature: String,
-    start: usize,
-    end: usize,
+    pub id: usize,
+    pub signature: String,
+    pub start: usize,
+    pub end: usize,
 }
 
 pub struct Pattern {
