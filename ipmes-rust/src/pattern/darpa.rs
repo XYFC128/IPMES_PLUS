@@ -1,9 +1,14 @@
 use serde_json::Value;
+use crate::pattern::parser::PatternParser;
 
-pub fn node_signature(obj: &Value) -> Option<String> {
-    todo!()
-}
+pub struct DarpaPatternParser;
 
-pub fn edge_signature(obj: &Value) -> Option<String> {
-    todo!()
+impl PatternParser for DarpaPatternParser {
+    fn node_signature(obj: &Value) -> Option<String> {
+        todo!()
+    }
+
+    fn edge_signature(obj: &Value) -> Option<String> {
+        todo!()
+    }
 }

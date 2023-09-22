@@ -1,5 +1,10 @@
 use log::info;
-use clap::{Parser, ValueEnum};
+use clap::{arg, Parser, ValueEnum};
+
+use ipmes_rust::pattern::spade::SpadePatternParser;
+use ipmes_rust::pattern::darpa::DarpaPatternParser;
+use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
+use ipmes_rust::pattern::Pattern;
 
 /// IPMES implemented in rust
 #[derive(Parser, Debug)]
@@ -34,6 +39,56 @@ fn main() {
     env_logger::init();
     let args = Args::parse();
     info!("Command line arguments: {:?}", args);
+
+    let pattern = parse_pattern(&args).expect("Fail to parse pattern");
+
+
+    todo!()
+}
+
+fn parse_pattern(args: &Args) -> Result<Pattern, PatternParsingError> {
+    let (node_file, edge_file, orels_file) = get_input_files(&args.pattern_prefix);
+
+    match args.pattern_format {
+        PatternFormat::Spade => {
+            let parser = SpadePatternParser;
+            parser.parse(&node_file, &edge_file, &orels_file)
+        }
+        PatternFormat::Darpa => {
+            let parser = DarpaPatternParser;
+            parser.parse(&node_file, &edge_file, &orels_file)
+        }
+    }
+}
+
+fn get_input_files(input_prefix: &str) -> (String, String, String) {
+    let node_file = format!("{}_node.json", input_prefix);
+    let edge_file = format!("{}_edge.json", input_prefix);
+    let orels_file = if let Some(prefix) = input_prefix.strip_suffix("_regex") {
+        format!("{}_oRels.json", prefix)
+    } else {
+        format!("{}_oRels.json", input_prefix)
+    };
+
+    (node_file, edge_file, orels_file)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::get_input_files;
+
+    #[test]
+    fn test_input_file_name_parsing() {
+        assert_eq!(
+            get_input_files("TTP11"),
+            ("TTP11_node.json".to_string(), "TTP11_edge.json".to_string(), "TTP11_oRels.json".to_string())
+        );
+
+        assert_eq!(
+            get_input_files("TTP11_regex"),
+            ("TTP11_regex_node.json".to_string(), "TTP11_regex_edge.json".to_string(), "TTP11_oRels.json".to_string())
+        );
+    }
 }
 
 /*
@@ -41,7 +96,7 @@ for line in input {
     let parsed = parse(line)
 
     let sorted = xxx.sort(parsed) Iter<[1, 2, 3]>
-    let subpatterns = match_sub_pattern(sorted) [(key, [val])]
+    let sub_patterns = match_sub_pattern(sorted) [(key, [val])]
     let patterns = join(pool3, sub_pattern) [pattern]
 }
 for result in input.parse().reorder().dispatch().sub_pattern_match().join()
