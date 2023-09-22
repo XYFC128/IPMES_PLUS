@@ -16,6 +16,6 @@ pub struct Edge {
 }
 
 pub struct Pattern {
-    edges: Vec<Edge>,
-    order: OrderRelation,
+    pub edges: Vec<Edge>,
+    pub order: OrderRelation,
 }

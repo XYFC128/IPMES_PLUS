@@ -35,3 +35,14 @@ fn main() {
     let args = Args::parse();
     info!("Command line arguments: {:?}", args);
 }
+
+/*
+for line in input {
+    let parsed = parse(line)
+
+    let sorted = xxx.sort(parsed) Iter<[1, 2, 3]>
+    let subpatterns = match_sub_pattern(sorted) [(key, [val])]
+    let patterns = join(pool3, sub_pattern) [pattern]
+}
+for result in input.parse().reorder().dispatch().sub_pattern_match().join()
+ */

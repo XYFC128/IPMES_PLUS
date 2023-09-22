@@ -23,6 +23,12 @@ impl OrderRelation {
             })
     }
 
+    pub fn get_next(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
+        let idx = NodeIndex::<DefaultIx>::new(eid + 1);
+        self.graph.neighbors_directed(idx, Direction::Outgoing)
+            .map(|idx| idx.index() - 1)
+    }
+
     pub fn parse(order_relation_file: &str) -> Result<Self, PatternParsingError> {
         let mut file = File::open(order_relation_file)?;
         let mut content = Vec::new();
