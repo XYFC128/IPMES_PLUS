@@ -59,7 +59,7 @@ fn has_shared_node(edge: &Edge, parents: &Vec<&Edge>) -> bool {
 
 fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> Vec<SubPattern> {
     // sort in decreasing size
-    sub_patterns.sort_by(|x, y| x.edges.len().cmp(&y.edges.len()));
+    sub_patterns.sort_by(|x, y| y.edges.len().cmp(&x.edges.len()));
 
     let mut selected_sub_patterns: Vec<SubPattern> = Vec::new();
     let mut is_edge_selected: Vec<bool> = vec![false; num_edges];
@@ -94,7 +94,48 @@ mod tests {
     use crate::pattern::spade::SpadePatternParser;
 
     #[test]
-    fn test () {
+    fn test_gsp() {
+        let parser = SpadePatternParser;
+        let pattern = parser.parse(
+            "../data/patterns/TTP9_node.json",
+            "../data/patterns/TTP9_edge.json",
+            "../data/patterns/TTP9_oRels.json",
+        ).unwrap();
+
+        let edge: &Edge = &pattern.edges[0];
+        let mut parents: Vec<&Edge> = Vec::new();
+        let mut results: Vec<SubPattern> = Vec::new();
+        generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
+
+        println!("{:#?}", pattern.edges);
+    }
+
+    #[test]
+    fn test_hsn() {
+        let e1 = &Edge {id: 0, signature: "a".to_string(), start: 10, end: 19};
+        let e2 = &Edge {id: 0, signature: "b".to_string(), start: 9, end: 15};
+        let e3 = &Edge {id: 0, signature: "c".to_string(), start: 11, end: 13};
+        let e4 = &Edge {id: 0, signature: "d".to_string(), start: 10, end: 13};
+
+        // true
+        let parents: Vec<&Edge> = vec![e1, e3];
+        assert!(has_shared_node(e4, &parents));
+
+        // false
+        let parents: Vec<&Edge> = vec![e2];
+        assert!(!has_shared_node(e4, &parents));
+
+        // true
+        let parents: Vec<&Edge> = vec![e3];
+        assert!(has_shared_node(e4, &parents));
+
+        // true
+        let parents: Vec<&Edge> = vec![];
+        assert!(has_shared_node(e4, &parents));
+    }
+
+    #[test]
+    fn test_ss() {
         let parser = SpadePatternParser;
         let pattern = parser.parse(
             "../data/patterns/TTP11_node.json",
@@ -107,9 +148,53 @@ mod tests {
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
-        for x in results {
-            println!("x.id: {:?}", x);
-        }
-        // println!("{:?}", results);
+        let num_edges: usize = 4;
+        let selected = select_sub_patterns(num_edges, results);
+
+        println!("{:?}", selected);
+    }
+
+    #[test]
+    fn test_cse() {
+        let parser = SpadePatternParser;
+        let pattern = parser.parse(
+            "../data/patterns/TTP11_node.json",
+            "../data/patterns/TTP11_edge.json",
+            "../data/patterns/TTP11_oRels.json",
+        ).unwrap();
+
+        let edge: &Edge = &pattern.edges[0];
+        let mut parents: Vec<&Edge> = Vec::new();
+        let mut results: Vec<SubPattern> = Vec::new();
+        generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
+
+
+        let sub_pattern = &results[0];
+        let is_selected = vec![false, false, true, true];
+        assert!(!contains_selected_edge(&sub_pattern, &is_selected));
+
+        let sub_pattern = &results[1];
+        let is_selected = vec![false, false, true, true];
+        assert!(!contains_selected_edge(&sub_pattern, &is_selected));
+
+        let sub_pattern = &results[2];
+        let is_selected = vec![false, false, true, true];
+        assert!(contains_selected_edge(&sub_pattern, &is_selected));
+
+        let sub_pattern = &results[3];
+        let is_selected = vec![false, false, false, true];
+        assert!(contains_selected_edge(&sub_pattern, &is_selected));
+    }
+
+    #[test]
+    fn test_decompose() {
+        let parser = SpadePatternParser;
+        let pattern = parser.parse(
+            "../data/patterns/TTP9_node.json",
+            "../data/patterns/TTP9_edge.json",
+            "../data/patterns/TTP9_oRels.json",
+        ).unwrap();
+
+        println!("{:#?}", decompose(&pattern));
     }
 }
