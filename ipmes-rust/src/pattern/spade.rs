@@ -93,6 +93,25 @@ mod tests {
             })),
             Some(String::from("Artifact::network socket::localhost:8080"))
         );
+
+        assert_eq!(
+            SpadePatternParser::node_signature(&json!({
+                "properties": {
+                    "type": "Foo",
+                }
+            })),
+            Some(String::from("Foo::"))
+        );
+
+        assert_eq!(
+            SpadePatternParser::node_signature(&json!({
+                "properties": {
+                    "type": "Artifact",
+                    "subtype": "FooBar",
+                }
+            })),
+            Some(String::from("Artifact::FooBar::"))
+        );
     }
 
     #[test]
