@@ -28,11 +28,11 @@ impl PatternParser for SpadePatternParser {
                         Some(format!("{node_type}::{subtype}::{addr}:{port}"))
                     }
 
-                    _ => None,
+                    _ => Some(format!("{node_type}::{subtype}::")),
                 }
             }
 
-            _ => None,
+            _ => Some(format!("{node_type}::")),
         }
     }
 
