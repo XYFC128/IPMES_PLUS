@@ -1,0 +1,26 @@
+1640336879.895,1640336879.895,recv#Artifact::unknown::#Process::systemd-udevd,2436754,3,2
+1640336880.003,1640336880.003,recv#Artifact::unknown::#Process::gnome-shell,2436755,5,4
+1640336880.666,1640336880.666,setuid#Process::su#Process::su,2493581,6,7
+1640336880.666,1640336880.666,setgid#Process::su#Process::su,2493513,6,8
+1640336880.666,1640336880.666,setgid#Process::su#Process::su,2493512,6,6
+1640336880.666,1640336880.666,setuid#Process::su#Process::su,2493582,7,6
+1640336880.666,1640336880.666,lseek#Process::su#Artifact::file::/etc/passwd,2493634,8,9
+1640336880.666,1640336880.666,exit#Process::su#Process::su,2482932,8,8
+1640336880.666,1640336880.666,send#Process::su#Artifact::unknown::,2422900,8,11
+1640336880.666,1640336880.666,read#Artifact::file::/etc/passwd#Process::su,2316505,9,8
+1640336880.666,1640336880.666,open#Artifact::file::/etc/passwd#Process::su,2281164,9,8
+1640336880.666,1640336880.666,open#Artifact::file::/etc/login.defs#Process::su,2281196,10,8
+1640336880.670,1640336880.670,send#Process::thread-pool-4#Artifact::unknown::,2422902,12,13
+1640336880.670,1640336880.670,mmap (write)#Process::clamd#Artifact::memory::,2522012,15,17
+1640336880.670,1640336880.670,chmod#Process::clamd#Artifact::directory::/tmp/20211224_170800-scantem.43f84e2cf4,2521951,15,18
+1640336880.670,1640336880.670,madvise#Process::clamd#Artifact::memory::,2467124,15,17
+1640336880.670,1640336880.670,open#Artifact::file::/home/admin/startallservice.sh#Process::clamd,2281200,16,15
+1640336880.670,1640336880.670,open#Artifact::directory::/tmp/20211224_170800-scantem.43f84e2cf4#Process::clamd,2281201,18,15
+1640336880.670,1640336880.670,recv#Artifact::unknown::#Process::thread-pool-4,2436756,19,12
+1640336880.670,1640336880.670,recv#Artifact::unknown::#Process::thread-pool-4,2436757,20,12
+1640336880.758,1640336880.758,exit#Process::journal-offline#Process::journal-offline,2482934,22,22
+1640336880.758,1640336880.758,madvise#Process::journal-offline#Artifact::memory::,2467127,22,21
+1640336883.445,1640336883.445,read#Artifact::unknown::#Process::systemd-udevd,2316521,24,23
+1640336883.449,1640336883.449,exit#Process::systemd-udevd#Process::systemd-udevd,2482935,23,23
+1640336909.999,1640336909.999,exit#Process::clamd#Process::clamd,2482933,15,15
+1640336909.999,1640336909.999,madvise#Process::clamd#Artifact::memory::,2467125,15,25

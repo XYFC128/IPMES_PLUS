@@ -1,6 +1,6 @@
-use std::ops::Sub;
-use crate::pattern::{Edge, Pattern};
 use crate::pattern::order_relation::OrderRelation;
+use crate::pattern::{Edge, Pattern};
+use std::ops::Sub;
 
 #[derive(Debug)]
 pub struct SubPattern<'a> {
@@ -8,8 +8,7 @@ pub struct SubPattern<'a> {
     pub edges: Vec<&'a Edge>,
 }
 
-impl<'a> SubPattern<'a> {
-}
+impl<'a> SubPattern<'a> {}
 
 pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
@@ -26,12 +25,20 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     selected
 }
 
-fn generate_sub_patterns<'a>(pattern: &'a Pattern, edge: &'a Edge, parents: &mut Vec<&'a Edge>, results: &mut Vec<SubPattern<'a>>) {
+fn generate_sub_patterns<'a>(
+    pattern: &'a Pattern,
+    edge: &'a Edge,
+    parents: &mut Vec<&'a Edge>,
+    results: &mut Vec<SubPattern<'a>>,
+) {
     if !has_shared_node(edge, parents) {
         return;
     }
     parents.push(edge);
-    results.push(SubPattern {id: 0, edges: parents.clone()});
+    results.push(SubPattern {
+        id: 0,
+        edges: parents.clone(),
+    });
     for eid in pattern.order.get_next(edge.id) {
         generate_sub_patterns(pattern, &pattern.edges[eid], parents, results);
     }
@@ -44,11 +51,11 @@ fn has_shared_node(edge: &Edge, parents: &Vec<&Edge>) -> bool {
     }
     for parent in parents {
         let node_shared = if edge.start == parent.start || edge.start == parent.end {
-            true 
-        } else if edge.end == parent.start || edge.end == parent.end { 
-            true 
-        } else { 
-            false 
+            true
+        } else if edge.end == parent.start || edge.end == parent.end {
+            true
+        } else {
+            false
         };
         if node_shared {
             return true;
@@ -96,11 +103,13 @@ mod tests {
     #[test]
     fn test_gsp() {
         let parser = SpadePatternParser;
-        let pattern = parser.parse(
-            "../data/patterns/TTP9_node.json",
-            "../data/patterns/TTP9_edge.json",
-            "../data/patterns/TTP9_oRels.json",
-        ).unwrap();
+        let pattern = parser
+            .parse(
+                "../data/patterns/TTP9_node.json",
+                "../data/patterns/TTP9_edge.json",
+                "../data/patterns/TTP9_oRels.json",
+            )
+            .unwrap();
 
         let edge: &Edge = &pattern.edges[0];
         let mut parents: Vec<&Edge> = Vec::new();
@@ -112,10 +121,30 @@ mod tests {
 
     #[test]
     fn test_hsn() {
-        let e1 = &Edge {id: 0, signature: "a".to_string(), start: 10, end: 19};
-        let e2 = &Edge {id: 0, signature: "b".to_string(), start: 9, end: 15};
-        let e3 = &Edge {id: 0, signature: "c".to_string(), start: 11, end: 13};
-        let e4 = &Edge {id: 0, signature: "d".to_string(), start: 10, end: 13};
+        let e1 = &Edge {
+            id: 0,
+            signature: "a".to_string(),
+            start: 10,
+            end: 19,
+        };
+        let e2 = &Edge {
+            id: 0,
+            signature: "b".to_string(),
+            start: 9,
+            end: 15,
+        };
+        let e3 = &Edge {
+            id: 0,
+            signature: "c".to_string(),
+            start: 11,
+            end: 13,
+        };
+        let e4 = &Edge {
+            id: 0,
+            signature: "d".to_string(),
+            start: 10,
+            end: 13,
+        };
 
         // true
         let parents: Vec<&Edge> = vec![e1, e3];
@@ -137,11 +166,13 @@ mod tests {
     #[test]
     fn test_ss() {
         let parser = SpadePatternParser;
-        let pattern = parser.parse(
-            "../data/patterns/TTP11_node.json",
-            "../data/patterns/TTP11_edge.json",
-            "../data/patterns/TTP11_oRels.json",
-        ).unwrap();
+        let pattern = parser
+            .parse(
+                "../data/patterns/TTP11_node.json",
+                "../data/patterns/TTP11_edge.json",
+                "../data/patterns/TTP11_oRels.json",
+            )
+            .unwrap();
 
         let edge: &Edge = &pattern.edges[0];
         let mut parents: Vec<&Edge> = Vec::new();
@@ -157,17 +188,18 @@ mod tests {
     #[test]
     fn test_cse() {
         let parser = SpadePatternParser;
-        let pattern = parser.parse(
-            "../data/patterns/TTP11_node.json",
-            "../data/patterns/TTP11_edge.json",
-            "../data/patterns/TTP11_oRels.json",
-        ).unwrap();
+        let pattern = parser
+            .parse(
+                "../data/patterns/TTP11_node.json",
+                "../data/patterns/TTP11_edge.json",
+                "../data/patterns/TTP11_oRels.json",
+            )
+            .unwrap();
 
         let edge: &Edge = &pattern.edges[0];
         let mut parents: Vec<&Edge> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
-
 
         let sub_pattern = &results[0];
         let is_selected = vec![false, false, true, true];
@@ -189,11 +221,13 @@ mod tests {
     #[test]
     fn test_decompose() {
         let parser = SpadePatternParser;
-        let pattern = parser.parse(
-            "../data/patterns/TTP9_node.json",
-            "../data/patterns/TTP9_edge.json",
-            "../data/patterns/TTP9_oRels.json",
-        ).unwrap();
+        let pattern = parser
+            .parse(
+                "../data/patterns/TTP9_node.json",
+                "../data/patterns/TTP9_edge.json",
+                "../data/patterns/TTP9_oRels.json",
+            )
+            .unwrap();
 
         println!("{:#?}", decompose(&pattern));
     }
