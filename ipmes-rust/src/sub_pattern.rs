@@ -2,7 +2,7 @@ use std::ops::Sub;
 use crate::pattern::{Edge, Pattern};
 use crate::pattern::order_relation::OrderRelation;
 
-// #[derive(Debug)]
+#[derive(Debug)]
 pub struct SubPattern<'a> {
     pub id: usize,
     pub edges: Vec<&'a Edge>,
@@ -68,7 +68,7 @@ fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> V
             continue;
         }
 
-        for edge in sub_pattern.edges {
+        for edge in &sub_pattern.edges {
             is_edge_selected[edge.id] = true;
         }
         selected_sub_patterns.push(sub_pattern);
@@ -78,7 +78,7 @@ fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> V
 }
 
 fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -> bool {
-    for edge in sub_pattern.edges {
+    for edge in &sub_pattern.edges {
         if is_edge_selected[edge.id] {
             return true;
         }
@@ -99,7 +99,7 @@ mod tests {
         let pattern = parser.parse(
             "../data/patterns/TTP11_node.json",
             "../data/patterns/TTP11_edge.json",
-            "../data/patterns/TTP11_orels.json",
+            "../data/patterns/TTP11_oRels.json",
         ).unwrap();
 
         let edge: &Edge = &pattern.edges[0];
@@ -108,7 +108,7 @@ mod tests {
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
         for x in results {
-            println!("x.id: {}", x.id);
+            println!("x.id: {:?}", x);
         }
         // println!("{:?}", results);
     }
