@@ -8,7 +8,7 @@ import org.json.*;
 public class SpadePatternExtractor implements SigExtractor {
     public String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");
-        String type = properties.getString("type");
+        String type = properties.getString("type") ;
         String signature = String.format("%s::", type);
         if (type.equals("Process")) {
             signature += properties.getString("name");

@@ -93,11 +93,9 @@ mod tests {
 
 /*
 for line in input {
-    let parsed = parse(line)
-
-    let sorted = xxx.sort(parsed) Iter<[1, 2, 3]>
-    let sub_patterns = match_sub_pattern(sorted) [(key, [val])]
-    let patterns = join(pool3, sub_pattern) [pattern]
+    let parsed = parse(line) [edge]
+    let sorted = sorter.sort(parsed) [edge]
+    let sub_patterns = sub_pattern_matcher.match_against(sorted) [(key, val)]
+    let patterns = table.join(sub_pattern) [pattern]
 }
-for result in input.parse().reorder().dispatch().sub_pattern_match().join()
  */

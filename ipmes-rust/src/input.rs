@@ -1,12 +1,21 @@
 pub struct InputEdge;
-pub fn parse(string: &str) {
+pub fn parse(string: &str) -> InputEdge {
     todo!()
 }
 
 pub struct Sorter;
 
 impl Sorter {
-    pub fn sort(&mut self) {
+    pub fn put(&mut self, edge: InputEdge) {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test() {
+
     }
 }

@@ -9,7 +9,7 @@ public class DarpaExtractor implements SigExtractor {
     public String extractNodeSignature(JSONObject nodeObj) {
         JSONObject properties = nodeObj.getJSONObject("properties");
         String type;
-        if (properties.has("NetFlowObject_baseObject_epoch")) {
+        if (properties.has("f")) {
             type = "OBJECT_SOCKET";
         } else if (properties.has("UnnamedPipeObject_baseObject_epoch")) {
             type = "OBJECT_UNNAMEPIPE";

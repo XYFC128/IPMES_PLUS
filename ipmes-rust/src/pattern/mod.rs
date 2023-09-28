@@ -8,6 +8,7 @@ use order_relation::OrderRelation;
 use clap::ValueEnum;
 use std::io::BufRead;
 
+#[derive(Debug)]
 pub struct Edge {
     pub id: usize,
     pub signature: String,
