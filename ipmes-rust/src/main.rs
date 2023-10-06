@@ -94,7 +94,7 @@ mod tests {
 /*
 for line in input {
     let parsed = parse(line) [edge]
-    let sorted = sorter.sort(parsed) [edge]
+    let sorted = sorter.sort(parsed) Iter<[edge]>
     let sub_patterns = sub_pattern_matcher.match_against(sorted) [(key, val)]
     let patterns = table.join(sub_pattern) [pattern]
 }
