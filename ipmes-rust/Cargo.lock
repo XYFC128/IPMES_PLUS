@@ -230,6 +230,7 @@ dependencies = [
  "env_logger",
  "log",
  "petgraph",
+ "serde",
  "serde_json",
  "thiserror",
 ]

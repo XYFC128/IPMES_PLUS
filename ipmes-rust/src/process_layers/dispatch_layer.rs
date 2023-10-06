@@ -1,4 +1,4 @@
-use crate::input::InputEdge;
+use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
 
 struct DispatchLayer<P>
