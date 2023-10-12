@@ -7,6 +7,7 @@ use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 struct PartialMatch<'a> {
     timestamp: u64,
@@ -42,18 +43,20 @@ impl<'a> SubMatcher<'a> {
             buffer: VecDeque::new(),
         })
     }
-    pub fn match_against(&mut self, input_edges: &[InputEdge]) -> Vec<PartialMatch<'a>> {
+    pub fn match_against(&mut self, input_edges: &[Rc<InputEdge>]) -> Vec<PartialMatch<'a>> {
         input_edges
             .iter()
             .filter(|edge| self.signature.is_match(&edge.signature))
             .cartesian_product(self.buffer.iter())
-            .filter_map(|(input_edge, partial_match)| self.merge(input_edge, partial_match))
+            .filter_map(|(input_edge, partial_match)| {
+                self.merge(Rc::clone(input_edge), partial_match)
+            })
             .collect()
     }
 
     fn merge(
         &self,
-        input_edge: &InputEdge,
+        input_edge: Rc<InputEdge>,
         partial_match: &PartialMatch<'a>,
     ) -> Option<PartialMatch<'a>> {
         // Check node collision
@@ -70,21 +73,21 @@ impl<'a> SubMatcher<'a> {
         if partial_match
             .edges
             .iter()
-            .find(|edge| edge.id == input_edge.id)
+            .find(|edge| edge.input_edge.id == input_edge.id)
             .is_some()
         {
             return None;
         }
 
-        let match_edge = MatchEdge {
-            id: input_edge.id,
-            matched: self.pattern_edge,
-        };
-
         let mut node_id_map = partial_match.node_id_map.clone();
         let mut edges = partial_match.edges.clone();
         node_id_map[self.pattern_edge.start] = input_edge.start;
         node_id_map[self.pattern_edge.end] = input_edge.end;
+
+        let match_edge = MatchEdge {
+            input_edge,
+            matched: self.pattern_edge,
+        };
         edges.push(match_edge);
 
         Some(PartialMatch {
@@ -107,7 +110,7 @@ impl<'a> SubMatcher<'a> {
 
 pub struct OrdMatchLayer<'a, P>
 where
-    P: Iterator<Item = Vec<InputEdge>>,
+    P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     prev_layer: P,
     use_regex: bool,
@@ -117,7 +120,7 @@ where
 
 impl<'a, P> OrdMatchLayer<'a, P>
 where
-    P: Iterator<Item = Vec<InputEdge>>,
+    P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     pub fn new(
         prev_layer: P,
@@ -146,7 +149,7 @@ where
 
 impl<P> Iterator for OrdMatchLayer<'_, P>
 where
-    P: Iterator<Item = Vec<InputEdge>>,
+    P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     type Item = Vec<SubPatternMatch>;
 
