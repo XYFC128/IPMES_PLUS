@@ -6,6 +6,7 @@ use crate::sub_pattern_match::SubPatternMatch;
 use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
+use std::cmp::max;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
@@ -132,6 +133,23 @@ where
         for sub_pattern in decomposition {
             for edge in &sub_pattern.edges {
                 sub_matchers.push(SubMatcher::new(edge, use_regex)?);
+            }
+            // get the first sub-matcher for this sub-pattern
+            if let Some(first) = sub_matchers
+                .iter_mut()
+                .nth_back(sub_pattern.edges.len() - 1)
+            {
+                let max_node_id = sub_pattern
+                    .edges
+                    .iter()
+                    .map(|e| max(e.start, e.end))
+                    .max()
+                    .unwrap();
+                first.buffer.push_back(PartialMatch {
+                    timestamp: u64::MAX,
+                    node_id_map: vec![0; max_node_id + 1],
+                    edges: vec![],
+                })
             }
             if let Some(last) = sub_matchers.last_mut() {
                 last.sub_pattern_id = sub_pattern.id as i64;
