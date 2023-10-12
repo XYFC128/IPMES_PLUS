@@ -10,27 +10,27 @@ use std::cmp::max;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-struct PartialMatch<'a> {
+struct PartialMatch<'p> {
     timestamp: u64,
     node_id_map: Vec<u64>,
-    edges: Vec<MatchEdge<'a>>,
+    edges: Vec<MatchEdge<'p>>,
 }
 
-impl<'a> PartialMatch<'a> {
+impl<'p> PartialMatch<'p> {
     pub fn to_sub_pattern_match(self) -> SubPatternMatch {
         todo!()
     }
 }
 
-struct SubMatcher<'a> {
+struct SubMatcher<'p> {
     signature: Regex,
-    pattern_edge: &'a PatternEdge,
+    pattern_edge: &'p PatternEdge,
     sub_pattern_id: i64,
-    buffer: VecDeque<PartialMatch<'a>>,
+    buffer: VecDeque<PartialMatch<'p>>,
 }
 
-impl<'a> SubMatcher<'a> {
-    pub fn new(pattern_edge: &'a PatternEdge, use_regex: bool) -> Result<Self, RegexError> {
+impl<'p> SubMatcher<'p> {
+    pub fn new(pattern_edge: &'p PatternEdge, use_regex: bool) -> Result<Self, RegexError> {
         let signature = if use_regex {
             Regex::new(&pattern_edge.signature)?
         } else {
@@ -44,7 +44,7 @@ impl<'a> SubMatcher<'a> {
             buffer: VecDeque::new(),
         })
     }
-    pub fn match_against(&mut self, input_edges: &[Rc<InputEdge>]) -> Vec<PartialMatch<'a>> {
+    pub fn match_against(&mut self, input_edges: &[Rc<InputEdge>]) -> Vec<PartialMatch<'p>> {
         input_edges
             .iter()
             .filter(|edge| self.signature.is_match(&edge.signature))
@@ -58,8 +58,8 @@ impl<'a> SubMatcher<'a> {
     fn merge(
         &self,
         input_edge: Rc<InputEdge>,
-        partial_match: &PartialMatch<'a>,
-    ) -> Option<PartialMatch<'a>> {
+        partial_match: &PartialMatch<'p>,
+    ) -> Option<PartialMatch<'p>> {
         // Check node collision
         let start_id = partial_match.node_id_map[self.pattern_edge.start];
         let end_id = partial_match.node_id_map[self.pattern_edge.end];
@@ -109,23 +109,23 @@ impl<'a> SubMatcher<'a> {
     }
 }
 
-pub struct OrdMatchLayer<'a, P>
+pub struct OrdMatchLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     prev_layer: P,
     use_regex: bool,
     window_size: u64,
-    sub_matchers: Vec<SubMatcher<'a>>,
+    sub_matchers: Vec<SubMatcher<'p>>,
 }
 
-impl<'a, P> OrdMatchLayer<'a, P>
+impl<'p, P> OrdMatchLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     pub fn new(
         prev_layer: P,
-        decomposition: &'a [SubPattern],
+        decomposition: &'p [SubPattern],
         use_regex: bool,
         window_size: u64,
     ) -> Result<Self, RegexError> {
