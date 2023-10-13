@@ -24,18 +24,27 @@ impl<'p> PartialMatch<'p> {
     }
 }
 
+/// Represent a small buffer for matching an edge
 struct SubMatcher<'p> {
+    /// regex matcher for the pattern signature
     signature: Regex,
+    /// corresponding pattern edge
     pattern_edge: &'p PatternEdge,
+    /// if this is the last buffer of a subpattern, sub_pattern_id will be the id of that subpattern
+    /// , -1 otherwise
     sub_pattern_id: i64,
+    /// buffer for the partial match results, dequeue is used for windowing
     buffer: VecDeque<PartialMatch<'p>>,
 }
 
 impl<'p> SubMatcher<'p> {
     pub fn new(pattern_edge: &'p PatternEdge, use_regex: bool) -> Result<Self, RegexError> {
+        // the regex expression should match whole string, so we add ^ and $ to the front and
+        // end of the expression.
         let match_syntax = if use_regex {
             format!("^{}$", pattern_edge.signature)
         } else {
+            // if disable regex matching, simply escape meta characters in the string
             format!("^{}$", regex::escape(&pattern_edge.signature))
         };
         let signature = Regex::new(&match_syntax)?;
@@ -149,6 +158,7 @@ where
     ) -> Result<Self, RegexError> {
         let mut sub_matchers = Vec::new();
         for sub_pattern in decomposition {
+            // create sub-matcher for each edge
             for edge in &sub_pattern.edges {
                 sub_matchers.push(SubMatcher::new(edge, use_regex)?);
             }
@@ -157,12 +167,15 @@ where
                 .iter_mut()
                 .nth_back(sub_pattern.edges.len() - 1)
             {
+                // the node_id_map only need to store up to the maximum node id nodes
                 let max_node_id = sub_pattern
                     .edges
                     .iter()
                     .map(|e| max(e.start, e.end))
                     .max()
                     .unwrap();
+                // Insert an empty partial match that is never expired. All the partial match for
+                // sub pattern will be duplicated from this partial match
                 first.buffer.push_back(PartialMatch {
                     timestamp: u64::MAX,
                     node_id_map: vec![0; max_node_id + 1],
@@ -207,6 +220,7 @@ where
                 matcher.buffer.extend(prev_result.into_iter());
                 let cur_result = matcher.match_against(&time_batch);
                 if matcher.sub_pattern_id != -1 {
+                    // this is the last buffer of a subpattern
                     results.extend(cur_result.into_iter().map(|m| m.to_sub_pattern_match()));
                     prev_result = Vec::new();
                 } else {
