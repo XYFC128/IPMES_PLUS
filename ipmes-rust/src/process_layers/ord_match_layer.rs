@@ -10,6 +10,7 @@ use std::cmp::max;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
+/// Internal representation of a not complete subpattern match
 #[derive(Debug)]
 struct PartialMatch<'p> {
     timestamp: u64,
@@ -62,26 +63,13 @@ impl<'p> SubMatcher<'p> {
         input_edge: Rc<InputEdge>,
         partial_match: &PartialMatch<'p>,
     ) -> Option<PartialMatch<'p>> {
-        // Check node collision
-        let start_id = partial_match.node_id_map[self.pattern_edge.start];
-        let end_id = partial_match.node_id_map[self.pattern_edge.end];
-        if start_id > 0 && start_id != input_edge.start {
-            return None;
-        }
-        if end_id > 0 && end_id != input_edge.end {
-            return None;
-        }
-
-        // Check edge uniqueness
-        if partial_match
-            .edges
-            .iter()
-            .find(|edge| edge.input_edge.id == input_edge.id)
-            .is_some()
+        if self.has_nod_collision(&input_edge, partial_match)
+            || Self::edge_duplicates(&input_edge, partial_match)
         {
             return None;
         }
 
+        // duplicate the partial match and add the input edge into the new partial match
         let mut node_id_map = partial_match.node_id_map.clone();
         let mut edges = partial_match.edges.clone();
         node_id_map[self.pattern_edge.start] = input_edge.start;
@@ -99,6 +87,34 @@ impl<'p> SubMatcher<'p> {
             edges,
         })
     }
+
+    /// Return `true` if the input edge's endpoints do not match the expected id in the partial match.
+    ///
+    /// That is, if input node x matches pattern node n0, and the start node of the the input
+    /// edge matches n0 too, then the start node should be x too.
+    fn has_nod_collision(
+        &self,
+        input_edge: &Rc<InputEdge>,
+        partial_match: &PartialMatch<'p>,
+    ) -> bool {
+        // the expected id of start/end node, 0 for any
+        let start_match = partial_match.node_id_map[self.pattern_edge.start];
+        let end_match = partial_match.node_id_map[self.pattern_edge.end];
+
+        start_match > 0 && start_match != input_edge.start
+            || end_match > 0 && end_match != input_edge.end
+    }
+
+    /// Return `true` if the id of input edge already exist in the partial match.
+    fn edge_duplicates(input_edge: &Rc<InputEdge>, partial_match: &PartialMatch<'p>) -> bool {
+        partial_match
+            .edges
+            .iter()
+            .find(|edge| edge.input_edge.id == input_edge.id)
+            .is_some()
+    }
+
+    /// Clear the entries in the buffer which timestamp < time_bound
 
     pub fn clear_expired(&mut self, time_bound: u64) {
         while let Some(head) = self.buffer.front() {
