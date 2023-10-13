@@ -313,10 +313,7 @@ mod tests {
 
         let sub_pattern = SubPattern {
             id: 0,
-            edges: vec![
-                &pattern_edge1,
-                &pattern_edge2,
-            ],
+            edges: vec![&pattern_edge1, &pattern_edge2],
         };
         let decomposition = [sub_pattern];
 
@@ -327,7 +324,8 @@ mod tests {
             input_edge(1, "edge1", 1, 2),
         ];
 
-        let mut layer = OrdMatchLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
+        let mut layer =
+            OrdMatchLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
         let result = layer.next().unwrap();
         assert_eq!(result.len(), 1);
     }
