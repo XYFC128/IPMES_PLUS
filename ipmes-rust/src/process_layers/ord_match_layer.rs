@@ -10,6 +10,7 @@ use std::cmp::max;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
+#[derive(Debug)]
 struct PartialMatch<'p> {
     timestamp: u64,
     node_id_map: Vec<u64>,
@@ -31,11 +32,12 @@ struct SubMatcher<'p> {
 
 impl<'p> SubMatcher<'p> {
     pub fn new(pattern_edge: &'p PatternEdge, use_regex: bool) -> Result<Self, RegexError> {
-        let signature = if use_regex {
-            Regex::new(&pattern_edge.signature)?
+        let match_syntax = if use_regex {
+            format!("^{}$", pattern_edge.signature)
         } else {
-            Regex::new(&regex::escape(&pattern_edge.signature))?
+            format!("^{}$", regex::escape(&pattern_edge.signature))
         };
+        let signature = Regex::new(&match_syntax)?;
 
         Ok(Self {
             signature,
@@ -198,5 +200,135 @@ where
         }
 
         Some(results)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEdge> {
+        Rc::new(InputEdge {
+            timestamp: 0,
+            signature: signature.to_string(),
+            id,
+            start: 1,
+            end: 2,
+        })
+    }
+
+    fn input_edge(id: u64, signature: &str, start: u64, end: u64) -> Rc<InputEdge> {
+        Rc::new(InputEdge {
+            timestamp: 0,
+            signature: signature.to_string(),
+            id,
+            start,
+            end,
+        })
+    }
+    #[test]
+    fn test_sub_matcher_no_regex() {
+        let pattern_edge = PatternEdge {
+            id: 0,
+            signature: "edge*".to_string(),
+            start: 0,
+            end: 1,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            edges: vec![&pattern_edge],
+        };
+
+        let decomposition = &[sub_pattern];
+
+        let mut matcher = SubMatcher::new(&pattern_edge, false).unwrap();
+        matcher.buffer.push_back(PartialMatch {
+            timestamp: u64::MAX,
+            node_id_map: vec![0; 2],
+            edges: vec![],
+        });
+
+        let input_edges = vec![
+            simple_input_edge(1, "edge*"),
+            simple_input_edge(2, "edgee"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "input_edge"),
+        ];
+
+        let result = matcher.match_against(&input_edges);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].edges[0].input_edge.id, 1);
+    }
+
+    #[test]
+    fn test_sub_matcher_regex() {
+        let pattern_edge = PatternEdge {
+            id: 0,
+            signature: "edge*".to_string(),
+            start: 0,
+            end: 1,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            edges: vec![&pattern_edge],
+        };
+
+        let decomposition = &[sub_pattern];
+
+        let mut matcher = SubMatcher::new(&pattern_edge, true).unwrap();
+        matcher.buffer.push_back(PartialMatch {
+            timestamp: u64::MAX,
+            node_id_map: vec![0; 2],
+            edges: vec![],
+        });
+
+        let input_edges = vec![
+            simple_input_edge(1, "edge*"),
+            simple_input_edge(2, "edgee"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "input_edge"),
+        ];
+
+        let result = matcher.match_against(&input_edges);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].edges[0].input_edge.id, 2);
+    }
+
+    #[test]
+    fn test_ord_match_layer() {
+        let pattern_edge1 = PatternEdge {
+            id: 0,
+            signature: "edge1".to_string(),
+            start: 0,
+            end: 1,
+        };
+        let pattern_edge2 = PatternEdge {
+            id: 1,
+            signature: "edge2".to_string(),
+            start: 1,
+            end: 2,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            edges: vec![
+                &pattern_edge1,
+                &pattern_edge2,
+            ],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            input_edge(2, "edge2", 2, 3),
+            input_edge(3, "foo", 4, 5),
+            input_edge(4, "bar", 6, 7),
+            input_edge(1, "edge1", 1, 2),
+        ];
+
+        let mut layer = OrdMatchLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
+        let result = layer.next().unwrap();
+        assert_eq!(result.len(), 1);
     }
 }
