@@ -124,7 +124,6 @@ impl<'p> SubMatcher<'p> {
     }
 
     /// Clear the entries in the buffer which timestamp < time_bound
-
     pub fn clear_expired(&mut self, time_bound: u64) {
         while let Some(head) = self.buffer.front() {
             if head.timestamp < time_bound {
