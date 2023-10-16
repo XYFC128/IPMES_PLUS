@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::pattern::{Edge, Pattern};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -39,10 +40,16 @@ pub trait PatternParser {
 
         let (id_convert, node_signatures) = self.parse_node_file(node_file)?;
         let edges = self.parse_edge_file(edges_file, &id_convert, &node_signatures)?;
+        let num_nodes = edges
+            .iter()
+            .map(|e| max(e.start, e.end))
+            .max()
+            .unwrap() + 1;
 
         Ok(Pattern {
             edges,
             order: OrderRelation::parse(order_relation_file)?,
+            num_nodes
         })
     }
 
