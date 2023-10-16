@@ -1,17 +1,22 @@
+use std::collections::HashMap;
 use crate::pattern::parser::PatternParsingError;
-use petgraph::graph::{DefaultIx, Graph};
+use petgraph::graph::{DefaultIx, Graph, GraphIndex, Node};
 use serde_json::Value;
 use std::fs::File;
+use std::hash::Hash;
 use std::io::{BufRead, Read};
+use petgraph::algo::{BoundedMeasure, floyd_warshall, toposort};
 use petgraph::graph::NodeIndex;
 use petgraph::Direction;
 
 pub struct OrderRelation {
     graph: Graph<usize, ()>,
+    // distances_table: HashMap<(NodeIndex, NodeIndex), i32>,
 }
 
 impl OrderRelation {
     pub fn get_previous(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
+        // Indices in "graph" is incremented by 1, since "0" is reserved for "root".
         let idx = NodeIndex::<DefaultIx>::new(eid + 1);
         self.graph.neighbors_directed(idx, Direction::Incoming)
             .filter_map(|idx| {
@@ -42,6 +47,7 @@ impl OrderRelation {
 
         Ok(Self {
             graph: Graph::from_edges(&orel_edges),
+            // distances_table: HashMap::new(),
         })
     }
 
@@ -66,6 +72,11 @@ impl OrderRelation {
 
         Some(orel_edges)
     }
+
+    pub fn calculate_distances(&self) -> Option<HashMap<(NodeIndex, NodeIndex), i32>> {
+        let distances_table = floyd_warshall(&self.graph, |_| 1).ok();
+        distances_table
+    }
 }
 
 #[cfg(test)]
@@ -79,5 +90,19 @@ mod tests {
         for neighbor in ord.get_previous(1) {
             println!("{:?}", neighbor);
         }
+    }
+
+    #[test]
+    fn test_calculate_distances() {
+        let ord = OrderRelation::parse("../data/patterns/TTP11_oRels.json")
+            .expect("fail to parse order relation file");
+
+
+        // ord.distances_table = ord.calculate_distances().unwrap();
+
+            // println!("{:?}", ord.distances_table);
+
+        // println!("{:?}", ord.distances_table.get(&(NodeIndex::new(1), NodeIndex::new(0))).unwrap());
+        // println!("{:?}", ord.graph.edge_indices());
     }
 }
