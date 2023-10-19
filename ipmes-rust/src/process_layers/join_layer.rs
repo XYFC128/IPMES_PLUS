@@ -140,7 +140,7 @@ impl SubPatternBuffer {
     }
 }
 
-struct JoinLayer<'p, P>
+pub struct JoinLayer<'p, P>
 where
     P: Iterator<Item = Vec<SubPatternMatch>>,
 {
