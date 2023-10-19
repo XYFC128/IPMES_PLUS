@@ -12,11 +12,14 @@ use std::io::BufRead;
 pub struct Edge {
     pub id: usize,
     pub signature: String,
+    // start node id
     pub start: usize,
+    // end node id
     pub end: usize,
 }
 
 pub struct Pattern {
     pub edges: Vec<Edge>,
     pub order: OrderRelation,
+    pub num_nodes: usize
 }

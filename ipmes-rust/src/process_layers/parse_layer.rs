@@ -6,6 +6,7 @@ use serde_json::to_string;
 use std::collections::BinaryHeap;
 use std::error::Error;
 use std::fs::File;
+use::std::rc::Rc;
 use std::io;
 
 #[derive(Debug, serde::Deserialize)]
@@ -78,12 +79,12 @@ impl<'a> ParseLayer<'a> {
         }
     }
 
-    fn get_batch(&mut self) -> Option<Vec<InputEdge>> {
-        let mut edges_to_flush: Vec<InputEdge> = Vec::new();
+    fn get_batch(&mut self) -> Option<Vec<Rc<InputEdge>>> {
+        let mut edges_to_flush: Vec<Rc<InputEdge>> = Vec::new();
         loop {
             match self.buffer.peek() {
                 Some(edge) if edge.0.timestamp < self.boundary_time => {
-                    edges_to_flush.push(self.buffer.pop().unwrap().0);
+                    edges_to_flush.push(Rc::new(self.buffer.pop().unwrap().0));
                 }
                 _ => {
                     break;
@@ -100,7 +101,7 @@ impl<'a> ParseLayer<'a> {
 }
 
 impl Iterator for ParseLayer<'_> {
-    type Item = Vec<InputEdge>;
+    type Item = Vec<Rc<InputEdge>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.nothing_to_send() {

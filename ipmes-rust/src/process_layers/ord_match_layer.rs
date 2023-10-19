@@ -19,7 +19,7 @@ struct PartialMatch<'p> {
 }
 
 impl<'p> PartialMatch<'p> {
-    pub fn to_sub_pattern_match(self) -> SubPatternMatch {
+    pub fn to_sub_pattern_match(self) -> SubPatternMatch<'p> {
         todo!()
     }
 }
@@ -195,11 +195,11 @@ where
     }
 }
 
-impl<P> Iterator for OrdMatchLayer<'_, P>
+impl<'p, P> Iterator for OrdMatchLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
-    type Item = Vec<SubPatternMatch>;
+    type Item = Vec<SubPatternMatch<'p>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut results = Vec::new();

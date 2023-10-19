@@ -4,12 +4,14 @@ use std::ops::Sub;
 
 #[derive(Debug)]
 pub struct SubPattern<'a> {
+    // sub-pattern id
     pub id: usize,
     pub edges: Vec<&'a Edge>,
 }
 
 impl<'a> SubPattern<'a> {}
 
+// maybe we can set a maximum sub-pattern size
 pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
     let mut parents: Vec<&Edge> = Vec::new();
@@ -21,7 +23,7 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     for (id, x) in selected.iter_mut().enumerate() {
         x.id = id;
     }
-    // this.TCQRelation = genRelations(selected);
+    // this.TCQRelation = genRelations(selected); [reserved to "join_layer"]
     selected
 }
 
@@ -31,6 +33,7 @@ fn generate_sub_patterns<'a>(
     parents: &mut Vec<&'a Edge>,
     results: &mut Vec<SubPattern<'a>>,
 ) {
+    // if "has_shared_node" is false, the sub-pattern would be disconnected (not allowed)
     if !has_shared_node(edge, parents) {
         return;
     }
@@ -164,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ss() {
+    fn test_ssp() {
         let parser = SpadePatternParser;
         let pattern = parser
             .parse(
