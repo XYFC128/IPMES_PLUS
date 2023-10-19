@@ -1,10 +1,14 @@
-use log::info;
 use clap::{arg, Parser, ValueEnum};
+use log::info;
+use std::fs::File;
 
-use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::darpa::DarpaPatternParser;
 use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
+use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::Pattern;
+use ipmes_rust::process_layers::join_layer::JoinLayer;
+use ipmes_rust::process_layers::{OrdMatchLayer, ParseLayer};
+use ipmes_rust::sub_pattern::decompose;
 
 /// IPMES implemented in rust
 #[derive(Parser, Debug)]
@@ -26,7 +30,7 @@ struct Args {
 
     /// Window size (sec)
     #[arg(short, long, default_value_t = 1800)]
-    window_size: u32,
+    window_size: u64,
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -41,9 +45,18 @@ fn main() {
     info!("Command line arguments: {:?}", args);
 
     let pattern = parse_pattern(&args).expect("Fail to parse pattern");
+    let decomposition = decompose(&pattern);
 
+    let input_reader = File::open(args.data_graph).unwrap();
+    let mut input_reader = csv::Reader::from_reader(input_reader);
+    let parse_layer = ParseLayer::new(&mut input_reader);
+    let ord_match_layer =
+        OrdMatchLayer::new(parse_layer, &decomposition, args.regex, args.window_size).unwrap();
+    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition);
 
-    todo!()
+    for result in join_layer {
+        todo!()
+    }
 }
 
 fn parse_pattern(args: &Args) -> Result<Pattern, PatternParsingError> {
@@ -81,21 +94,20 @@ mod tests {
     fn test_input_file_name_parsing() {
         assert_eq!(
             get_input_files("TTP11"),
-            ("TTP11_node.json".to_string(), "TTP11_edge.json".to_string(), "TTP11_oRels.json".to_string())
+            (
+                "TTP11_node.json".to_string(),
+                "TTP11_edge.json".to_string(),
+                "TTP11_oRels.json".to_string()
+            )
         );
 
         assert_eq!(
             get_input_files("TTP11_regex"),
-            ("TTP11_regex_node.json".to_string(), "TTP11_regex_edge.json".to_string(), "TTP11_oRels.json".to_string())
+            (
+                "TTP11_regex_node.json".to_string(),
+                "TTP11_regex_edge.json".to_string(),
+                "TTP11_oRels.json".to_string()
+            )
         );
     }
 }
-
-/*
-for line in input {
-    let parsed = parse(line) [edge]
-    let sorted = sorter.sort(parsed) Iter<[edge]>
-    let sub_patterns = sub_pattern_matcher.match_against(sorted) [(key, val)]
-    let patterns = table.join(sub_pattern) [pattern]
-}
- */

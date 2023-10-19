@@ -47,7 +47,7 @@ fn parse(record: Record) -> (InputEdge, Option<InputEdge>) {
 }
 
 // #[derive(serde::Deserialize)]
-struct ParseLayer<'a> {
+pub struct ParseLayer<'a> {
     csv_iter: DeserializeRecordsIter<'a, File, Record>,
     buffer: BinaryHeap<Reverse<InputEdge>>,
     boundary_time: u64,
