@@ -1,16 +1,16 @@
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern_match::SubPatternMatch;
 
-struct NaiveJoinLayer<P>
+struct NaiveJoinLayer<'p, P>
     where
-        P: Iterator<Item = Vec<SubPatternMatch>>,
+        P: Iterator<Item = Vec<SubPatternMatch<'p>>>,
 {
     prev_layer: P,
 }
 
-impl<P> Iterator for NaiveJoinLayer<P>
+impl<'p, P> Iterator for NaiveJoinLayer<'p, P>
     where
-        P: Iterator<Item = Vec<SubPatternMatch>>,
+        P: Iterator<Item = Vec<SubPatternMatch<'p>>>,
 {
     type Item = PatternMatch;
 

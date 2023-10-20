@@ -7,7 +7,7 @@ use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
 use std::cmp::max;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
 /// Internal representation of a not complete subpattern match
@@ -18,9 +18,24 @@ struct PartialMatch<'p> {
     edges: Vec<MatchEdge<'p>>,
 }
 
-impl<'p> PartialMatch<'p> {
-    pub fn to_sub_pattern_match(self) -> SubPatternMatch<'p> {
-        todo!()
+impl<'p> From<PartialMatch<'p>> for SubPatternMatch<'p>  {
+    fn from(value: PartialMatch<'p>) -> SubPatternMatch<'p> {
+        let mut matched_nodes_table = HashMap::new();
+        let mut matched_edges_table = HashMap::new();
+
+        for (id_in_pattern, id_in_input) in value.node_id_map.iter().enumerate() {
+            matched_nodes_table.insert(id_in_pattern, id_in_input.clone());
+        }
+        for edge in &value.edges {
+            matched_edges_table.insert(edge.matched.id, Rc::clone(&edge.input_edge));
+        }
+
+        SubPatternMatch {
+            timestamp: value.timestamp,
+            matched_nodes_table,
+            matched_edges_table,
+            match_edges: value.edges
+        }
     }
 }
 
@@ -220,7 +235,7 @@ where
                 let cur_result = matcher.match_against(&time_batch);
                 if matcher.sub_pattern_id != -1 {
                     // this is the last buffer of a subpattern
-                    results.extend(cur_result.into_iter().map(|m| m.to_sub_pattern_match()));
+                    results.extend(cur_result.into_iter().map(|m| m.into()));
                     prev_result = Vec::new();
                 } else {
                     prev_result = cur_result;
