@@ -1,13 +1,9 @@
 use std::cmp::Reverse;
 use crate::input_edge::InputEdge;
-use csv::{DeserializeRecordsIter, ReaderBuilder, StringRecordIter};
-use serde::Deserialize;
-use serde_json::to_string;
+use csv::DeserializeRecordsIter;
 use std::collections::BinaryHeap;
-use std::error::Error;
 use std::fs::File;
 use::std::rc::Rc;
-use std::io;
 
 #[derive(Debug, serde::Deserialize)]
 struct Record {

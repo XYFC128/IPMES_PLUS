@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use crate::pattern::parser::PatternParsingError;
-use petgraph::graph::{DefaultIx, Graph, GraphIndex, Node};
+use petgraph::graph::{DefaultIx, Graph};
 use serde_json::Value;
 use std::fs::File;
-use std::hash::Hash;
-use std::io::{BufRead, Read};
-use petgraph::algo::{BoundedMeasure, floyd_warshall, toposort};
+use std::io::Read;
+use petgraph::algo::floyd_warshall;
 use petgraph::graph::NodeIndex;
 use petgraph::Direction;
 

@@ -36,8 +36,6 @@ pub trait PatternParser {
         edges_file: &str,
         order_relation_file: &str,
     ) -> Result<Pattern, PatternParsingError> {
-        use PatternParsingError::*;
-
         let (id_convert, node_signatures) = self.parse_node_file(node_file)?;
         let edges = self.parse_edge_file(edges_file, &id_convert, &node_signatures)?;
         let num_nodes = edges

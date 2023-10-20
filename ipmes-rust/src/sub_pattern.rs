@@ -1,6 +1,4 @@
-use crate::pattern::order_relation::OrderRelation;
 use crate::pattern::{Edge, Pattern};
-use std::ops::Sub;
 
 #[derive(Debug)]
 pub struct SubPattern<'a> {
