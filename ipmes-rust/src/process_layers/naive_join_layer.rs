@@ -4,6 +4,7 @@ use crate::match_edge::MatchEdge;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern_match::SubPatternMatch;
 
+
 struct Entry<'p> {
     earliest_time: u64,
     match_edges: Vec<MatchEdge<'p>>,
@@ -17,8 +18,6 @@ impl<'p> From<Entry<'p>> for PatternMatch {
 }
 
 pub struct NaiveJoinLayer<'p, P>
-    where
-        P: Iterator<Item = Vec<SubPatternMatch>>,
 {
     prev_layer: P,
     table: HashSet<Rc<Entry<'p>>>,
@@ -32,7 +31,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
 
 impl<'p, P> Iterator for NaiveJoinLayer<'p, P>
     where
-        P: Iterator<Item = Vec<SubPatternMatch>>,
+        P: Iterator<Item = Vec<SubPatternMatch<'p>>>,
 {
     type Item = PatternMatch;
 
