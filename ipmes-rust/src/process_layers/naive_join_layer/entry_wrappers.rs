@@ -3,7 +3,6 @@ use std::rc::Rc;
 use std::collections::hash_map::DefaultHasher;
 use std::iter::zip;
 use std::cmp::Ordering;
-use std::ops::Deref;
 use crate::match_edge::MatchEdge;
 use crate::process_layers::naive_join_layer::entry::Entry;
 
