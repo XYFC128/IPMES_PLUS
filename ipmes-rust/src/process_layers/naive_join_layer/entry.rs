@@ -1,8 +1,8 @@
-use std::cmp::min;
-use itertools::Itertools;
 use crate::match_edge::MatchEdge;
+use crate::pattern_match::PatternMatch;
 use crate::process_layers::naive_join_layer::entry_wrappers::UniqueEntry;
-use crate::sub_pattern_match::SubPatternMatch;
+use itertools::Itertools;
+use std::cmp::min;
 
 #[derive(Debug)]
 pub struct Entry<'p> {
@@ -58,5 +58,19 @@ impl<'p> Entry<'p> {
             match_nodes,
             hash,
         }
+    }
+}
+
+impl<'p> From<Entry<'p>> for PatternMatch {
+    fn from(value: Entry<'_>) -> Self {
+        let mut match_edges = value.match_edges;
+        match_edges.sort_by(|a, b| a.matched.id.cmp(&b.matched.id));
+
+        let matched_edges = match_edges
+            .into_iter()
+            .map(|edge| edge.input_edge)
+            .collect_vec();
+
+        Self { matched_edges }
     }
 }

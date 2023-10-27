@@ -162,7 +162,6 @@ where
     P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
     prev_layer: P,
-    use_regex: bool,
     window_size: u64,
     sub_matchers: Vec<SubMatcher<'p>>,
 }
@@ -210,7 +209,6 @@ where
 
         Ok(Self {
             prev_layer,
-            use_regex,
             window_size,
             sub_matchers,
         })
