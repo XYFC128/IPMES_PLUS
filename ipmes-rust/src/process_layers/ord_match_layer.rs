@@ -6,19 +6,20 @@ use crate::sub_pattern_match::SubPatternMatch;
 use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
 struct PartialMatch<'p> {
+    /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
     timestamp: u64,
     node_id_map: Vec<u64>,
     edges: Vec<MatchEdge<'p>>,
 }
 
-impl<'p> From<PartialMatch<'p>> for SubPatternMatch<'p>  {
+impl<'p> From<PartialMatch<'p>> for SubPatternMatch<'p> {
     fn from(value: PartialMatch<'p>) -> SubPatternMatch<'p> {
         let mut matched_nodes_table = HashMap::new();
         let mut matched_edges_table = HashMap::new();
@@ -26,15 +27,20 @@ impl<'p> From<PartialMatch<'p>> for SubPatternMatch<'p>  {
         for (id_in_pattern, id_in_input) in value.node_id_map.iter().enumerate() {
             matched_nodes_table.insert(id_in_pattern, id_in_input.clone());
         }
+
+        let mut earliest_time = u64::MAX;
         for edge in &value.edges {
             matched_edges_table.insert(edge.matched.id, Rc::clone(&edge.input_edge));
+            earliest_time = min(earliest_time, edge.input_edge.timestamp);
         }
 
         SubPatternMatch {
-            timestamp: value.timestamp,
+            id: 0,
+            latest_time: value.timestamp,
+            earliest_time,
             matched_nodes_table,
             matched_edges_table,
-            match_edges: value.edges
+            match_edges: value.edges,
         }
     }
 }
@@ -235,7 +241,11 @@ where
                 let cur_result = matcher.match_against(&time_batch);
                 if matcher.sub_pattern_id != -1 {
                     // this is the last buffer of a subpattern
-                    results.extend(cur_result.into_iter().map(|m| m.into()));
+                    results.extend(
+                        cur_result.into_iter().map(|m| {
+                            SubPatternMatch::from(m).set_id(matcher.sub_pattern_id as usize)
+                        }),
+                    );
                     prev_result = Vec::new();
                 } else {
                     prev_result = cur_result;

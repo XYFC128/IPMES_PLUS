@@ -6,7 +6,7 @@ use ipmes_rust::pattern::darpa::DarpaPatternParser;
 use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
 use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::Pattern;
-use ipmes_rust::process_layers::{OrdMatchLayer, ParseLayer, JoinLayer};
+use ipmes_rust::process_layers::{JoinLayer, OrdMatchLayer, ParseLayer};
 use ipmes_rust::sub_pattern::decompose;
 
 /// IPMES implemented in rust
