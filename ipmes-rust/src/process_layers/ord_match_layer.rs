@@ -12,12 +12,12 @@ use std::rc::Rc;
 
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
-struct PartialMatch<'p> {
+pub struct PartialMatch<'p> {
     /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
-    timestamp: u64,
+    pub timestamp: u64,
     /// nodes in pattern is matched to nodes of the input ("0" means not matched)
-    node_id_map: Vec<u64>,
-    edges: Vec<MatchEdge<'p>>,
+    pub node_id_map: Vec<u64>,
+    pub edges: Vec<MatchEdge<'p>>,
 }
 
 /// Represent a small buffer for matching an edge
