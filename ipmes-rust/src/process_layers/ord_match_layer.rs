@@ -15,6 +15,7 @@ use std::rc::Rc;
 struct PartialMatch<'p> {
     /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
     timestamp: u64,
+    /// nodes in pattern is matched to nodes of the input ("0" means not matched)
     node_id_map: Vec<u64>,
     edges: Vec<MatchEdge<'p>>,
 }
