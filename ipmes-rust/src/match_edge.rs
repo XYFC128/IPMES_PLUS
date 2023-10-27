@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use crate::input_edge::InputEdge;
 use crate::pattern::Edge as PatternEdge;
