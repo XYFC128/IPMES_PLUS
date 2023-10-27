@@ -42,6 +42,7 @@ fn main() {
     env_logger::init();
     let args = Args::parse();
     info!("Command line arguments: {:?}", args);
+    let window_size = args.window_size * 1000;
 
     let pattern = parse_pattern(&args).expect("Fail to parse pattern");
     let decomposition = decompose(&pattern);
@@ -50,7 +51,7 @@ fn main() {
     let mut input_reader = csv::Reader::from_reader(input_reader);
     let parse_layer = ParseLayer::new(&mut input_reader);
     let ord_match_layer =
-        OrdMatchLayer::new(parse_layer, &decomposition, args.regex, args.window_size).unwrap();
+        OrdMatchLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
     let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition);
 
     for result in join_layer {

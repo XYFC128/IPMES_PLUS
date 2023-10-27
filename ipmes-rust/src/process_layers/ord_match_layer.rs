@@ -124,7 +124,7 @@ impl<'p> SubMatcher<'p> {
     /// edge matches n0 too, then the start node should be x too.
     fn has_nod_collision(
         &self,
-        input_edge: &Rc<InputEdge>,
+        input_edge: &InputEdge,
         partial_match: &PartialMatch<'p>,
     ) -> bool {
         // the expected id of start/end node, 0 for any
@@ -136,7 +136,7 @@ impl<'p> SubMatcher<'p> {
     }
 
     /// Return `true` if the id of input edge already exist in the partial match.
-    fn edge_duplicates(input_edge: &Rc<InputEdge>, partial_match: &PartialMatch<'p>) -> bool {
+    fn edge_duplicates(input_edge: &InputEdge, partial_match: &PartialMatch<'p>) -> bool {
         partial_match
             .edges
             .iter()

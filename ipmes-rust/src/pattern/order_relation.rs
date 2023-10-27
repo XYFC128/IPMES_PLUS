@@ -10,10 +10,11 @@ use petgraph::Direction;
 
 pub struct OrderRelation {
     graph: Graph<usize, ()>,
-    // distances_table: HashMap<(NodeIndex, NodeIndex), i32>,
 }
 
 impl OrderRelation {
+    /// Returns an iterator over the id of pattern edges that should appear **before** the given pattern
+    /// edge.
     pub fn get_previous(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
         // Indices in "graph" is incremented by 1, since "0" is reserved for "root".
         let idx = NodeIndex::<DefaultIx>::new(eid + 1);
@@ -27,6 +28,8 @@ impl OrderRelation {
             })
     }
 
+    /// Returns an iterator over the id of pattern edges that should appear **after** the given pattern
+    /// edge.
     pub fn get_next(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
         let idx = NodeIndex::<DefaultIx>::new(eid + 1);
         self.graph.neighbors_directed(idx, Direction::Outgoing)
@@ -73,8 +76,7 @@ impl OrderRelation {
     }
 
     pub fn calculate_distances(&self) -> Option<HashMap<(NodeIndex, NodeIndex), i32>> {
-        let distances_table = floyd_warshall(&self.graph, |_| 1).ok();
-        distances_table
+        floyd_warshall(&self.graph, |_| 1).ok()
     }
 }
 
