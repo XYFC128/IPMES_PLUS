@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
 use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 pub struct SubPatternMatch<'p> {
     pub timestamp: u64,
