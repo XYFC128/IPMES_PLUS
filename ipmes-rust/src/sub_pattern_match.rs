@@ -18,7 +18,7 @@ pub struct SubPatternMatch<'p> {
 
     /// (input node id, pattern node id)
     pub node_id_map: Vec<(u64, u64)>,
-    /// (input edge id, pattern edge id)
+    /// "edge_id_map[matched_id] = input_id"
     pub edge_id_map: Vec<Option<u64>>,
 
     /// sort this by id for uniqueness determination
@@ -108,6 +108,7 @@ impl SubPatternMatch {
         let edge_id_map = Self::merge_edge_id(sub_pattern_match1, sub_pattern_match2);
 
         Some(SubPatternMatch {
+            /// 'id' is meaningless here
             id: 0,
             latest_time: max(
                 sub_pattern_match1.latest_time,
