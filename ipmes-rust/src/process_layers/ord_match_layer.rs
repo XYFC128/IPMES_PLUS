@@ -13,6 +13,9 @@ use std::rc::Rc;
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
 pub struct PartialMatch<'p> {
+    /// todo: check whether 'id' is properly initialized
+    /// the id of the matched sub-pattern
+    pub id: usize,
     /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
     pub timestamp: u64,
     /// nodes in pattern is matched to nodes of the input ("0" means not matched)
@@ -87,6 +90,7 @@ impl<'p> SubMatcher<'p> {
         edges.push(match_edge);
 
         Some(PartialMatch {
+            id: partial_match.id,
             timestamp: partial_match.timestamp,
             node_id_map,
             edges,
@@ -171,6 +175,7 @@ where
                 // Insert an empty partial match that is never expired. All the partial match for
                 // sub pattern will be duplicated from this partial match
                 first.buffer.push_back(PartialMatch {
+                    id: sub_pattern.id,
                     timestamp: u64::MAX,
                     node_id_map: vec![0; max_node_id + 1],
                     edges: vec![],
@@ -269,6 +274,7 @@ mod tests {
 
         let mut matcher = SubMatcher::new(&pattern_edge, false).unwrap();
         matcher.buffer.push_back(PartialMatch {
+            id: 0,
             timestamp: u64::MAX,
             node_id_map: vec![0; 2],
             edges: vec![],
@@ -304,6 +310,7 @@ mod tests {
 
         let mut matcher = SubMatcher::new(&pattern_edge, true).unwrap();
         matcher.buffer.push_back(PartialMatch {
+            id: 0,
             timestamp: u64::MAX,
             node_id_map: vec![0; 2],
             edges: vec![],
