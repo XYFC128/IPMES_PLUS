@@ -2,7 +2,6 @@ use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
 use crate::pattern::Edge as PatternEdge;
 use crate::sub_pattern::SubPattern;
-use crate::sub_pattern_match::SubPatternMatch;
 use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;

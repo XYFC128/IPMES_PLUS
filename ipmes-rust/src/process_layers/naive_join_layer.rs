@@ -220,7 +220,7 @@ where
             let sub_pattern_matches = self.prev_layer.next()?;
 
             if let Some(sub_match) = sub_pattern_matches.last() {
-                self.clear_expired(sub_match.timestamp.saturating_sub(self.time_window));
+                self.clear_expired(sub_match.latest_time.saturating_sub(self.time_window));
             } else {
                 continue;
             }

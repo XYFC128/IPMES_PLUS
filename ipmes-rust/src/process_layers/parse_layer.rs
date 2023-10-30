@@ -131,7 +131,6 @@ mod tests {
             .from_path("testcases/test.csv").unwrap();
         let parse_layer = ParseLayer::new(&mut csv);
 
-        let mut outer = 0;
         for batch in parse_layer {
             let mut time: u64 = 0;
             for edge in batch {

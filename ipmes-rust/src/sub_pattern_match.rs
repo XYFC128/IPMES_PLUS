@@ -1,12 +1,8 @@
-use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use itertools::Itertools;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet};
-use std::ops::Deref;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct SubPatternMatch<'p> {
@@ -21,14 +17,14 @@ pub struct SubPatternMatch<'p> {
     /// "edge_id_map[matched_id] = input_id"
     pub edge_id_map: Vec<Option<u64>>,
 
-    /// sort this by id for uniqueness determination
+    /// sort this by 'id' for uniqueness determination
     pub match_edges: Vec<MatchEdge<'p>>,
 }
 
-impl SubPatternMatch {
+impl<'p> SubPatternMatch<'p> {
     /// todo: check correctness
     fn merge_edge_id(sub_pattern_match1: &Self, sub_pattern_match2: &Self) -> Vec<Option<u64>> {
-        let mut edge_id_map = vec![None, sub_pattern_match1.edge_id_map.len()];
+        let mut edge_id_map = vec![None; sub_pattern_match1.edge_id_map.len()];
         for i in 0..sub_pattern_match1.edge_id_map.len() {
             match sub_pattern_match1.edge_id_map[i] {
                 Some(T) => edge_id_map[i] = Some(T),
@@ -64,8 +60,8 @@ impl SubPatternMatch {
             .collect_vec();
 
         /// handle "edge uniqueness"
-        let mut prev_id = -1;
-        for edge in merged_edges {
+        let mut prev_id = u64::MAX;
+        for edge in &merged_edges {
             if edge.input_edge.id == prev_id {
                 return None;
             }
@@ -78,11 +74,10 @@ impl SubPatternMatch {
         /// todo: if shared_node[i] = true, there must exist a pair!
         let mut node_id_map = vec![];
         let mut j = 0;
-        for (i, (input_node_id, pattern_node_id)) in
+        for (i, (input_id1, pattern_id1)) in
             sub_pattern_match1.node_id_map.iter().enumerate()
         {
             while j < sub_pattern_match2.node_id_map.len() {
-                let (input_id1, pattern_id1) = &sub_pattern_match1.node_id_map[i];
                 let (input_id2, pattern_id2) = &sub_pattern_match2.node_id_map[i];
 
                 if input_id2 < input_id1 {
@@ -93,7 +88,7 @@ impl SubPatternMatch {
                     if pattern_id2 == pattern_id1
                         && sub_pattern_buffer
                             .relation
-                            .is_node_shared(pattern_id2)
+                            .is_node_shared(pattern_id2.clone() as usize)
                     {
                         break;
                     } else {
@@ -125,7 +120,8 @@ impl SubPatternMatch {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
+#[derive(Clone)]
 pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
 
 impl Eq for EarliestFirst<'_> {}
@@ -148,8 +144,8 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
     }
 }
 
-impl<'p> AsRef<SubPatternMatch<'p>> for EarliestFirst<'p> {
-    fn as_ref(&self) -> &SubPatternMatch<'p> {
-        self.0.as_ref()
-    }
-}
+// impl<'p> AsRef<SubPatternMatch<'p>> for EarliestFirst<'p> {
+//     fn as_ref(&self) -> &SubPatternMatch<'p> {
+//         self.0.as_ref()
+//     }
+// }
