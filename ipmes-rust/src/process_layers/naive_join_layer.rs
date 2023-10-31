@@ -1,9 +1,13 @@
 mod entry;
 mod entry_wrappers;
 
+#[cfg(test)]
+mod tests;
+
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
+use crate::process_layers::ord_match_layer::PartialMatch;
 use crate::sub_pattern_match::SubPatternMatch;
 use entry::Entry;
 use entry_wrappers::{EarliestFirst, UniqueEntry};
@@ -52,6 +56,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         }
     }
 
+    /// Add entry to the pool and perform join
     fn add_entry(&mut self, entry: Rc<Entry<'p>>) {
         let unique_entry = UniqueEntry(Rc::clone(&entry));
         if self.unique_entries.contains(&unique_entry) {
@@ -103,22 +108,75 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
             })
             .collect_vec();
 
-        let pattern_match = self.get_mapping(&merged_edges)?;
+        let mapping = self.get_mapping(&merged_edges)?;
 
-        if !self.check_order_relation(&entry1, &entry2, &pattern_match) {
+        if !self.check_order_relation(&entry1, &entry2, &mapping) {
             return None;
         }
 
         // todo: check node uniqueness
 
         let merged_nodes = self.merge_nodes(&entry1.match_nodes, &entry2.match_nodes);
-        let hash = UniqueEntry::calc_hash(&pattern_match);
+        let hash = UniqueEntry::calc_hash(&mapping);
         Some(Entry {
             earliest_time: min(entry1.earliest_time, entry2.earliest_time),
             match_edges: merged_edges,
             match_nodes: merged_nodes,
             hash,
         })
+    }
+
+    fn try_merge_edges(
+        &self,
+        a: &[MatchEdge<'p>],
+        b: &[MatchEdge<'p>],
+    ) -> Option<Vec<MatchEdge<'p>>> {
+        let (mut p1, mut p2) = if a.len() > b.len() {
+            (a.iter(), b.iter())
+        } else {
+            (b.iter(), a.iter())
+        };
+
+        let mut mapping = vec![None; self.pattern.edges.len()];
+        let mut merged = Vec::new();
+
+        let mut next1 = p1.next();
+        let mut next2 = p2.next();
+        while let (Some(edge1), Some(edge2)) = (next1, next2) {
+            if edge1.input_edge.id < edge2.input_edge.id {
+                if mapping[edge1.matched.id].is_some() {
+                    return None;
+                }
+                merged.push(edge1.clone());
+                mapping[edge1.matched.id] = merged.last();
+                next1 = p1.next();
+            } else {
+                if mapping[edge2.matched.id].is_some() {
+                    return None;
+                }
+
+                if edge1.input_edge.id == edge2.input_edge.id {
+                    if edge1.matched.id != edge2.matched.id {
+                        return None;
+                    }
+                    next1 = p1.next();
+                }
+                merged.push(edge2.clone());
+                mapping[edge2.matched.id] = merged.last();
+                next2 = p2.next();
+            }
+        }
+
+        while let Some(edge) = next1 {
+            if mapping[edge.matched.id].is_some() {
+                return None;
+            }
+            merged.push(edge.clone());
+            mapping[edge.matched.id] = merged.last();
+            next1 = p1.next();
+        }
+
+        Some(merged)
     }
 
     /// Check whether input nodes in different entries that match the same pattern node are also
@@ -153,6 +211,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
             }
             prev_id = edge.input_edge.id;
 
+            todo!("This check is not right");
             if pattern_match[edge.matched.id].is_some() {
                 return None; // 2 input edges matches to the same pattern edge
             }
@@ -211,7 +270,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
 
 impl<'p, P> Iterator for NaiveJoinLayer<'p, P>
 where
-    P: Iterator<Item = Vec<SubPatternMatch<'p>>>,
+    P: Iterator<Item = Vec<PartialMatch<'p>>>,
 {
     type Item = PatternMatch;
 
@@ -228,18 +287,18 @@ where
             for sub_match in sub_pattern_matches {
                 let mut match_nodes = vec![None; self.pattern.num_nodes];
                 let mut earliest_time = u64::MAX;
-                for edge in &sub_match.match_edges {
+                for edge in &sub_match.edges {
                     match_nodes[edge.matched.start] = Some(edge.input_edge.start);
                     match_nodes[edge.matched.end] = Some(edge.input_edge.end);
 
                     earliest_time = min(edge.input_edge.timestamp, earliest_time);
                 }
 
-                if let Some(mapping) = self.get_mapping(&sub_match.match_edges) {
+                if let Some(mapping) = self.get_mapping(&sub_match.edges) {
                     let hash = UniqueEntry::calc_hash(&mapping);
                     let entry = Rc::new(Entry {
                         earliest_time,
-                        match_edges: sub_match.match_edges,
+                        match_edges: sub_match.edges,
                         match_nodes,
                         hash,
                     });
