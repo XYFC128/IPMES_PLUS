@@ -60,24 +60,24 @@ impl<'p> SubPatternMatch<'p> {
         //     sub_pattern_buffer.max_num_nodes
         // )?;
         todo!();
-
-        let edge_id_map = Self::merge_edge_id_map(sub_pattern_match1, sub_pattern_match2);
-
-        Some(SubPatternMatch {
-            /// 'id' is meaningless here
-            id: 0,
-            latest_time: max(
-                sub_pattern_match1.latest_time,
-                sub_pattern_match2.latest_time,
-            ),
-            earliest_time: min(
-                sub_pattern_match1.earliest_time,
-                sub_pattern_match2.earliest_time,
-            ),
-            match_nodes,
-            edge_id_map,
-            match_edges: merged_edges,
-        })
+        //
+        // let edge_id_map = Self::merge_edge_id_map(sub_pattern_match1, sub_pattern_match2);
+        //
+        // Some(SubPatternMatch {
+        //     /// 'id' is meaningless here
+        //     id: 0,
+        //     latest_time: max(
+        //         sub_pattern_match1.latest_time,
+        //         sub_pattern_match2.latest_time,
+        //     ),
+        //     earliest_time: min(
+        //         sub_pattern_match1.earliest_time,
+        //         sub_pattern_match2.earliest_time,
+        //     ),
+        //     match_nodes,
+        //     edge_id_map,
+        //     match_edges: merged_edges,
+        // })
     }
 
     /// todo: Write tests to check correctness

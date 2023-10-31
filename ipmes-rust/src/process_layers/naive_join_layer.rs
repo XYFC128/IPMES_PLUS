@@ -130,7 +130,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         &self,
         a: &[MatchEdge<'p>],
         b: &[MatchEdge<'p>],
-    ) -> Option<(Vec<MatchEdge<'p>>, Vec<Option<&MatchEdge<'p>>>)> {
+    ) -> Option<Vec<MatchEdge<'p>>> {
         let (mut p1, mut p2) = if a.len() > b.len() {
             (a.iter(), b.iter())
         } else {
@@ -148,7 +148,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
                     return None;
                 }
                 merged.push(edge1.clone());
-                mapping[edge1.matched.id] = merged.last();
+                mapping[edge1.matched.id] = Some(edge1.input_edge.timestamp);
                 next1 = p1.next();
             } else {
                 if mapping[edge2.matched.id].is_some() {
@@ -162,7 +162,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
                     next1 = p1.next();
                 }
                 merged.push(edge2.clone());
-                mapping[edge2.matched.id] = merged.last();
+                mapping[edge2.matched.id] = Some(edge2.input_edge.timestamp);
                 next2 = p2.next();
             }
         }
@@ -172,11 +172,11 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
                 return None;
             }
             merged.push(edge.clone());
-            mapping[edge.matched.id] = merged.last();
+            mapping[edge.matched.id] = Some(edge.input_edge.timestamp);
             next1 = p1.next();
         }
 
-        Some((merged, mapping))
+        Some(merged)
     }
 
     /// Check whether input nodes in different entries that match the same pattern node are also
