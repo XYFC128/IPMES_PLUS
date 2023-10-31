@@ -31,7 +31,7 @@ impl<'p> Entry<'p> {
     ///
     /// **Important**: This function is inefficient and unsafe, and should only be used for
     /// testing purpose.
-    pub fn from_match_edge<L>(match_edges: L, num_nodes: usize, num_edges: usize) -> Self
+    pub fn from_match_edges<L>(match_edges: L, num_nodes: usize, num_edges: usize) -> Self
     where
         L: Iterator<Item = MatchEdge<'p>>,
     {

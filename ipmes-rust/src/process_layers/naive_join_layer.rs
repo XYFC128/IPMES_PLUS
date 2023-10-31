@@ -130,7 +130,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         &self,
         a: &[MatchEdge<'p>],
         b: &[MatchEdge<'p>],
-    ) -> Option<Vec<MatchEdge<'p>>> {
+    ) -> Option<(Vec<MatchEdge<'p>>, Vec<Option<&MatchEdge<'p>>>)> {
         let (mut p1, mut p2) = if a.len() > b.len() {
             (a.iter(), b.iter())
         } else {
@@ -176,7 +176,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
             next1 = p1.next();
         }
 
-        Some(merged)
+        Some((merged, mapping))
     }
 
     /// Check whether input nodes in different entries that match the same pattern node are also
@@ -279,7 +279,7 @@ where
             let sub_pattern_matches = self.prev_layer.next()?;
 
             if let Some(sub_match) = sub_pattern_matches.last() {
-                self.clear_expired(sub_match.latest_time.saturating_sub(self.time_window));
+                self.clear_expired(sub_match.timestamp.saturating_sub(self.time_window));
             } else {
                 continue;
             }

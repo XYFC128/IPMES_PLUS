@@ -1,5 +1,5 @@
 use crate::match_edge::MatchEdge;
-use crate::process_layers::join_layer::SubPatternBuffer;
+use crate::process_layers::join_layer::{Relation, SubPatternBuffer};
 use itertools::Itertools;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
@@ -13,7 +13,7 @@ pub struct SubPatternMatch<'p> {
     pub earliest_time: u64,
 
     /// (input node id, pattern node id)
-    pub node_id_map: Vec<(u64, u64)>,
+    pub match_nodes: Vec<(u64, u64)>,
     /// "edge_id_map[matched_id] = input_id"
     pub edge_id_map: Vec<Option<u64>>,
 
@@ -22,20 +22,6 @@ pub struct SubPatternMatch<'p> {
 }
 
 impl<'p> SubPatternMatch<'p> {
-    /// todo: check correctness
-    fn merge_edge_id(sub_pattern_match1: &Self, sub_pattern_match2: &Self) -> Vec<Option<u64>> {
-        let mut edge_id_map = vec![None; sub_pattern_match1.edge_id_map.len()];
-        for i in 0..sub_pattern_match1.edge_id_map.len() {
-            match sub_pattern_match1.edge_id_map[i] {
-                Some(T) => edge_id_map[i] = Some(T),
-                None => match sub_pattern_match2.edge_id_map[i] {
-                    Some(T) => edge_id_map[i] = Some(T),
-                    None => (),
-                },
-            }
-        }
-        edge_id_map
-    }
     /// todo: check correctness
     pub fn merge_matches(
         sub_pattern_buffer: &SubPatternBuffer,
@@ -68,39 +54,14 @@ impl<'p> SubPatternMatch<'p> {
             prev_id = edge.input_edge.id;
         }
 
-        /// handle "shared node" and "node uniqueness"
-        /// Use relation.shared_node
-        /// MORE CHECKS (NOT FINISHED)
-        /// todo: if shared_node[i] = true, there must exist a pair!
-        let mut node_id_map = vec![];
-        let mut j = 0;
-        for (i, (input_id1, pattern_id1)) in
-            sub_pattern_match1.node_id_map.iter().enumerate()
-        {
-            while j < sub_pattern_match2.node_id_map.len() {
-                let (input_id2, pattern_id2) = &sub_pattern_match2.node_id_map[i];
+        // let mut match_nodes = Self::try_merge_nodes(
+        //     &sub_pattern_match1.match_nodes,
+        //     &sub_pattern_match1.match_nodes,
+        //     sub_pattern_buffer.max_num_nodes
+        // )?;
+        todo!();
 
-                if input_id2 < input_id1 {
-                    node_id_map.push(sub_pattern_match2.node_id_map[j]);
-                    j += 1;
-                } else if input_id2 == input_id1 {
-                    /// The input node is mapped to the same pattern node, and the node is indeed should be shared.
-                    if pattern_id2 == pattern_id1
-                        && sub_pattern_buffer
-                            .relation
-                            .is_node_shared(pattern_id2.clone() as usize)
-                    {
-                        break;
-                    } else {
-                        return None;
-                    }
-                }
-            }
-            node_id_map.push(sub_pattern_match1.node_id_map[i]);
-        }
-        node_id_map.extend(&sub_pattern_match2.node_id_map[j..]);
-
-        let edge_id_map = Self::merge_edge_id(sub_pattern_match1, sub_pattern_match2);
+        let edge_id_map = Self::merge_edge_id_map(sub_pattern_match1, sub_pattern_match2);
 
         Some(SubPatternMatch {
             /// 'id' is meaningless here
@@ -113,10 +74,80 @@ impl<'p> SubPatternMatch<'p> {
                 sub_pattern_match1.earliest_time,
                 sub_pattern_match2.earliest_time,
             ),
-            node_id_map,
+            match_nodes,
             edge_id_map,
             match_edges: merged_edges,
         })
+    }
+
+    /// todo: Write tests to check correctness
+    fn merge_edge_id_map(sub_pattern_match1: &Self, sub_pattern_match2: &Self) -> Vec<Option<u64>> {
+        let mut edge_id_map = vec![None; sub_pattern_match1.edge_id_map.len()];
+        for i in 0..sub_pattern_match1.edge_id_map.len() {
+            match sub_pattern_match1.edge_id_map[i] {
+                Some(T) => edge_id_map[i] = Some(T),
+                None => match sub_pattern_match2.edge_id_map[i] {
+                    Some(T) => edge_id_map[i] = Some(T),
+                    None => (),
+                },
+            }
+        }
+        edge_id_map
+    }
+
+    /// Try to merge match nodes, and handle "shared node" and "node uniqueness" in the process.
+    /// If the mentioned checks didn't pass, return None.
+    ///
+    /// a and b are slices over (input node id, pattern node id)
+    /// todo: Write tests to check correctness
+    fn try_merge_nodes(
+        a: &[(u64, u64)],
+        b: &[(u64, u64)],
+        max_num_nodes: usize
+    ) -> Option<Vec<(u64, u64)>> {
+        let (mut p1, mut p2) = if a.len() > b.len() {
+            (a.iter(), b.iter())
+        } else {
+            (b.iter(), a.iter())
+        };
+
+        let mut used = vec![false; max_num_nodes];
+        let mut merged = Vec::with_capacity(a.len() + b.len());
+
+        let mut next1 = p1.next();
+        let mut next2 = p2.next();
+        while let (Some(node1), Some(node2)) = (next1, next2) {
+            if used[node1.1 as usize] || used[node2.1 as usize] {
+                return None;
+            }
+
+            if node1.0 < node2.0 {
+                merged.push(node1.clone());
+                used[node1.1 as usize] = true;
+                next1 = p1.next();
+            } else if node1.0 > node2.0 {
+                merged.push(node2.clone());
+                used[node2.1 as usize] = true;
+                next2 = p2.next();
+            } else {
+                if node1.1 != node2.1 {
+                    return None;
+                }
+                merged.push(node1.clone());
+                used[node1.1 as usize] = true;
+                next1 = p1.next();
+                next2 = p2.next();
+            }
+        }
+        for node in p1 {
+            if used[node.1 as usize] {
+                return None;
+            }
+            used[node.1 as usize] = true;
+            merged.push(node.clone());
+        }
+
+        Some(merged)
     }
 }
 
