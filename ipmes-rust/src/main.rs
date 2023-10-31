@@ -52,7 +52,7 @@ fn main() {
     let parse_layer = ParseLayer::new(&mut input_reader);
     let ord_match_layer =
         OrdMatchLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
-    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition);
+    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size.clone());
 
     for result in join_layer {
         todo!()

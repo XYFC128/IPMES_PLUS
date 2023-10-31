@@ -4,6 +4,7 @@ use std::iter::zip;
 use std::rc::Rc;
 
 /// Complete Pattern Match
+#[derive(Clone)]
 pub struct PatternMatch {
     /// Matched edges of this pattern. i-th element is the input edge that matches pattern edge i
     pub matched_edges: Vec<Rc<InputEdge>>,
