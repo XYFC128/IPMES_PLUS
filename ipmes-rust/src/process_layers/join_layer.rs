@@ -43,15 +43,17 @@ impl Relation {
         myself: &SubPatternMatch,
         sibling: &SubPatternMatch,
     ) -> bool {
-        // todo: check this
+        // todo: check this (This is WRONG now)
         // If "if input_edge1.id > input_edge2.id, then input_edge1.timestamp >= input_edge2.timestamp" is true, use 'id' for to replace timestamp here.
-        self.edge_orders.iter().all(|(id1, id2, time_order)| {
-            if let (Some(e1_id), Some(e2_id)) = (myself.edge_id_map[id1.clone()], sibling.edge_id_map[id2.clone()]) {
+        // sorry, the above is false
+        // How to get the information of "input_edge.timestamp" from its "id"?
+        self.edge_orders.iter().all(|(pattern_id1, pattern_id2, time_order)| {
+            if let (Some(input_id1), Some(input_id2)) = (myself.edge_id_map[pattern_id1.clone()], sibling.edge_id_map[pattern_id2.clone()]) {
                 match time_order {
                     // FirstToSecond => e1.timestamp <= e2.timestamp,
                     // SecondToFirst => e1.timestamp >= e2.timestamp,
-                    FirstToSecond => e1_id <= e2_id,
-                    SecondToFirst => e1_id >= e2_id
+                    FirstToSecond => input_id1 <= input_id2,
+                    SecondToFirst => input_id1 >= input_id2
                 }
             } else {
                 false
@@ -68,8 +70,9 @@ impl Relation {
 pub struct SubPatternBuffer<'p> {
     id: usize,
     sibling_id: usize,
-    // List of ids of pattern nodes (edges) contained in this sub-pattern.
+    /// List of ids of pattern nodes contained in this sub-pattern.
     node_id_list: HashSet<usize>,
+    /// List of ids of pattern edges contained in this sub-pattern.
     edge_id_list: HashSet<usize>,
     buffer: BinaryHeap<EarliestFirst<'p>>,
     new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
@@ -106,6 +109,7 @@ impl<'p> SubPatternBuffer<'p> {
         let mut shared_nodes = vec![false; pattern.num_nodes];
         let mut edge_orders = Vec::new();
 
+        // identify shared nodes
         for i in 0..pattern.num_nodes {
             if sub_pattern_buffer1.node_id_list.contains(&i)
                 && sub_pattern_buffer2.node_id_list.contains(&i)
@@ -114,6 +118,7 @@ impl<'p> SubPatternBuffer<'p> {
             }
         }
 
+        // generate order-relation
         for eid1 in &sub_pattern_buffer1.edge_id_list {
             for eid2 in &sub_pattern_buffer2.edge_id_list {
                 let id1 = NodeIndex::<DefaultIx>::new(eid1.clone());
@@ -290,19 +295,13 @@ impl<'p, P> JoinLayer<'p, P> {
         let mut matches_to_parent = BinaryHeap::new();
         for sub_pattern_match1 in &self.sub_pattern_buffers[my_id].new_match_buffer {
             for sub_pattern_match2 in &self.sub_pattern_buffers[sibling_id].buffer {
-                // order_relation is checked in SubPatternMatch::merge_matches
-                // if self.sub_pattern_buffers[my_id]
-                //     .relation
-                //     .check_order_relation(&sub_pattern_match1.0, &sub_pattern_match2.0)
-                // {
-                    if let Some(merged) = SubPatternMatch::merge_matches(
-                        &self.sub_pattern_buffers[my_id],
-                        &sub_pattern_match1.0,
-                        &sub_pattern_match2.0,
-                    ) {
-                        matches_to_parent.push(EarliestFirst(merged));
-                    }
-                // }
+                if let Some(merged) = SubPatternMatch::merge_matches(
+                    &self.sub_pattern_buffers[my_id],
+                    &sub_pattern_match1.0,
+                    &sub_pattern_match2.0,
+                ) {
+                    matches_to_parent.push(EarliestFirst(merged));
+                }
             }
         }
         matches_to_parent
