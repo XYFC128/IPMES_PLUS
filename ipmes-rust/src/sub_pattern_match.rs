@@ -22,7 +22,8 @@ pub struct SubPatternMatch<'p> {
 }
 
 impl<'p> SubPatternMatch<'p> {
-    /// todo: check correctness
+    // merge edge_id_map
+    // todo: check correctness
     fn merge_edge_id(sub_pattern_match1: &Self, sub_pattern_match2: &Self) -> Vec<Option<u64>> {
         let mut edge_id_map = vec![None; sub_pattern_match1.edge_id_map.len()];
         for i in 0..sub_pattern_match1.edge_id_map.len() {
@@ -36,13 +37,13 @@ impl<'p> SubPatternMatch<'p> {
         }
         edge_id_map
     }
-    /// todo: check correctness
+    // todo: check correctness
     pub fn merge_matches(
         sub_pattern_buffer: &SubPatternBuffer,
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        /// handle ordering relation
+        // handle ordering relation
         if !sub_pattern_buffer
             .relation
             .check_order_relation(sub_pattern_match1, sub_pattern_match2)
@@ -50,6 +51,7 @@ impl<'p> SubPatternMatch<'p> {
             return None;
         }
 
+        // merge match_edges
         let merged_edges = sub_pattern_match1
             .match_edges
             .iter()
@@ -59,7 +61,7 @@ impl<'p> SubPatternMatch<'p> {
             })
             .collect_vec();
 
-        /// handle "edge uniqueness"
+        // handle "edge uniqueness"
         let mut prev_id = u64::MAX;
         for edge in &merged_edges {
             if edge.input_edge.id == prev_id {
@@ -68,10 +70,10 @@ impl<'p> SubPatternMatch<'p> {
             prev_id = edge.input_edge.id;
         }
 
-        /// handle "shared node" and "node uniqueness"
-        /// Use relation.shared_node
-        /// MORE CHECKS (NOT FINISHED)
-        /// todo: if shared_node[i] = true, there must exist a pair!
+        // handle "shared node" and "node uniqueness"
+        // Use relation.shared_node
+        // MORE CHECKS
+        // todo: if shared_node[i] = true, there must exist a pair!
         let mut node_id_map = vec![];
         let mut j = 0;
         for (i, (input_id1, pattern_id1)) in
@@ -84,7 +86,7 @@ impl<'p> SubPatternMatch<'p> {
                     node_id_map.push(sub_pattern_match2.node_id_map[j]);
                     j += 1;
                 } else if input_id2 == input_id1 {
-                    /// The input node is mapped to the same pattern node, and the node is indeed should be shared.
+                    // The input node is mapped to the same pattern node, and the node is indeed should be shared.
                     if pattern_id2 == pattern_id1
                         && sub_pattern_buffer
                             .relation
@@ -103,7 +105,7 @@ impl<'p> SubPatternMatch<'p> {
         let edge_id_map = Self::merge_edge_id(sub_pattern_match1, sub_pattern_match2);
 
         Some(SubPatternMatch {
-            /// 'id' is meaningless here
+            // 'id' is meaningless here
             id: 0,
             latest_time: max(
                 sub_pattern_match1.latest_time,
