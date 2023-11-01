@@ -12,7 +12,7 @@ use std::rc::Rc;
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
 pub struct PartialMatch<'p> {
-    /// todo: check whether 'id' is properly initialized
+    // todo: check whether 'id' is properly initialized
     /// the id of the matched sub-pattern
     pub id: usize,
     /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
