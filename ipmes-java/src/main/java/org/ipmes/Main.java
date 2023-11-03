@@ -108,7 +108,7 @@ public class Main {
         // Decomposition
         TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(spatialPattern, temporalPattern, tcQueries);
+        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(spatialPattern, temporalPattern, tcQueries, windowSize);
         gen.setUseRegex(useRegex);
 
         // Generate CEP app and runtime

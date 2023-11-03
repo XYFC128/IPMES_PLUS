@@ -77,9 +77,12 @@ public class CEPEventSender {
      * Sort the time buffer by total order and send to CEP.
      */
     void flushTimeBuffer() throws InterruptedException {
+        if (timeBuffer.isEmpty())
+            return;
+        long timestamp = timeBuffer.get(0).timestamp;
         ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
         for (Object[] data : sorted)
-            inputHandler.send(data);
+            inputHandler.send(timestamp, data);
         timeBuffer.clear();
     }
 

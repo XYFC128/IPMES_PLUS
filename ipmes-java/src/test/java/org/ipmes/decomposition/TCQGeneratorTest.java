@@ -46,7 +46,7 @@ public class TCQGeneratorTest {
 
         // Decomposition
         TCQGenerator d = new TCQGenerator(dep, pattern);
-        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, d.decompose());
+        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(pattern, dep, d.decompose(), Long.MAX_VALUE);
 
         // Generate CEP app and runtime
         String appStr = gen.generate();
