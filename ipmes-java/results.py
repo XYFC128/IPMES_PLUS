@@ -58,7 +58,7 @@ if __name__ == '__main__':
                     pattern_usage_count[key] = count + val
                     all_usage_count.append(pattern_usage_count)
             except:
-                continue
+                pass
             print('{}\t {}\t {}'.format(output['NumResults'], output['PeakPoolSize'], output['PeakHeapSize']))
         all_cputime.append(cputime)
 
