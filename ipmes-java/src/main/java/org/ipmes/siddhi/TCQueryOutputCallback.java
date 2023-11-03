@@ -12,6 +12,7 @@ import org.ipmes.pattern.PatternNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class TCQueryOutputCallback extends StreamCallback {
     TCQuery query;
@@ -60,6 +61,8 @@ public class TCQueryOutputCallback extends StreamCallback {
     public void receive(Event[] events) {
         for (Event e : events) {
             MatchResult res = toMatchResult(e);
+            if (!res.checkNodeUniqueness())
+                continue;
             this.join.addMatchResult(res, this.query.getId());
         }
     }
