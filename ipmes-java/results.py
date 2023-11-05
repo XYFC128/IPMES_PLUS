@@ -50,20 +50,24 @@ if __name__ == '__main__':
             cputime.append(parse_cputime(stderr))
 
             output = json.loads(stdout)
-            usage_count: dict = output['UsageCount']
-            for key, val in usage_count.items():
-                key = int(key)
-                count = pattern_usage_count.get(key, 0)
-                pattern_usage_count[key] = count + val
+            try:
+                usage_count: dict = output['UsageCount']
+                for key, val in usage_count.items():
+                    key = int(key)
+                    count = pattern_usage_count.get(key, 0)
+                    pattern_usage_count[key] = count + val
+                    all_usage_count.append(pattern_usage_count)
+            except:
+                pass
             print('{}\t {}\t {}'.format(output['NumResults'], output['PeakPoolSize'], output['PeakHeapSize']))
-        all_usage_count.append(pattern_usage_count)
         all_cputime.append(cputime)
 
     print('CPU Time (sec):')
     print_methods[args.cpu_time](all_cputime)
 
-    print('TC-Query Trigger Count: [TCQueryLen, Count]')
-    for pattern_usage_count in all_usage_count:
-        for key, val in sorted(pattern_usage_count.items()):
-            print('{}\t {}'.format(key, val))
-        print()
+    if len(all_usage_count) > 0:
+        print('TC-Query Trigger Count: [TCQueryLen, Count]')
+        for pattern_usage_count in all_usage_count:
+            for key, val in sorted(pattern_usage_count.items()):
+                print('{}\t {}'.format(key, val))
+            print()

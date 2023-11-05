@@ -95,6 +95,24 @@ public class MatchResult {
         return;
     }
 
+    /*
+    Return false if there is a input node matches 2 or more pattern node.
+     */
+    public boolean checkNodeUniqueness() {
+        HashMap<Long, Integer> nodeMap = new HashMap<>();
+        for (MatchEdge edge : this.results.values()) {
+            int startPattern = edge.matched.getStartId();
+            int endPattern = edge.matched.getEndId();
+            if (nodeMap.getOrDefault(edge.startId, startPattern) != startPattern)
+                return false;
+            if (nodeMap.getOrDefault(edge.endId, endPattern) != endPattern)
+                return false;
+            nodeMap.put(edge.startId, startPattern);
+            nodeMap.put(edge.endId, endPattern);
+        }
+        return true;
+    }
+
     public FullMatch toFullMatch() {
         FullMatch res = new FullMatch(this.results.size());
         for (Map.Entry<Integer, MatchEdge> entry : this.results.entrySet())

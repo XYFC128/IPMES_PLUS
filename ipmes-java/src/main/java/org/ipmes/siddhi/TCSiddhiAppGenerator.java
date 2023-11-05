@@ -24,11 +24,13 @@ public class TCSiddhiAppGenerator {
     TemporalRelation temporalRelation;
     ArrayList<TCQuery> tcQueries;
     boolean useRegex;
-    public TCSiddhiAppGenerator(PatternGraph patternGraph, TemporalRelation temporalRelation, ArrayList<TCQuery> tcQueries) {
+    long windowSize;
+    public TCSiddhiAppGenerator(PatternGraph patternGraph, TemporalRelation temporalRelation, ArrayList<TCQuery> tcQueries, long windowSize) {
         this.patternGraph = patternGraph;
         this.temporalRelation = temporalRelation;
         this.tcQueries = tcQueries;
         this.useRegex = false;
+        this.windowSize = windowSize;
     }
 
     public void setUseRegex(boolean flag) {
@@ -186,7 +188,7 @@ public class TCSiddhiAppGenerator {
             prefixNodes.put(edge.getStartId(), String.format("e%d.start_id", edge.getId()));
             prefixNodes.put(edge.getEndId(), String.format("e%d.end_id", edge.getId()));
         }
-        query += "within 10 sec\n";
+        query += String.format("within %d millisecond\n", this.windowSize);
         query += genSelectExpression(q, prefixNodes);
         query += String.format("\ninsert into TC%dOutput;\n", q.getId());
 
