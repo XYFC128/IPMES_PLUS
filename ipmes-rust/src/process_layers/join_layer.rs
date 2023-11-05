@@ -381,7 +381,7 @@ where
                     id: partial_match.id,
                     latest_time: partial_match.timestamp,
                     earliest_time,
-                    node_id_map,
+                    match_nodes: node_id_map,
                     edge_id_map,
                     match_edges,
                 };

@@ -1,12 +1,13 @@
-use std::collections::HashMap;
 use crate::pattern::parser::PatternParsingError;
-use petgraph::graph::{DefaultIx, Graph};
-use serde_json::Value;
-use std::fs::File;
-use std::io::Read;
+use itertools::Itertools;
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::NodeIndex;
+use petgraph::graph::{DefaultIx, Graph};
 use petgraph::Direction;
+use serde_json::Value;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
 
 pub struct OrderRelation {
     graph: Graph<usize, ()>,
@@ -18,7 +19,8 @@ impl OrderRelation {
     pub fn get_previous(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
         // Indices in "graph" is incremented by 1, since "0" is reserved for "root".
         let idx = NodeIndex::<DefaultIx>::new(eid + 1);
-        self.graph.neighbors_directed(idx, Direction::Incoming)
+        self.graph
+            .neighbors_directed(idx, Direction::Incoming)
             .filter_map(|idx| {
                 if idx.index() > 0 {
                     Some(idx.index() - 1)
@@ -32,8 +34,33 @@ impl OrderRelation {
     /// edge.
     pub fn get_next(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
         let idx = NodeIndex::<DefaultIx>::new(eid + 1);
-        self.graph.neighbors_directed(idx, Direction::Outgoing)
+        self.graph
+            .neighbors_directed(idx, Direction::Outgoing)
             .map(|idx| idx.index() - 1)
+    }
+
+    /// Returns an iterator over the id of pattern edges that are roots
+    pub fn get_roots(&self) -> impl Iterator<Item = usize> + '_ {
+        let idx = NodeIndex::<DefaultIx>::new(0);
+        self.graph
+            .neighbors_directed(idx, Direction::Outgoing)
+            .map(|idx| idx.index() - 1)
+    }
+
+    /// Construct OrderRelation from order rules for easier unit testing.
+    ///
+    pub fn from_order_rules(order_rules: &[(u32, u32)], roots: &[u32]) -> Self {
+        let mut edges = Vec::new();
+        for (a, b) in order_rules {
+            edges.push((a + 1, b + 1))
+        }
+        for root in roots {
+            edges.push((0, root + 1))
+        }
+
+        Self {
+            graph: Graph::from_edges(&edges),
+        }
     }
 
     pub fn parse(order_relation_file: &str) -> Result<Self, PatternParsingError> {
@@ -42,10 +69,9 @@ impl OrderRelation {
         file.read_to_end(&mut content)?;
         let json_obj: Value = serde_json::from_slice(&content)?;
 
-        let orel_edges = Self::parse_json_obj(&json_obj).ok_or(PatternParsingError::FormatError(
-            0,
-            "Json format of order relation file is not right.",
-        ))?;
+        let orel_edges = Self::parse_json_obj(&json_obj).ok_or(
+            PatternParsingError::FormatError(0, "Json format of order relation file is not right."),
+        )?;
 
         Ok(Self {
             graph: Graph::from_edges(&orel_edges),
@@ -98,10 +124,9 @@ mod tests {
         let ord = OrderRelation::parse("../data/patterns/TTP11_oRels.json")
             .expect("fail to parse order relation file");
 
-
         // ord.distances_table = ord.calculate_distances().unwrap();
 
-            // println!("{:?}", ord.distances_table);
+        // println!("{:?}", ord.distances_table);
 
         // println!("{:?}", ord.distances_table.get(&(NodeIndex::new(1), NodeIndex::new(0))).unwrap());
         // println!("{:?}", ord.graph.edge_indices());
