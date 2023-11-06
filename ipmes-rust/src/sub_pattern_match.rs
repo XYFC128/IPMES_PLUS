@@ -1,6 +1,7 @@
 use crate::match_edge::MatchEdge;
 use crate::process_layers::join_layer::{Relation, SubPatternBuffer};
 use itertools::Itertools;
+use regex::Match;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
 
@@ -13,12 +14,18 @@ pub struct SubPatternMatch<'p> {
     pub earliest_time: u64,
 
     /// (input node id, pattern node id)
+    /// match_nodes.len() == number of nodes in this sun-pattern match
     pub match_nodes: Vec<(u64, u64)>,
+
     /// "edge_id_map[matched_id] = input_id"
+    /// The term "matched edge" and "pattern edge" is used interchangeably.
+    /// edge_id_map,len() = number of edges in the "whole pattern"
     pub edge_id_map: Vec<Option<u64>>,
 
-    /// sort this by 'id' for uniqueness determination
+    /// sort this by 'input edge id' for uniqueness determination
     pub match_edges: Vec<MatchEdge<'p>>,
+    // A workplace for "used" in "try_merge_nodes" and for holding timestamps of input edges in "merge_edge_id()".
+    // pub workplace: Vec<u64>,
 }
 
 impl<'p> SubPatternMatch<'p> {
@@ -28,56 +35,101 @@ impl<'p> SubPatternMatch<'p> {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        /// handle ordering relation
-        if !sub_pattern_buffer
-            .relation
-            .check_order_relation(sub_pattern_match1, sub_pattern_match2)
-        {
+        /// merge "match_edges" with checking "edge uniqueness"
+        let (match_edges, timestamps) = Self::try_merge_match_edges(
+            &sub_pattern_match1.match_edges,
+            &sub_pattern_match2.match_edges,
+            sub_pattern_match1.edge_id_map.len(),
+        )?;
+
+        /// check "order relation"
+        if !sub_pattern_buffer.relation.check_order_relation(
+            &sub_pattern_match1.edge_id_map,
+            &sub_pattern_match2.edge_id_map,
+            &timestamps,
+        ) {
             return None;
         }
 
-        let merged_edges = sub_pattern_match1
-            .match_edges
-            .iter()
-            .cloned()
-            .merge_by(sub_pattern_match2.match_edges.iter().cloned(), |a, b| {
-                a.input_edge.id < b.input_edge.id
-            })
-            .collect_vec();
+        /// handle "shared node" and "node uniqueness"
+        let mut match_nodes = Self::try_merge_nodes(
+            &sub_pattern_match1.match_nodes,
+            &sub_pattern_match1.match_nodes,
+            sub_pattern_buffer.max_num_nodes,
+        )?;
 
-        /// handle "edge uniqueness"
-        let mut prev_id = u64::MAX;
-        for edge in &merged_edges {
-            if edge.input_edge.id == prev_id {
+        /// merge "edge_id_map"
+        let edge_id_map = Self::merge_edge_id_map(sub_pattern_match1, sub_pattern_match2);
+
+        Some(SubPatternMatch {
+            /// 'id' is meaningless here
+            id: 0,
+            latest_time: max(
+                sub_pattern_match1.latest_time,
+                sub_pattern_match2.latest_time,
+            ),
+            earliest_time: min(
+                sub_pattern_match1.earliest_time,
+                sub_pattern_match2.earliest_time,
+            ),
+            match_nodes,
+            edge_id_map,
+            match_edges,
+        })
+    }
+
+    /// "merge match_edge" and "check edge uniqueness"
+    /// Analogous to "try_merge_nodes"
+    /// todo: Check correctness. And it may be modified such that "timestamps" need not be returned.
+    fn try_merge_match_edges(
+        a: &[MatchEdge<'p>],
+        b: &[MatchEdge<'p>],
+        max_num_edges: usize,
+    ) -> Option<(Vec<MatchEdge<'p>>, Vec<u64>)> {
+        let (mut p1, mut p2) = if a.len() > b.len() {
+            (a.iter(), b.iter())
+        } else {
+            (b.iter(), a.iter())
+        };
+
+        // '0' means timestamp not recorded
+        let mut timestamps = vec![0; max_num_edges];
+        let mut merged = Vec::with_capacity(a.len() + b.len());
+
+        let mut next1 = p1.next();
+        let mut next2 = p2.next();
+        while let (Some(edge1), Some(edge2)) = (next1, next2) {
+            if timestamps[edge1.input_edge.id as usize] != 0 || timestamps[edge2.input_edge.id as usize] != 0 {
                 return None;
             }
-            prev_id = edge.input_edge.id;
+
+            if edge1.input_edge.id < edge2.input_edge.id {
+                merged.push(edge1.clone());
+                timestamps[edge1.input_edge.id as usize] = edge1.input_edge.timestamp;
+                next1 = p1.next();
+            } else if edge1.input_edge.id > edge2.input_edge.id {
+                merged.push(edge2.clone());
+                timestamps[edge2.input_edge.id as usize] = edge1.input_edge.timestamp;
+                next2 = p2.next();
+            } else {
+                if edge1.matched.id != edge2.matched.id {
+                    return None;
+                }
+                merged.push(edge1.clone());
+                timestamps[edge1.input_edge.id as usize] = edge1.input_edge.timestamp;
+                next1 = p1.next();
+                next2 = p2.next();
+            }
+        }
+        for edge in p1 {
+            if timestamps[edge.input_edge.id as usize] != 0 {
+                return None;
+            }
+            timestamps[edge.input_edge.id as usize] = edge.input_edge.timestamp;
+            merged.push(edge.clone());
         }
 
-        // let mut match_nodes = Self::try_merge_nodes(
-        //     &sub_pattern_match1.match_nodes,
-        //     &sub_pattern_match1.match_nodes,
-        //     sub_pattern_buffer.max_num_nodes
-        // )?;
-        todo!();
-        //
-        // let edge_id_map = Self::merge_edge_id_map(sub_pattern_match1, sub_pattern_match2);
-        //
-        // Some(SubPatternMatch {
-        //     /// 'id' is meaningless here
-        //     id: 0,
-        //     latest_time: max(
-        //         sub_pattern_match1.latest_time,
-        //         sub_pattern_match2.latest_time,
-        //     ),
-        //     earliest_time: min(
-        //         sub_pattern_match1.earliest_time,
-        //         sub_pattern_match2.earliest_time,
-        //     ),
-        //     match_nodes,
-        //     edge_id_map,
-        //     match_edges: merged_edges,
-        // })
+        Some((merged, timestamps))
     }
 
     /// todo: Write tests to check correctness
@@ -103,7 +155,7 @@ impl<'p> SubPatternMatch<'p> {
     fn try_merge_nodes(
         a: &[(u64, u64)],
         b: &[(u64, u64)],
-        max_num_nodes: usize
+        max_num_nodes: usize,
     ) -> Option<Vec<(u64, u64)>> {
         let (mut p1, mut p2) = if a.len() > b.len() {
             (a.iter(), b.iter())

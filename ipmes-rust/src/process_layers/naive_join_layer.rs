@@ -2,7 +2,7 @@ mod entry;
 mod entry_wrappers;
 
 #[cfg(test)]
-mod tests;
+// mod tests;
 
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;

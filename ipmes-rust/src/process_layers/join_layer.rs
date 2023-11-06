@@ -26,7 +26,14 @@ pub struct Relation {
     // shared_nodes.len() == num_node
     // If node 'i' is shared, shared_nodes[i] = true.
     // 'i': pattern node id
+
+    /// "shared_nodes" seems useless.
+    /// (The "structure" has guaranteed nodes to be shared properly, when doing "SubPatternMatch::try_merge_nodes()".)
     shared_nodes: Vec<bool>,
+
+    /// edge_orders: (pattern_id1, pattern_id2, TimeOrder)
+    /// "pattern_id1" comes from "sub_pattern1", which is the left part ("sub_pattern2" is the right part)
+    /// left and right is the "relative position" on the "sub_pattern_buffer tree"
     edge_orders: Vec<(usize, usize, TimeOrder)>,
 }
 
@@ -40,20 +47,15 @@ impl Relation {
 
     pub fn check_order_relation(
         &self,
-        myself: &SubPatternMatch,
-        sibling: &SubPatternMatch,
+        edge_id_map1: &[Option<u64>],
+        edge_id_map2: &[Option<u64>],
+        timestamps: &[u64]
     ) -> bool {
-        // todo: check this (This is WRONG now)
-        // If "if input_edge1.id > input_edge2.id, then input_edge1.timestamp >= input_edge2.timestamp" is true, use 'id' for to replace timestamp here.
-        // sorry, the above is false
-        // How to get the information of "input_edge.timestamp" from its "id"?
         self.edge_orders.iter().all(|(pattern_id1, pattern_id2, time_order)| {
-            if let (Some(input_id1), Some(input_id2)) = (myself.edge_id_map[pattern_id1.clone()], sibling.edge_id_map[pattern_id2.clone()]) {
+            if let (Some(id1), Some(id2)) = (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2]) {
                 match time_order {
-                    // FirstToSecond => e1.timestamp <= e2.timestamp,
-                    // SecondToFirst => e1.timestamp >= e2.timestamp,
-                    FirstToSecond => input_id1 <= input_id2,
-                    SecondToFirst => input_id1 >= input_id2
+                    FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
+                    SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
                 }
             } else {
                 false
@@ -76,11 +78,14 @@ pub struct SubPatternBuffer<'p> {
     edge_id_list: HashSet<usize>,
     buffer: BinaryHeap<EarliestFirst<'p>>,
     new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
+    
     pub relation: Relation,
+    /// number of nodes in the "whole" pattern 
+    pub max_num_nodes: usize 
 }
 
 impl<'p> SubPatternBuffer<'p> {
-    pub fn new(id: usize, sibling_id: usize, sub_pattern: &SubPattern) -> Self {
+    pub fn new(id: usize, sibling_id: usize, sub_pattern: &SubPattern, max_num_nodes: usize) -> Self {
         let mut node_id_list = HashSet::new();
         let mut edge_id_list = HashSet::new();
         for &edge in &sub_pattern.edges {
@@ -96,6 +101,7 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
+            max_num_nodes
         }
     }
 
@@ -160,6 +166,7 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
+            max_num_nodes: sub_pattern_buffer1.max_num_nodes
         }
     }
 }
@@ -185,6 +192,7 @@ impl<'p, P> JoinLayer<'p, P> {
             sub_pattern_buffer1.id + 1,
             sub_pattern_buffer1.id,
             &sub_patterns[id],
+            sub_pattern_buffer1.max_num_nodes
         );
         let relations = SubPatternBuffer::generate_relations(
             &pattern,
@@ -211,7 +219,7 @@ impl<'p, P> JoinLayer<'p, P> {
         let distances_table = pattern.order.calculate_distances().unwrap();
         let mut sub_pattern_buffers = Vec::with_capacity(2 * sub_patterns.len() - 1);
 
-        sub_pattern_buffers.push(SubPatternBuffer::new(0, 1, &sub_patterns[0]));
+        sub_pattern_buffers.push(SubPatternBuffer::new(0, 1, &sub_patterns[0], pattern.num_nodes));
 
         for i in 1..sub_patterns.len() {
             Self::create_buffer_pair(
