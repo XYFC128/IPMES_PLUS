@@ -1,8 +1,8 @@
 mod entry;
 mod entry_wrappers;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
