@@ -135,6 +135,9 @@ public class TCSiddhiAppGenerator {
      * @return the combined edge condition
      */
     String genEdgeCondition(PatternEdge edge, HashMap<Integer, String> prefixNodes) {
+        String windowingCondition = "";
+        if (!prefixNodes.isEmpty())
+            windowingCondition = String.format("(timestamp <= e0.timestamp + %d) and ", this.windowSize);
         String sharedNodeCondition = genSharedNodeConditions(edge, prefixNodes);
 
         PatternNode startNode = this.patternGraph.getNode(edge.getStartId());
@@ -142,7 +145,7 @@ public class TCSiddhiAppGenerator {
         String signatureCondition = String.format("match_id == %d", edge.getId());
         if (sharedNodeCondition.isEmpty())
             return signatureCondition;
-        return sharedNodeCondition + " and " + signatureCondition;
+        return windowingCondition + sharedNodeCondition + " and " + signatureCondition;
     }
 
     /**

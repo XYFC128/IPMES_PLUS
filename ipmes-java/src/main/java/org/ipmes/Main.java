@@ -117,6 +117,8 @@ public class Main {
         SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
 
         if (isDebug) {
+            System.err.println("CEP App:");
+            System.err.println(appStr);
             System.err.println("TC Queries:");
             tcQueries.forEach(System.err::println);
         }

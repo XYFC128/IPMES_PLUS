@@ -91,5 +91,6 @@ public class CEPEventSender {
      */
     public void flushBuffers() throws InterruptedException {
         popQueueUntil(Long.MAX_VALUE);
+        flushTimeBuffer();
     }
 }
