@@ -22,7 +22,7 @@ enum TimeOrder {
 }
 
 #[derive(Clone)]
-struct Relation {
+pub struct Relation {
     // shared_nodes.len() == num_node
     // If node 'i' is shared, shared_nodes[i] = true.
     // 'i': pattern node id
@@ -119,7 +119,7 @@ impl<'p> SubPatternBuffer<'p> {
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
             max_num_nodes,
-            used_nodes: vec![false, max_num_nodes],
+            used_nodes: vec![false; max_num_nodes],
             timestamps: HashMap::with_capacity(capacity as usize)
         }
     }
@@ -186,7 +186,7 @@ impl<'p> SubPatternBuffer<'p> {
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
             max_num_nodes: sub_pattern_buffer1.max_num_nodes,
-            used_nodes: vec![false, sub_pattern_buffer1.max_num_nodes],
+            used_nodes: vec![false; sub_pattern_buffer1.max_num_nodes],
             timestamps: HashMap::with_capacity(sub_pattern_buffer1.timestamps.capacity())
         }
     }
@@ -332,12 +332,15 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     // My new_match_buffer, joined with sibling's buffer.
-    fn join_with_sibling(&self, my_id: usize, sibling_id: usize) -> BinaryHeap<EarliestFirst<'p>> {
+    fn join_with_sibling(&mut self, my_id: usize, sibling_id: usize) -> BinaryHeap<EarliestFirst<'p>> {
         let mut matches_to_parent = BinaryHeap::new();
-        for sub_pattern_match1 in &self.sub_pattern_buffers[my_id].new_match_buffer {
-            for sub_pattern_match2 in &self.sub_pattern_buffers[sibling_id].buffer {
+        let buffer1 = self.sub_pattern_buffers[my_id].new_match_buffer.clone();
+        let buffer2 = self.sub_pattern_buffers[my_id].buffer.clone();
+
+        for sub_pattern_match1 in &buffer1 {
+            for sub_pattern_match2 in &buffer2 {
                 if let Some(merged) = SubPatternMatch::merge_matches(
-                    &self.sub_pattern_buffers[my_id],
+                    &mut self.sub_pattern_buffers[my_id],
                     &sub_pattern_match1.0,
                     &sub_pattern_match2.0,
                 ) {

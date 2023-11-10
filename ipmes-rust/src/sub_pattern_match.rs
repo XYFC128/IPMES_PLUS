@@ -130,7 +130,7 @@ impl<'p> SubPatternMatch<'p> {
             if timestamps.get(&edge.input_edge.id) == None {
                 return None;
             }
-            timestamps[edge.input_edge.id as usize] = edge.input_edge.timestamp;
+            timestamps.insert(edge.input_edge.id, edge.input_edge.timestamp);
             merged.push(edge.clone());
         }
 
