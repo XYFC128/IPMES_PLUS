@@ -8,6 +8,7 @@ use regex::Regex;
 use std::cmp::{max};
 use std::collections::{VecDeque};
 use std::rc::Rc;
+use log::warn;
 
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
@@ -134,19 +135,13 @@ impl<'p> SubMatcher<'p> {
     }
 }
 
-pub struct OrdMatchLayer<'p, P>
-where
-    P: Iterator<Item = Vec<Rc<InputEdge>>>,
-{
+pub struct OrdMatchLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
     sub_matchers: Vec<SubMatcher<'p>>,
 }
 
-impl<'p, P> OrdMatchLayer<'p, P>
-where
-    P: Iterator<Item = Vec<Rc<InputEdge>>>,
-{
+impl<'p, P> OrdMatchLayer<'p, P> {
     pub fn new(
         prev_layer: P,
         decomposition: &'p [SubPattern],
@@ -200,13 +195,14 @@ where
     type Item = Vec<PartialMatch<'p>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut results = Vec::new();
+        let mut results = vec![];
 
         while results.is_empty() {
             let time_batch = self.prev_layer.next()?;
             let time_bound = if let Some(edge) = time_batch.first() {
                 edge.timestamp.saturating_sub(self.window_size)
             } else {
+                warn!("Previous layer outputs an empty time batch.");
                 continue;
             };
 
@@ -359,5 +355,42 @@ mod tests {
             OrdMatchLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
         let result = layer.next().unwrap();
         assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn test_uniqueness() {
+        let pattern_edge1 = PatternEdge {
+            id: 0,
+            signature: "a".to_string(),
+            start: 0,
+            end: 1,
+        };
+        let pattern_edge2 = PatternEdge {
+            id: 1,
+            signature: "b".to_string(),
+            start: 1,
+            end: 2,
+        };
+        let pattern_edge3 = PatternEdge {
+            id: 2,
+            signature: "a".to_string(),
+            start: 3,
+            end: 1,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            edges: vec![&pattern_edge1, &pattern_edge2, &pattern_edge3],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            input_edge(1, "a", 1, 2),
+            input_edge(2, "b", 2, 3),
+        ];
+
+        let mut layer =
+            OrdMatchLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
+        assert!(layer.next().is_none());
     }
 }
