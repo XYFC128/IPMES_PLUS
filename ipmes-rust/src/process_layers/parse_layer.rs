@@ -63,7 +63,7 @@ impl<'a> ParseLayer<'a> {
         while let Some(result) = self.csv_iter.next() {
             match result {
                 Ok(record) => return Some(record),
-                Err(e) =>warn!("Error occurred in input file: {e}")
+                Err(e) => warn!("Error occurred in input file: {e}")
             };
         }
         None

@@ -44,24 +44,29 @@ fn main() {
     info!("Command line arguments: {:?}", args);
     let window_size = args.window_size * 1000;
 
-    let pattern = parse_pattern(&args).expect("Fail to parse pattern");
+    let pattern = parse_pattern(&args).expect("Failed to parse pattern");
     info!("Pattern Edges: {:#?}", pattern.edges);
 
     let decomposition = decompose(&pattern);
     info!("Decomposition results: {:#?}", decomposition);
 
-    let input_reader = File::open(args.data_graph).unwrap();
-    let mut input_reader = csv::Reader::from_reader(input_reader);
-    let parse_layer = ParseLayer::new(&mut input_reader);
+    let mut csv = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_path(args.data_graph).expect("Failed to open input graph");
+    let parse_layer = ParseLayer::new(&mut csv);
     let ord_match_layer =
         OrdMatchLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
-    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size.clone());
+    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size);
 
+    let mut num_result = 0u32;
     for result in join_layer {
         for pattern_match in result {
             info!("Pattern Match: {}", pattern_match);
         }
+        num_result += 1;
     }
+    info!("Total number of matches: {num_result}");
+    info!("Finished");
 }
 
 fn parse_pattern(args: &Args) -> Result<Pattern, PatternParsingError> {

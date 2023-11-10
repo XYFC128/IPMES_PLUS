@@ -117,7 +117,7 @@ pub trait PatternParser {
 
             let full_signature = format!(
                 "{}#{}#{}",
-                node_sigs[*start_id], signature, node_sigs[*end_id]
+                signature, node_sigs[*start_id], node_sigs[*end_id]
             );
             edges.push(Edge {
                 id: line_num,
