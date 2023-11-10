@@ -1,210 +1,23 @@
+mod sub_pattern_buffer;
+
+pub use sub_pattern_buffer::SubPatternBuffer;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
-use std::cmp::{max, min};
+use std::cmp::min;
 
 use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
-use crate::process_layers::join_layer::TimeOrder::{FirstToSecond, SecondToFirst};
 use crate::process_layers::ord_match_layer::PartialMatch;
 use itertools::Itertools;
-use petgraph::adj::DefaultIx;
 use petgraph::graph::NodeIndex;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
 use std::rc::Rc;
 
-#[derive(Clone)]
-enum TimeOrder {
-    FirstToSecond,
-    SecondToFirst,
-}
 
-#[derive(Clone)]
-pub struct Relation {
-    // shared_nodes.len() == num_node
-    // If node 'i' is shared, shared_nodes[i] = true.
-    // 'i': pattern node id
-    /// "shared_nodes" seems useless.
-    /// (The "structure" has guaranteed nodes to be shared properly, when doing "SubPatternMatch::try_merge_nodes()".)
-    shared_nodes: Vec<bool>,
-
-    /// edge_orders: (pattern_id1, pattern_id2, TimeOrder)
-    /// "pattern_id1" comes from "sub_pattern1", which is the left part ("sub_pattern2" is the right part)
-    /// left and right is the "relative position" on the "sub_pattern_buffer tree"
-    edge_orders: Vec<(usize, usize, TimeOrder)>,
-}
-
-impl Relation {
-    pub fn new() -> Self {
-        Self {
-            shared_nodes: Vec::new(),
-            edge_orders: Vec::new(),
-        }
-    }
-
-    pub fn check_order_relation(
-        &self,
-        edge_id_map1: &[Option<u64>],
-        edge_id_map2: &[Option<u64>],
-        timestamps: &Vec<u64>,
-    ) -> bool {
-        self.edge_orders
-            .iter()
-            .all(|(pattern_id1, pattern_id2, time_order)| {
-                match time_order {
-                    FirstToSecond => timestamps[*pattern_id1] <= timestamps[*pattern_id2],
-                    SecondToFirst => timestamps[*pattern_id1] >= timestamps[*pattern_id2],
-                }
-                // if let (Some(id1), Some(id2)) =
-                //     (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2])
-                // {
-                //     match time_order {
-                //         FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
-                //         SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
-                //         // FirstToSecond => timestamps.get(&id1).unwrap() <= timestamps.get(&id2).unwrap(),
-                //         // SecondToFirst => timestamps.get(&id1).unwrap() >= timestamps.get(&id2).unwrap(),
-                //     }
-                // } else {
-                //     false
-                // }
-            })
-    }
-
-    pub fn is_node_shared(&self, id: usize) -> bool {
-        self.shared_nodes[id]
-    }
-}
-
-#[derive(Clone)]
-pub struct SubPatternBuffer<'p> {
-    id: usize,
-    sibling_id: usize,
-    /// List of ids of pattern nodes contained in this sub-pattern.
-    node_id_list: HashSet<usize>,
-    /// List of ids of pattern edges contained in this sub-pattern.
-    edge_id_list: HashSet<usize>,
-    buffer: BinaryHeap<EarliestFirst<'p>>,
-    new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
-
-    pub relation: Relation,
-    /// number of nodes in the "whole" pattern
-    pub max_num_nodes: usize,
-
-    /// make sure the largest pattern edge id is "pattern.edges.len() - 1"
-    pub used_nodes: Vec<bool>,
-    /// '0' means timestamp not recorded
-    pub timestamps: Vec<u64>,
-}
-
-impl<'p> SubPatternBuffer<'p> {
-    pub fn new(
-        id: usize,
-        sibling_id: usize,
-        sub_pattern: &SubPattern,
-        max_num_nodes: usize,
-        max_num_edges: usize,
-    ) -> Self {
-        let mut node_id_list = HashSet::new();
-        let mut edge_id_list = HashSet::new();
-        /// capacity of "timestamps"; "7/8" is the purported "load factor"
-        // let capacity = (8_f64 * (max_num_edges as f64) / 7_f64).round();
-        for &edge in &sub_pattern.edges {
-            node_id_list.insert(edge.start);
-            node_id_list.insert(edge.end);
-            edge_id_list.insert(edge.id);
-        }
-        Self {
-            id,
-            sibling_id,
-            node_id_list,
-            edge_id_list,
-            buffer: BinaryHeap::new(),
-            new_match_buffer: BinaryHeap::new(),
-            relation: Relation::new(),
-            max_num_nodes,
-            used_nodes: vec![false; max_num_nodes],
-            // timestamps: HashMap::with_capacity(capacity as usize)
-            timestamps: vec![0; max_num_edges]
-        }
-    }
-
-    pub fn generate_relations(
-        // &mut self,
-        pattern: &Pattern,
-        sub_pattern_buffer1: &SubPatternBuffer,
-        sub_pattern_buffer2: &SubPatternBuffer,
-        distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
-    ) -> Relation {
-        let mut shared_nodes = vec![false; pattern.num_nodes];
-        let mut edge_orders = Vec::new();
-
-        // identify shared nodes
-        for i in 0..pattern.num_nodes {
-            if sub_pattern_buffer1.node_id_list.contains(&i)
-                && sub_pattern_buffer2.node_id_list.contains(&i)
-            {
-                shared_nodes[i] = true;
-            }
-        }
-
-        // generate order-relation
-        for eid1 in &sub_pattern_buffer1.edge_id_list {
-            for eid2 in &sub_pattern_buffer2.edge_id_list {
-                let id1 = NodeIndex::<DefaultIx>::new(eid1.clone());
-                let id2 = NodeIndex::<DefaultIx>::new(eid2.clone());
-                let distance_1_2 = distances_table.get(&(id1, id2)).unwrap();
-                let distance_2_1 = distances_table.get(&(id2, id1)).unwrap();
-
-                // "2" is "1"'s parent
-                if distance_1_2 == &i32::MAX && distance_2_1 != &i32::MAX {
-                    edge_orders.push((eid1.clone(), eid2.clone(), SecondToFirst));
-                } else if distance_1_2 != &i32::MAX && distance_2_1 == &i32::MAX {
-                    edge_orders.push((eid1.clone(), eid2.clone(), FirstToSecond));
-                }
-            }
-        }
-
-        Relation {
-            shared_nodes,
-            edge_orders,
-        }
-    }
-
-    pub fn merge_buffers(
-        sub_pattern_buffer1: &SubPatternBuffer,
-        sub_pattern_buffer2: &SubPatternBuffer,
-    ) -> Self {
-        let mut node_id_list = sub_pattern_buffer1.node_id_list.clone();
-        let mut edge_id_list = sub_pattern_buffer1.edge_id_list.clone();
-        node_id_list.extend(&sub_pattern_buffer2.node_id_list);
-        edge_id_list.extend(&sub_pattern_buffer2.edge_id_list);
-
-        let id = max(sub_pattern_buffer1.id, sub_pattern_buffer2.id) + 1;
-
-        Self {
-            id,
-            sibling_id: id + 1,
-            node_id_list,
-            edge_id_list,
-            buffer: BinaryHeap::new(),
-            new_match_buffer: BinaryHeap::new(),
-            relation: Relation::new(),
-            max_num_nodes: sub_pattern_buffer1.max_num_nodes,
-            used_nodes: vec![false; sub_pattern_buffer1.max_num_nodes],
-            // timestamps: HashMap::with_capacity(sub_pattern_buffer1.timestamps.capacity())
-            timestamps: vec![0; sub_pattern_buffer1.timestamps.len()]
-        }
-    }
-
-    pub fn clear_workspace(&mut self) {
-        self.used_nodes.fill(false);
-        self.timestamps.fill(0);
-    }
-}
-
-// todo: check "match uniqueness" (matches in buffers); To be handled by "hashing".
+// todo: check "answer uniqueness"
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
     pattern: &'p Pattern,
