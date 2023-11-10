@@ -22,11 +22,10 @@ enum TimeOrder {
 }
 
 #[derive(Clone)]
-pub struct Relation {
+struct Relation {
     // shared_nodes.len() == num_node
     // If node 'i' is shared, shared_nodes[i] = true.
     // 'i': pattern node id
-
     /// "shared_nodes" seems useless.
     /// (The "structure" has guaranteed nodes to be shared properly, when doing "SubPatternMatch::try_merge_nodes()".)
     shared_nodes: Vec<bool>,
@@ -49,18 +48,24 @@ impl Relation {
         &self,
         edge_id_map1: &[Option<u64>],
         edge_id_map2: &[Option<u64>],
-        timestamps: &[u64]
+        timestamps: &HashMap<u64, u64>,
     ) -> bool {
-        self.edge_orders.iter().all(|(pattern_id1, pattern_id2, time_order)| {
-            if let (Some(id1), Some(id2)) = (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2]) {
-                match time_order {
-                    FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
-                    SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
+        self.edge_orders
+            .iter()
+            .all(|(pattern_id1, pattern_id2, time_order)| {
+                if let (Some(id1), Some(id2)) =
+                    (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2])
+                {
+                    match time_order {
+                        // FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
+                        // SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
+                        FirstToSecond => timestamps.get(&id1).unwrap() <= timestamps.get(&id2).unwrap(),
+                        SecondToFirst => timestamps.get(&id1).unwrap() >= timestamps.get(&id2).unwrap(),
+                    }
+                } else {
+                    false
                 }
-            } else {
-                false
-            }
-        })
+            })
     }
 
     pub fn is_node_shared(&self, id: usize) -> bool {
@@ -78,16 +83,28 @@ pub struct SubPatternBuffer<'p> {
     edge_id_list: HashSet<usize>,
     buffer: BinaryHeap<EarliestFirst<'p>>,
     new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
-    
+
     pub relation: Relation,
-    /// number of nodes in the "whole" pattern 
-    pub max_num_nodes: usize 
+    /// number of nodes in the "whole" pattern
+    pub max_num_nodes: usize,
+
+    /// make sure the largest pattern edge id is "pattern.edges.len() - 1"
+    pub used_nodes: Vec<bool>,
+    pub timestamps: HashMap<u64, u64>,
 }
 
 impl<'p> SubPatternBuffer<'p> {
-    pub fn new(id: usize, sibling_id: usize, sub_pattern: &SubPattern, max_num_nodes: usize) -> Self {
+    pub fn new(
+        id: usize,
+        sibling_id: usize,
+        sub_pattern: &SubPattern,
+        max_num_nodes: usize,
+        max_num_edges: usize,
+    ) -> Self {
         let mut node_id_list = HashSet::new();
         let mut edge_id_list = HashSet::new();
+        /// capacity of "timestamps"; "7/8" is the purported "load factor"
+        let capacity = (8_f64 * (max_num_edges as f64) / 7_f64).round();
         for &edge in &sub_pattern.edges {
             node_id_list.insert(edge.start);
             node_id_list.insert(edge.end);
@@ -101,7 +118,9 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
-            max_num_nodes
+            max_num_nodes,
+            used_nodes: vec![false, max_num_nodes],
+            timestamps: HashMap::with_capacity(capacity as usize)
         }
     }
 
@@ -166,8 +185,15 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
-            max_num_nodes: sub_pattern_buffer1.max_num_nodes
+            max_num_nodes: sub_pattern_buffer1.max_num_nodes,
+            used_nodes: vec![false, sub_pattern_buffer1.max_num_nodes],
+            timestamps: HashMap::with_capacity(sub_pattern_buffer1.timestamps.capacity())
         }
+    }
+
+    pub fn clear_workspace(&mut self) {
+        self.used_nodes.fill(false);
+        self.timestamps.clear();
     }
 }
 
@@ -192,7 +218,8 @@ impl<'p, P> JoinLayer<'p, P> {
             sub_pattern_buffer1.id + 1,
             sub_pattern_buffer1.id,
             &sub_patterns[id],
-            sub_pattern_buffer1.max_num_nodes
+            sub_pattern_buffer1.max_num_nodes,
+            pattern.edges.len(),
         );
         let relations = SubPatternBuffer::generate_relations(
             &pattern,
@@ -219,7 +246,13 @@ impl<'p, P> JoinLayer<'p, P> {
         let distances_table = pattern.order.calculate_distances().unwrap();
         let mut sub_pattern_buffers = Vec::with_capacity(2 * sub_patterns.len() - 1);
 
-        sub_pattern_buffers.push(SubPatternBuffer::new(0, 1, &sub_patterns[0], pattern.num_nodes));
+        sub_pattern_buffers.push(SubPatternBuffer::new(
+            0,
+            1,
+            &sub_patterns[0],
+            pattern.num_nodes,
+            pattern.edges.len(),
+        ));
 
         for i in 1..sub_patterns.len() {
             Self::create_buffer_pair(
@@ -240,7 +273,7 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     fn to_pattern_match(&self, buffer_id: usize) -> Vec<PatternMatch> {
-        let empty_input_edge = Rc::new(InputEdge{
+        let empty_input_edge = Rc::new(InputEdge {
             timestamp: 0,
             signature: "".to_string(),
             id: 0,
@@ -263,7 +296,7 @@ impl<'p, P> JoinLayer<'p, P> {
             // every pattern edge should be matched
             assert!(!matched_edges.iter().any(|x| x.eq(&empty_input_edge)));
 
-            pattern_matches.push(PatternMatch{matched_edges});
+            pattern_matches.push(PatternMatch { matched_edges });
         }
         pattern_matches
     }
@@ -328,7 +361,9 @@ impl<'p, P> JoinLayer<'p, P> {
             self.clear_expired(current_time, Self::get_sibling_id(buffer_id));
 
             let joined = self.join_with_sibling(buffer_id, Self::get_sibling_id(buffer_id));
-            self.sub_pattern_buffers[parent_id].new_match_buffer.extend(joined);
+            self.sub_pattern_buffers[parent_id]
+                .new_match_buffer
+                .extend(joined);
 
             // root reached
             if parent_id == self.sub_pattern_buffers.len() - 1 {
