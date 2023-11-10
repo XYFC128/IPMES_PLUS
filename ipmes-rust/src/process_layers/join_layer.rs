@@ -48,23 +48,27 @@ impl Relation {
         &self,
         edge_id_map1: &[Option<u64>],
         edge_id_map2: &[Option<u64>],
-        timestamps: &HashMap<u64, u64>,
+        timestamps: &Vec<u64>,
     ) -> bool {
         self.edge_orders
             .iter()
             .all(|(pattern_id1, pattern_id2, time_order)| {
-                if let (Some(id1), Some(id2)) =
-                    (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2])
-                {
-                    match time_order {
-                        // FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
-                        // SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
-                        FirstToSecond => timestamps.get(&id1).unwrap() <= timestamps.get(&id2).unwrap(),
-                        SecondToFirst => timestamps.get(&id1).unwrap() >= timestamps.get(&id2).unwrap(),
-                    }
-                } else {
-                    false
+                match time_order {
+                    FirstToSecond => timestamps[*pattern_id1] <= timestamps[*pattern_id2],
+                    SecondToFirst => timestamps[*pattern_id1] >= timestamps[*pattern_id2],
                 }
+                // if let (Some(id1), Some(id2)) =
+                //     (edge_id_map1[*pattern_id1], edge_id_map2[*pattern_id2])
+                // {
+                //     match time_order {
+                //         FirstToSecond => timestamps[id1 as usize] <= timestamps[id2 as usize],
+                //         SecondToFirst => timestamps[id1 as usize] >= timestamps[id2 as usize],
+                //         // FirstToSecond => timestamps.get(&id1).unwrap() <= timestamps.get(&id2).unwrap(),
+                //         // SecondToFirst => timestamps.get(&id1).unwrap() >= timestamps.get(&id2).unwrap(),
+                //     }
+                // } else {
+                //     false
+                // }
             })
     }
 
@@ -90,7 +94,8 @@ pub struct SubPatternBuffer<'p> {
 
     /// make sure the largest pattern edge id is "pattern.edges.len() - 1"
     pub used_nodes: Vec<bool>,
-    pub timestamps: HashMap<u64, u64>,
+    /// '0' means timestamp not recorded
+    pub timestamps: Vec<u64>,
 }
 
 impl<'p> SubPatternBuffer<'p> {
@@ -104,7 +109,7 @@ impl<'p> SubPatternBuffer<'p> {
         let mut node_id_list = HashSet::new();
         let mut edge_id_list = HashSet::new();
         /// capacity of "timestamps"; "7/8" is the purported "load factor"
-        let capacity = (8_f64 * (max_num_edges as f64) / 7_f64).round();
+        // let capacity = (8_f64 * (max_num_edges as f64) / 7_f64).round();
         for &edge in &sub_pattern.edges {
             node_id_list.insert(edge.start);
             node_id_list.insert(edge.end);
@@ -120,7 +125,8 @@ impl<'p> SubPatternBuffer<'p> {
             relation: Relation::new(),
             max_num_nodes,
             used_nodes: vec![false; max_num_nodes],
-            timestamps: HashMap::with_capacity(capacity as usize)
+            // timestamps: HashMap::with_capacity(capacity as usize)
+            timestamps: vec![0; max_num_edges]
         }
     }
 
@@ -187,13 +193,14 @@ impl<'p> SubPatternBuffer<'p> {
             relation: Relation::new(),
             max_num_nodes: sub_pattern_buffer1.max_num_nodes,
             used_nodes: vec![false; sub_pattern_buffer1.max_num_nodes],
-            timestamps: HashMap::with_capacity(sub_pattern_buffer1.timestamps.capacity())
+            // timestamps: HashMap::with_capacity(sub_pattern_buffer1.timestamps.capacity())
+            timestamps: vec![0; sub_pattern_buffer1.timestamps.len()]
         }
     }
 
     pub fn clear_workspace(&mut self) {
         self.used_nodes.fill(false);
-        self.timestamps.clear();
+        self.timestamps.fill(0);
     }
 }
 
