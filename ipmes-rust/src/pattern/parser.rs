@@ -4,6 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use log::info;
 use thiserror::Error;
 use crate::pattern::order_relation::OrderRelation;
 
@@ -36,6 +37,7 @@ pub trait PatternParser {
         edges_file: &str,
         order_relation_file: &str,
     ) -> Result<Pattern, PatternParsingError> {
+        info!("Parsing: {node_file}, {edges_file}, {order_relation_file}");
         let (id_convert, node_signatures) = self.parse_node_file(node_file)?;
         let edges = self.parse_edge_file(edges_file, &id_convert, &node_signatures)?;
         let num_nodes = edges

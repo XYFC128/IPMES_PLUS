@@ -4,6 +4,7 @@ use csv::DeserializeRecordsIter;
 use std::collections::BinaryHeap;
 use std::fs::File;
 use::std::rc::Rc;
+use log::warn;
 
 #[derive(Debug, serde::Deserialize)]
 struct Record {
@@ -60,9 +61,10 @@ impl<'a> ParseLayer<'a> {
 
     fn next_valid_record(&mut self) -> Option<Record> {
         while let Some(result) = self.csv_iter.next() {
-            if let Ok(record) = result {
-                return Some(record);
-            }
+            match result {
+                Ok(record) => return Some(record),
+                Err(e) =>warn!("Error occurred in input file: {e}")
+            };
         }
         None
     }

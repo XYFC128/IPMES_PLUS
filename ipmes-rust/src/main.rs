@@ -45,7 +45,10 @@ fn main() {
     let window_size = args.window_size * 1000;
 
     let pattern = parse_pattern(&args).expect("Fail to parse pattern");
+    info!("Pattern Edges: {:#?}", pattern.edges);
+
     let decomposition = decompose(&pattern);
+    info!("Decomposition results: {:#?}", decomposition);
 
     let input_reader = File::open(args.data_graph).unwrap();
     let mut input_reader = csv::Reader::from_reader(input_reader);
@@ -55,7 +58,9 @@ fn main() {
     let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size.clone());
 
     for result in join_layer {
-        todo!()
+        for pattern_match in result {
+            info!("Pattern Match: {}", pattern_match);
+        }
     }
 }
 
