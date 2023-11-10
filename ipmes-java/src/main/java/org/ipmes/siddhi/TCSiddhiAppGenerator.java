@@ -180,11 +180,20 @@ public class TCSiddhiAppGenerator {
         String query = "from ";
 
         HashMap<Integer, String> prefixNodes = new HashMap<>();
+        PatternEdge firstEdge = null;
         for (PatternEdge edge : q.getEdges()) {
             if (!prefixNodes.isEmpty())
                 query += "  -> ";
-            query += String.format("every(e%d = InputStream[%s])\n",
-                    edge.getId(), genEdgeCondition(edge, prefixNodes));
+
+            if (firstEdge == null) {
+                query += String.format("every(e%d = InputStream[%s])\n",
+                        edge.getId(), genEdgeCondition(edge, prefixNodes));
+                firstEdge = edge;
+            } else {
+                query += String.format("every(e%d = InputStream[timestamp <= e%d.timestamp + %d and %s])\n",
+                        edge.getId(), firstEdge.getId(), this.windowSize, genEdgeCondition(edge, prefixNodes));
+            }
+
             prefixNodes.put(edge.getStartId(), String.format("e%d.start_id", edge.getId()));
             prefixNodes.put(edge.getEndId(), String.format("e%d.end_id", edge.getId()));
         }
