@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-#[derive(Eq, Debug)]
+#[derive(Eq, Debug, Clone)]
 pub struct InputEdge {
     pub timestamp: u64,
     pub signature: String,
