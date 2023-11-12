@@ -1,6 +1,5 @@
 use clap::{arg, Parser, ValueEnum};
 use log::info;
-use std::fs::File;
 
 use ipmes_rust::pattern::darpa::DarpaPatternParser;
 use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
@@ -56,7 +55,7 @@ fn main() {
     let parse_layer = ParseLayer::new(&mut csv);
     let ord_match_layer =
         OrdMatchLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
-    let mut join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size);
+    let join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size);
 
     let mut num_result = 0u32;
     for result in join_layer {

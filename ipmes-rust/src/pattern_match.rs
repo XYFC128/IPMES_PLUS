@@ -1,7 +1,7 @@
 use crate::input_edge::InputEdge;
 use itertools::Itertools;
 use std::fmt;
-use std::fmt::{write, Formatter};
+use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 use std::iter::zip;
 use std::rc::Rc;

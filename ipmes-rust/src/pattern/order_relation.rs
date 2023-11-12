@@ -1,5 +1,4 @@
 use crate::pattern::parser::PatternParsingError;
-use itertools::Itertools;
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::NodeIndex;
 use petgraph::graph::{DefaultIx, Graph};
