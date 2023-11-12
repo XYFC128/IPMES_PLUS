@@ -29,116 +29,6 @@ pub struct SubPatternMatch<'p> {
     pub match_edges: Vec<MatchEdge<'p>>,
 }
 
-/// Try to merge match nodes, and handle "shared node" and "node uniqueness" in the process.
-/// If the mentioned checks didn't pass, return None.
-///
-/// a and b are slices over (input node id, pattern node id)
-fn try_merge_nodes(
-    a: &[(u64, u64)],
-    b: &[(u64, u64)],
-    used: &mut Vec<bool>,
-) -> Option<Vec<(u64, u64)>> {
-    let mut merged = Vec::with_capacity(a.len() + b.len());
-
-    let mut p1 = a.iter();
-    let mut p2 = b.iter();
-    let mut next1 = p1.next();
-    let mut next2 = p2.next();
-    while let (Some(node1), Some(node2)) = (next1, next2) {
-        if used[node1.1 as usize] || used[node2.1 as usize] {
-            return None;
-        }
-
-        if node1.0 < node2.0 {
-            merged.push(node1.clone());
-            used[node1.1 as usize] = true;
-            next1 = p1.next();
-        } else if node1.0 > node2.0 {
-            merged.push(node2.clone());
-            used[node2.1 as usize] = true;
-            next2 = p2.next();
-        } else {
-            if node1.1 != node2.1 {
-                return None;
-            }
-            merged.push(node1.clone());
-            used[node1.1 as usize] = true;
-            next1 = p1.next();
-            next2 = p2.next();
-        }
-    }
-
-    if next1.is_none() {
-        p1 = p2;
-        next1 = next2;
-    }
-
-    while let Some(node) = next1 {
-        if used[node.1 as usize] {
-            return None;
-        }
-        used[node.1 as usize] = true;
-        merged.push(node.clone());
-        next1 = p1.next();
-    }
-
-    Some(merged)
-}
-
-/// "merge match_edge" and "check edge uniqueness"
-/// Analogous to "try_merge_nodes"
-///
-/// Since "check_edge_uniqueness" guarantees the bijective relationship between
-/// pattern edges and input edges, the index of "timestamps" can be "pattern edge id".
-///
-/// All pattern edges are unique.
-fn try_merge_match_edges<'p>(
-    a: &[MatchEdge<'p>],
-    b: &[MatchEdge<'p>],
-    timestamps: &mut Vec<u64>,
-) -> Option<Vec<MatchEdge<'p>>> {
-    let mut merged = Vec::with_capacity(a.len() + b.len());
-
-    let mut p1 = a.iter();
-    let mut p2 = b.iter();
-    let mut next1 = p1.next();
-    let mut next2 = p2.next();
-
-    while let (Some(edge1), Some(edge2)) = (next1, next2) {
-        if edge1.input_edge.id < edge2.input_edge.id {
-            merged.push(edge1.clone());
-            timestamps[edge1.matched.id] = edge1.input_edge.timestamp;
-            next1 = p1.next();
-        } else if edge1.input_edge.id > edge2.input_edge.id {
-            merged.push(edge2.clone());
-            timestamps[edge2.matched.id] = edge2.input_edge.timestamp;
-            next2 = p2.next();
-        } else {
-            if edge1.matched.id != edge2.matched.id {
-                println!("pattern edge not shared!");
-                return None;
-            }
-            merged.push(edge1.clone());
-            timestamps[edge1.matched.id] = edge1.input_edge.timestamp;
-            next1 = p1.next();
-            next2 = p2.next();
-        }
-    }
-
-    if next1.is_none() {
-        p1 = p2;
-        next1 = next2;
-    }
-
-    while let Some(edge) = next1 {
-        timestamps[edge.matched.id] = edge.input_edge.timestamp;
-        merged.push(edge.clone());
-        next1 = p1.next();
-    }
-
-    Some(merged)
-}
-
 /// Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
 fn merge_edge_id_map(
     edge_id_map1: &Vec<Option<u64>>,
@@ -171,16 +61,14 @@ fn check_edge_uniqueness(match_edges: &Vec<MatchEdge>) -> bool {
 impl<'p> SubPatternMatch<'p> {
     /// todo: check correctness
     pub fn merge_matches(
-        sub_pattern_buffer: &mut SubPatternBuffer,
+        sub_pattern_buffer: &mut SubPatternBuffer<'p>,
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
         /// merge "match_edges" (WITHOUT checking "edge uniqueness")
-        let match_edges = try_merge_match_edges(
+        let match_edges = sub_pattern_buffer.try_merge_match_edges(
             &sub_pattern_match1.match_edges,
             &sub_pattern_match2.match_edges,
-            // sub_pattern_match1.edge_id_map.len(),
-            &mut sub_pattern_buffer.timestamps,
         )?;
 
         /// handle "edge uniqueness"
@@ -190,18 +78,15 @@ impl<'p> SubPatternMatch<'p> {
 
         /// check "order relation"
         if !sub_pattern_buffer.relation.check_order_relation(
-            &sub_pattern_match1.edge_id_map,
-            &sub_pattern_match2.edge_id_map,
             &sub_pattern_buffer.timestamps,
         ) {
             return None;
         }
 
         /// handle "shared node" and "node uniqueness"
-        let mut match_nodes = try_merge_nodes(
+        let mut match_nodes = sub_pattern_buffer.try_merge_nodes(
             &sub_pattern_match1.match_nodes,
             &sub_pattern_match1.match_nodes,
-            &mut sub_pattern_buffer.used_nodes,
         )?;
 
         /// merge "edge_id_map"
@@ -231,7 +116,6 @@ impl<'p> SubPatternMatch<'p> {
     }
 }
 
-// #[derive(Debug)]
 #[derive(Clone)]
 pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
 
@@ -254,9 +138,3 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
         Some(self.cmp(other))
     }
 }
-
-// impl<'p> AsRef<SubPatternMatch<'p>> for EarliestFirst<'p> {
-//     fn as_ref(&self) -> &SubPatternMatch<'p> {
-//         self.0.as_ref()
-//     }
-// }
