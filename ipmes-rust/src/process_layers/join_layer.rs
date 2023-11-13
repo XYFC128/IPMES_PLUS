@@ -121,13 +121,13 @@ impl<'p, P> JoinLayer<'p, P> {
         pattern_matches
     }
 
-    // The uniqueness of matches should be handled (Just like any other buffer.).
+    /// The uniqueness of matches should be handled.
     fn add_to_answer(&mut self, results: &mut Vec<PatternMatch>) {
-        let root_buffer_id = self.sub_pattern_buffers.len() - 1;
-        results.extend(self.to_pattern_match(root_buffer_id));
+        let root_id = self.sub_pattern_buffers.len() - 1;
+        results.extend(self.to_pattern_match(root_id));
 
-        // Clear used matches.
-        self.sub_pattern_buffers[root_buffer_id].buffer.clear();
+        /// Clear used matches.
+        self.sub_pattern_buffers[root_id].buffer.clear();
     }
 
     fn get_left_buffer_id(buffer_id: usize) -> usize {
@@ -135,13 +135,23 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     // Siblings' buffer ids only differ by their LSB.
-    fn get_sibling_id(buffer_id: usize) -> usize {
+    fn get_sibling_id(&self, buffer_id: usize) -> usize {
+        // root has no sibling
+        if buffer_id == self.get_root_buffer_id() {
+            return buffer_id;
+        }
         buffer_id ^ 1
     }
 
-    fn get_parent_id(buffer_id: usize) -> usize {
+    fn get_parent_id(&self, buffer_id: usize) -> usize {
+        // root has no parent
+        if buffer_id == self.get_root_buffer_id() {
+            return buffer_id;
+        }
         Self::get_left_buffer_id(buffer_id) + 2
     }
+
+    fn get_root_buffer_id(&self) -> usize { self.sub_pattern_buffers.len() - 1 }
 
     fn clear_expired(&mut self, latest_time: u64, buffer_id: usize) {
         while let Some(sub_pattern_match) = self.sub_pattern_buffers[buffer_id].buffer.peek() {
@@ -151,11 +161,11 @@ impl<'p, P> JoinLayer<'p, P> {
         }
     }
 
-    // My new_match_buffer, joined with sibling's buffer.
+    /// My new_match_buffer, joined with sibling's buffer.
     fn join_with_sibling(&mut self, my_id: usize, sibling_id: usize) -> BinaryHeap<EarliestFirst<'p>> {
         let mut matches_to_parent = BinaryHeap::new();
         let buffer1 = self.sub_pattern_buffers[my_id].new_match_buffer.clone();
-        let buffer2 = self.sub_pattern_buffers[my_id].buffer.clone();
+        let buffer2 = self.sub_pattern_buffers[sibling_id].buffer.clone();
 
         for sub_pattern_match1 in &buffer1 {
             for sub_pattern_match2 in &buffer2 {
@@ -168,28 +178,42 @@ impl<'p, P> JoinLayer<'p, P> {
                 }
             }
         }
+
         matches_to_parent
     }
 
-    // Join new-matches with matches in its sibling buffer, in a button-up fashion.
+    /// Join new-matches with matches in its sibling buffer, in a button-up fashion.
     fn join(&mut self, current_time: u64, mut buffer_id: usize, results: &mut Vec<PatternMatch>) {
+        // root is the only buffer
+        if buffer_id == self.get_root_buffer_id() {
+            let new_matches = self.sub_pattern_buffers[buffer_id].new_match_buffer.clone();
+            self.sub_pattern_buffers[buffer_id]
+                .buffer
+                .extend(new_matches);
+            return;
+        }
+
         loop {
             let new_matches = self.sub_pattern_buffers[buffer_id].new_match_buffer.clone();
-            let parent_id = Self::get_parent_id(buffer_id);
             self.sub_pattern_buffers[buffer_id]
                 .buffer
                 .extend(new_matches);
 
-            // Clear only sibling buffer, since we can clear current buffer when needed (deferred).
-            self.clear_expired(current_time, Self::get_sibling_id(buffer_id));
 
-            let joined = self.join_with_sibling(buffer_id, Self::get_sibling_id(buffer_id));
+            /// Clear only sibling buffer, since we can clear current buffer when needed (deferred).
+            self.clear_expired(current_time, self.get_sibling_id(buffer_id));
+
+            let parent_id = self.get_parent_id(buffer_id);
+            let joined = self.join_with_sibling(buffer_id, self.get_sibling_id(buffer_id));
             self.sub_pattern_buffers[parent_id]
                 .new_match_buffer
                 .extend(joined);
+            /// Clear used matches.
+            self.sub_pattern_buffers[buffer_id].new_match_buffer.clear();
 
-            // root reached
-            if parent_id == self.sub_pattern_buffers.len() - 1 {
+
+            /// root reached
+            if parent_id == self.get_root_buffer_id() {
                 self.add_to_answer(results);
                 break;
             }
