@@ -5,9 +5,6 @@ import java.io.FileReader;
 import java.util.*;
 import java.lang.Runtime;
 
-import io.siddhi.core.SiddhiAppRuntime;
-import io.siddhi.core.SiddhiManager;
-import io.siddhi.core.stream.input.InputHandler;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -22,8 +19,6 @@ import org.ipmes.match.FullMatch;
 import org.ipmes.match.LiteMatchResult;
 import org.ipmes.pattern.*;
 
-import org.ipmes.siddhi.TCQueryOutputCallback;
-import org.ipmes.siddhi.TCSiddhiAppGenerator;
 import org.json.JSONObject;
 
 public class Main {
@@ -108,43 +103,26 @@ public class Main {
         // Decomposition
         TCQGenerator d = new TCQGenerator(temporalPattern, spatialPattern);
         ArrayList<TCQuery> tcQueries = d.decompose();
-        TCSiddhiAppGenerator gen = new TCSiddhiAppGenerator(spatialPattern, temporalPattern, tcQueries, windowSize);
-        gen.setUseRegex(useRegex);
-
-        // Generate CEP app and runtime
-        String appStr = gen.generate();
-        SiddhiManager siddhiManager = new SiddhiManager();
-        SiddhiAppRuntime runtime = siddhiManager.createSiddhiAppRuntime(appStr);
 
         if (isDebug) {
-            System.err.println("CEP App:");
-            System.err.println(appStr);
             System.err.println("TC Queries:");
             tcQueries.forEach(System.err::println);
         }
 
         Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
-        for (TCQuery q : tcQueries) {
-            runtime.addCallback(
-                    String.format("TC%dOutput", q.getId()),
-                    new TCQueryOutputCallback(q, spatialPattern, join));
-        }
 
         BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
         String line = inputReader.readLine();
 
-        InputHandler inputHandler = runtime.getInputHandler("InputStream");
-        runtime.start();
-
-        EventSorter sorter = new EventSorter(tcQueries, useRegex);
-        CEPEventSender sender = new CEPEventSender(inputHandler, sorter);
+        TCMatcher matcher = new TCMatcher(tcQueries, useRegex, windowSize, join);
+        EventSender sender = new EventSender(matcher);
         int maxPoolSize = 0;
         Runtime jvm = Runtime.getRuntime();
         long maxHeapSize = jvm.totalMemory();
         while (line != null) {
             sender.sendLine(line);
             line = inputReader.readLine();
-            maxPoolSize = Math.max(maxPoolSize, join.getPoolSize());
+            maxPoolSize = Math.max(maxPoolSize, join.getPoolSize() + matcher.getPoolSize());
             maxHeapSize = Math.max(maxHeapSize, jvm.totalMemory());
         }
         sender.flushBuffers();
@@ -155,7 +133,7 @@ public class Main {
         output.put("PeakPoolSize", maxPoolSize);
         output.put("PeakHeapSize", maxHeapSize);
 
-        // output.put("TriggerCounts", matcher.getTriggerCounts());
+        output.put("TriggerCounts", matcher.getTriggerCounts());
 
         Collection<FullMatch> results = join.extractAnswer();
         output.put("NumResults", results.size());
@@ -166,7 +144,5 @@ public class Main {
         }
 
         System.out.println(output.toString(2));
-        runtime.shutdown();
-        siddhiManager.shutdown();
     }
 }
