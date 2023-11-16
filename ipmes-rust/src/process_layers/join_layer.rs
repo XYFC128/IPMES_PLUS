@@ -1,10 +1,10 @@
 mod sub_pattern_buffer;
 
-pub use sub_pattern_buffer::SubPatternBuffer;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
 use std::cmp::min;
+pub use sub_pattern_buffer::SubPatternBuffer;
 
 use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
@@ -12,17 +12,17 @@ use crate::pattern::Pattern;
 use crate::process_layers::ord_match_layer::PartialMatch;
 use itertools::Itertools;
 use petgraph::graph::NodeIndex;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::hash::Hash;
+use std::mem;
 use std::rc::Rc;
 
-
-// todo: check "answer uniqueness"
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
     pattern: &'p Pattern,
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     window_size: u64,
+    full_match: HashSet<PatternMatch>,
 }
 
 impl<'p, P> JoinLayer<'p, P> {
@@ -89,52 +89,53 @@ impl<'p, P> JoinLayer<'p, P> {
             pattern,
             sub_pattern_buffers,
             window_size,
+            full_match: HashSet::new(),
         }
     }
 
-    fn to_pattern_match(&self, buffer_id: usize) -> Vec<PatternMatch> {
-        let empty_input_edge = Rc::new(InputEdge {
-            timestamp: 0,
-            signature: "".to_string(),
-            id: 0,
-            start: 0,
-            end: 0,
-        });
-        let empty_matches = vec![empty_input_edge.clone(); self.pattern.edges.len()];
-        let mut pattern_matches = Vec::new();
+    /// change the name of the function
+    /// "match_edges" is sorted by its match edge ids, and thus "matched_edges" is in good order.
+    fn convert_pattern_match(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> HashSet<PatternMatch> {
+        let mut pattern_matches = HashSet::new();
 
-        for sub_pattern_match in &self.sub_pattern_buffers[buffer_id].buffer {
-            // let mut matched_edges = vec![empty_input_edge; self.pattern.edges.len()];
-            let mut matched_edges = empty_matches.clone();
+        for mut sub_pattern_match in buffer.drain() {
+            let mut matched_edges = Vec::new();
+            sub_pattern_match
+                .0
+                .match_edges
+                .sort_by(|a, b| a.matched.id.cmp(&b.matched.id));
+
             for match_edge in &sub_pattern_match.0.match_edges {
-                matched_edges[match_edge.matched.id] = Rc::clone(&match_edge.input_edge);
+                matched_edges.push(Rc::clone(&match_edge.input_edge));
             }
 
-            // for testing
-            // no two pattern edges should match to the same input edge
-            // assert!(matched_edges.iter().all_unique());
-            // every pattern edge should be matched
-            assert!(!matched_edges.iter().any(|x| x.eq(&empty_input_edge)));
-
-            pattern_matches.push(PatternMatch { matched_edges });
+            pattern_matches.insert(PatternMatch { matched_edges });
         }
         pattern_matches
     }
 
     /// The uniqueness of matches should be handled.
-    fn add_to_answer(&mut self, results: &mut Vec<PatternMatch>) {
+    fn add_to_answer(&mut self) {
         let root_id = self.sub_pattern_buffers.len() - 1;
-        results.extend(self.to_pattern_match(root_id));
+        self.full_match.extend(Self::convert_pattern_match(
+            &mut self.sub_pattern_buffers[root_id].buffer,
+        ));
+        self.full_match.extend(Self::convert_pattern_match(
+            &mut self.sub_pattern_buffers[root_id].new_match_buffer,
+        ));
 
-        /// Clear used matches.
-        self.sub_pattern_buffers[root_id].buffer.clear();
+        /// for testing
+        assert!(self.sub_pattern_buffers[root_id].buffer.is_empty());
+        assert!(self.sub_pattern_buffers[root_id]
+            .new_match_buffer
+            .is_empty());
     }
 
     fn get_left_buffer_id(buffer_id: usize) -> usize {
         buffer_id - buffer_id % 2
     }
 
-    // Siblings' buffer ids only differ by their LSB.
+    /// Siblings' buffer ids only differ by their LSB.
     fn get_sibling_id(&self, buffer_id: usize) -> usize {
         // root has no sibling
         if buffer_id == self.get_root_buffer_id() {
@@ -151,7 +152,9 @@ impl<'p, P> JoinLayer<'p, P> {
         Self::get_left_buffer_id(buffer_id) + 2
     }
 
-    fn get_root_buffer_id(&self) -> usize { self.sub_pattern_buffers.len() - 1 }
+    fn get_root_buffer_id(&self) -> usize {
+        self.sub_pattern_buffers.len() - 1
+    }
 
     fn clear_expired(&mut self, latest_time: u64, buffer_id: usize) {
         while let Some(sub_pattern_match) = self.sub_pattern_buffers[buffer_id].buffer.peek() {
@@ -162,7 +165,11 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     /// My new_match_buffer, joined with sibling's buffer.
-    fn join_with_sibling(&mut self, my_id: usize, sibling_id: usize) -> BinaryHeap<EarliestFirst<'p>> {
+    fn join_with_sibling(
+        &mut self,
+        my_id: usize,
+        sibling_id: usize,
+    ) -> BinaryHeap<EarliestFirst<'p>> {
         let mut matches_to_parent = BinaryHeap::new();
         let buffer1 = self.sub_pattern_buffers[my_id].new_match_buffer.clone();
         let buffer2 = self.sub_pattern_buffers[sibling_id].buffer.clone();
@@ -183,40 +190,33 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     /// Join new-matches with matches in its sibling buffer, in a button-up fashion.
-    fn join(&mut self, current_time: u64, mut buffer_id: usize, results: &mut Vec<PatternMatch>) {
-        // root is the only buffer
-        if buffer_id == self.get_root_buffer_id() {
-            let new_matches = self.sub_pattern_buffers[buffer_id].new_match_buffer.clone();
-            self.sub_pattern_buffers[buffer_id]
-                .buffer
-                .extend(new_matches);
-            return;
-        }
-
+    fn join(&mut self, current_time: u64, mut buffer_id: usize) {
         loop {
-            let new_matches = self.sub_pattern_buffers[buffer_id].new_match_buffer.clone();
-            self.sub_pattern_buffers[buffer_id]
-                .buffer
-                .extend(new_matches);
-
+            /// root reached
+            if buffer_id == self.get_root_buffer_id() {
+                self.add_to_answer();
+                break;
+            }
 
             /// Clear only sibling buffer, since we can clear current buffer when needed (deferred).
             self.clear_expired(current_time, self.get_sibling_id(buffer_id));
 
-            let parent_id = self.get_parent_id(buffer_id);
             let joined = self.join_with_sibling(buffer_id, self.get_sibling_id(buffer_id));
+            let parent_id = self.get_parent_id(buffer_id);
             self.sub_pattern_buffers[parent_id]
                 .new_match_buffer
                 .extend(joined);
-            /// Clear used matches.
-            self.sub_pattern_buffers[buffer_id].new_match_buffer.clear();
 
 
-            /// root reached
-            if parent_id == self.get_root_buffer_id() {
-                self.add_to_answer(results);
-                break;
-            }
+            /// move new matches to buffer
+            let new_matches = mem::replace(
+                &mut self.sub_pattern_buffers[buffer_id].new_match_buffer,
+                BinaryHeap::new(),
+            );
+            self.sub_pattern_buffers[buffer_id]
+                .buffer
+                .extend(new_matches);
+
 
             buffer_id = parent_id;
         }
@@ -235,7 +235,7 @@ fn convert_node_id_map(node_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
     node_id_map.sort();
 }
 
-// Return the "earliest time" of all edges' timestamps.
+/// Return the "earliest time" of all edges' timestamps.
 fn create_edge_id_map(edge_id_map: &mut Vec<Option<u64>>, edges: &Vec<MatchEdge>) -> u64 {
     let mut earliest_time = u64::MAX;
     for edge in edges {
@@ -249,15 +249,14 @@ impl<'p, P> Iterator for JoinLayer<'p, P>
 where
     P: Iterator<Item = Vec<PartialMatch<'p>>>,
 {
-    type Item = Vec<PatternMatch>;
+    type Item = HashSet<PatternMatch>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // todo: return the "fully matched results"
-        let mut results = Vec::new();
-        while results.is_empty() {
+        while self.full_match.is_empty() {
             let partial_matches = self.prev_layer.next()?;
 
-            // Convert PartialMatch to SubPatternMatch
+            /// Convert PartialMatch to SubPatternMatch
+            /// Maybe isolate it to be a function?
             for partial_match in partial_matches {
                 let mut node_id_map = vec![(0, 0); self.pattern.num_nodes];
                 let mut edge_id_map = vec![None; self.pattern.edges.len()];
@@ -286,11 +285,11 @@ where
                 let new_match_buffer = &self.sub_pattern_buffers[buffer_id].new_match_buffer;
                 if !(new_match_buffer.is_empty()) {
                     let current_time = new_match_buffer.peek().unwrap().0.latest_time;
-                    self.join(current_time, buffer_id, &mut results);
+                    self.join(current_time, buffer_id);
                 }
             }
         }
 
-        Some(results)
+        Some(mem::replace(&mut self.full_match, HashSet::new()))
     }
 }
