@@ -59,12 +59,12 @@ fn main() {
 
     let mut num_result = 0u32;
     for result in join_layer {
+        num_result += result.len() as u32;
         for pattern_match in result {
             info!("Pattern Match: {}", pattern_match);
         }
-        num_result += 1;
     }
-    info!("Total number of matches: {num_result}");
+    println!("Total number of matches: {num_result}");
     info!("Finished");
 }
 
