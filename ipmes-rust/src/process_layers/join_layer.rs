@@ -16,7 +16,7 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::hash::Hash;
 use std::mem;
 use std::rc::Rc;
-use log::warn;
+use log::{debug, warn};
 
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
@@ -100,6 +100,7 @@ impl<'p, P> JoinLayer<'p, P> {
         let mut pattern_matches = HashSet::new();
 
         for mut sub_pattern_match in buffer.drain() {
+            debug!("sub_pattern_match id: {}", sub_pattern_match.0.id);
             let mut matched_edges = Vec::new();
             sub_pattern_match
                 .0
@@ -132,6 +133,13 @@ impl<'p, P> JoinLayer<'p, P> {
             .is_empty());
     }
 
+    /// get the corresponding buffer id of a sub_pattern_match
+    fn get_buffer_id (sub_pattern_id: usize) -> usize {
+        if sub_pattern_id == 0 { 0 }
+        else { 2 * sub_pattern_id - 1 }
+    }
+
+    /// get the buffer id of the left sibling of "buffer_id"
     fn get_left_buffer_id(buffer_id: usize) -> usize {
         buffer_id - buffer_id % 2
     }
@@ -179,12 +187,16 @@ impl<'p, P> JoinLayer<'p, P> {
 
         for sub_pattern_match1 in &buffer1 {
             for sub_pattern_match2 in &buffer2 {
+                debug!("now try merging {} and {}", sub_pattern_match1.0.id, sub_pattern_match2.0.id);
                 if let Some(merged) = SubPatternMatch::merge_matches(
                     &mut self.sub_pattern_buffers[my_id],
                     &sub_pattern_match1.0,
                     &sub_pattern_match2.0,
                 ) {
                     matches_to_parent.push(EarliestFirst(merged));
+                }
+                else {
+                    debug!("merge {} and {} failed", sub_pattern_match1.0.id, sub_pattern_match2.0.id);
                 }
             }
         }
@@ -195,6 +207,8 @@ impl<'p, P> JoinLayer<'p, P> {
     /// Join new-matches with matches in its sibling buffer, in a button-up fashion.
     fn join(&mut self, current_time: u64, mut buffer_id: usize) {
         loop {
+            debug!("buffer id: {}", buffer_id);
+
             /// root reached
             if buffer_id == self.get_root_buffer_id() {
                 self.add_to_answer();
@@ -206,20 +220,30 @@ impl<'p, P> JoinLayer<'p, P> {
 
             let joined = self.join_with_sibling(buffer_id, self.get_sibling_id(buffer_id));
             let parent_id = self.get_parent_id(buffer_id);
+
+            // debug!("parent id: {}", parent_id);
+
             self.sub_pattern_buffers[parent_id]
                 .new_match_buffer
                 .extend(joined);
-
 
             /// move new matches to buffer
             let new_matches = mem::replace(
                 &mut self.sub_pattern_buffers[buffer_id].new_match_buffer,
                 BinaryHeap::new(),
             );
+
+            debug!("new matches size: {}", new_matches.len());
+
             self.sub_pattern_buffers[buffer_id]
                 .buffer
                 .extend(new_matches);
 
+
+            if self.sub_pattern_buffers[parent_id].new_match_buffer.is_empty() {
+                debug!("no new match!");
+                break;
+            }
 
             buffer_id = parent_id;
         }
@@ -258,6 +282,7 @@ where
             /// Convert PartialMatch to SubPatternMatch
             /// Maybe isolate it to be a function?
             for partial_match in partial_matches {
+                debug!("partial match id: {}", partial_match.id);
                 let latest_time = if let Some(edge) = partial_match.edges.last() {
                     edge.input_edge.timestamp
                 } else {
@@ -265,7 +290,7 @@ where
                     continue;
                 };
 
-                let mut node_id_map = vec![(0, 0); self.pattern.num_nodes];
+                let mut node_id_map = Vec::with_capacity(self.pattern.num_nodes);
                 let mut edge_id_map = vec![None; self.pattern.edges.len()];
                 convert_node_id_map(&mut node_id_map, &partial_match.node_id_map);
                 create_edge_id_map(&mut edge_id_map, &partial_match.edges);
@@ -282,8 +307,8 @@ where
                     match_edges,
                 };
 
-                // put the sub-pattern match to its corresponding buffer
-                self.sub_pattern_buffers[sub_pattern_match.id]
+                /// put the sub-pattern match to its corresponding buffer
+                self.sub_pattern_buffers[Self::get_buffer_id(sub_pattern_match.id)]
                     .new_match_buffer
                     .push(EarliestFirst(sub_pattern_match));
             }
