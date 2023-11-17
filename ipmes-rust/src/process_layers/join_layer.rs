@@ -3,7 +3,7 @@ mod sub_pattern_buffer;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
-use std::cmp::min;
+use std::cmp::{max, min};
 pub use sub_pattern_buffer::SubPatternBuffer;
 
 use crate::input_edge::InputEdge;
@@ -16,6 +16,7 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::hash::Hash;
 use std::mem;
 use std::rc::Rc;
+use log::warn;
 
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
@@ -160,6 +161,8 @@ impl<'p, P> JoinLayer<'p, P> {
         while let Some(sub_pattern_match) = self.sub_pattern_buffers[buffer_id].buffer.peek() {
             if latest_time.saturating_sub(self.window_size) > sub_pattern_match.0.earliest_time {
                 self.sub_pattern_buffers[buffer_id].buffer.pop();
+            } else {
+                break;
             }
         }
     }
@@ -235,14 +238,11 @@ fn convert_node_id_map(node_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
     node_id_map.sort();
 }
 
-/// Return the "earliest time" of all edges' timestamps.
-fn create_edge_id_map(edge_id_map: &mut Vec<Option<u64>>, edges: &Vec<MatchEdge>) -> u64 {
-    let mut earliest_time = u64::MAX;
+/// Convert vector of edges to vector map of edges
+fn create_edge_id_map(edge_id_map: &mut Vec<Option<u64>>, edges: &Vec<MatchEdge>) {
     for edge in edges {
-        earliest_time = min(earliest_time, edge.input_edge.timestamp);
         edge_id_map[edge.matched.id] = Some(edge.input_edge.id);
     }
-    earliest_time
 }
 
 impl<'p, P> Iterator for JoinLayer<'p, P>
@@ -258,18 +258,25 @@ where
             /// Convert PartialMatch to SubPatternMatch
             /// Maybe isolate it to be a function?
             for partial_match in partial_matches {
+                let latest_time = if let Some(edge) = partial_match.edges.last() {
+                    edge.input_edge.timestamp
+                } else {
+                    warn!("Got an empty PartialMatch");
+                    continue;
+                };
+
                 let mut node_id_map = vec![(0, 0); self.pattern.num_nodes];
                 let mut edge_id_map = vec![None; self.pattern.edges.len()];
                 convert_node_id_map(&mut node_id_map, &partial_match.node_id_map);
-                let earliest_time = create_edge_id_map(&mut edge_id_map, &partial_match.edges);
+                create_edge_id_map(&mut edge_id_map, &partial_match.edges);
 
                 let mut match_edges = partial_match.edges;
                 match_edges.sort_by(|x, y| x.input_edge.id.cmp(&y.input_edge.id));
 
                 let sub_pattern_match = SubPatternMatch {
                     id: partial_match.id,
-                    latest_time: partial_match.timestamp,
-                    earliest_time,
+                    latest_time,
+                    earliest_time: partial_match.timestamp,
                     match_nodes: node_id_map,
                     edge_id_map,
                     match_edges,

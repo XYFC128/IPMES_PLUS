@@ -5,7 +5,7 @@ use crate::sub_pattern::SubPattern;
 use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
-use std::cmp::{max};
+use std::cmp::{max, min};
 use std::collections::{VecDeque};
 use std::rc::Rc;
 use log::warn;
@@ -16,7 +16,7 @@ pub struct PartialMatch<'p> {
     // todo: check whether 'id' is properly initialized
     /// the id of the matched sub-pattern
     pub id: usize,
-    /// the timestamp of the last edge (in "edges") , which is also the latest timestamp
+    /// the earliest timestamp
     pub timestamp: u64,
     /// nodes in pattern is matched to nodes of the input ("0" means not matched)
     pub node_id_map: Vec<u64>,
@@ -83,6 +83,7 @@ impl<'p> SubMatcher<'p> {
         node_id_map[self.pattern_edge.start] = input_edge.start;
         node_id_map[self.pattern_edge.end] = input_edge.end;
 
+        let timestamp = min(input_edge.timestamp, partial_match.timestamp);
         let match_edge = MatchEdge {
             input_edge,
             matched: self.pattern_edge,
@@ -91,7 +92,7 @@ impl<'p> SubMatcher<'p> {
 
         Some(PartialMatch {
             id: partial_match.id,
-            timestamp: partial_match.timestamp,
+            timestamp,
             node_id_map,
             edges,
         })
