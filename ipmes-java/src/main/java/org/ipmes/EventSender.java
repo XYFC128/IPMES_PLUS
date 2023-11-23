@@ -84,5 +84,6 @@ public class EventSender {
      */
     public void flushBuffers() throws InterruptedException {
         popQueueUntil(Long.MAX_VALUE);
+        flushTimeBuffer();
     }
 }
