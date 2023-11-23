@@ -21,7 +21,7 @@ public class NaiveJoin implements Join {
     TemporalRelation temporalRelation;
     PatternGraph spatialRelation;
     // store the match result of the whole pattern
-    ArrayList<MatchResult> answer;
+    HashSet<FullMatch> answer;
     // table for joining result
     HashSet<MatchResult> expansionTable;
     // use SortedMap<TimeStamp, entry> to maintain window
@@ -40,7 +40,7 @@ public class NaiveJoin implements Join {
             ArrayList<TCQuery> subTCQueries) {
         this.temporalRelation = temporalRelation;
         this.spatialRelation = spatialRelation;
-        this.answer = new ArrayList<MatchResult>();
+        this.answer = new HashSet<>();
         this.expansionTable = new HashSet<MatchResult>();
         this.relationGenerator = new NaiveGenRel(temporalRelation, spatialRelation, subTCQueries);
         this.TCQRelation = relationGenerator.getRelation();
@@ -182,7 +182,7 @@ public class NaiveJoin implements Join {
         int ansSize = this.spatialRelation.numEdges();
         for (MatchResult entry : this.bufferForPartialMatch) {
             if (entry.size() == ansSize)
-                this.answer.add(entry);
+                this.answer.add(entry.toFullMatch());
             else {
                 this.expansionTable.add(entry);
                 this.curPoolSize += 1;
@@ -232,12 +232,7 @@ public class NaiveJoin implements Join {
      * extract full match result.
      */
     public Collection<FullMatch> extractAnswer() {
-        ArrayList<FullMatch> ret = new ArrayList<>();
-        for (MatchResult result : this.answer) {
-            ret.add(result.toFullMatch());
-        }
-        this.answer.clear();
-        return ret;
+        return this.answer;
     }
 
     public int getPoolSize() {

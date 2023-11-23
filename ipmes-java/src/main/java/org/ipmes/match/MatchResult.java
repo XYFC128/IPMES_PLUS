@@ -132,6 +132,14 @@ public class MatchResult {
         if (!(obj instanceof MatchResult))
             return false;
         MatchResult other = (MatchResult) obj;
-        return this.results.equals(other.results);
+        if (this.results.size() != other.results.size())
+            return false;
+        for (Integer pattern_id : this.results.keySet()) {
+            MatchEdge e1 = this.results.get(pattern_id);
+            MatchEdge e2 = other.results.get(pattern_id);
+            if (e2 == null || e1.dataId != e2.dataId || e1.timestamp != e2.timestamp)
+                return false;
+        }
+        return true;
     }
 }
