@@ -62,12 +62,13 @@ def run(window_size):
     cpu_time /= args.re_run
     output = json.loads(stdout)
     poolsize = output['PeakPoolSize']
+    num_reults = output['NumResults']
 
-    print('{}\t {}\t {}'.format(window_size, cpu_time, poolsize))
+    print('{}\t {}\t {}\t {}'.format(window_size, cpu_time, poolsize, num_reults))
 
     return cpu_time, poolsize
 
-print('Window size, CPU time, Peak pool size')
+print('Window size, CPU time, Peak pool size, Number of Results')
 if args.multiplier == 1:
     for window_size in range(args.start, args.stop, args.step):
         run(window_size)
