@@ -4,6 +4,7 @@ from subprocess import Popen
 import os
 import json
 import argparse
+import sys
 from results import parse_cputime
 
 parser = parser = argparse.ArgumentParser(
@@ -50,7 +51,7 @@ def run(window_size):
         sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="--darpa --regex -w {window_size} ../data/darpa_patterns/TTP1-1_regex ../data/preprocessed/dd1.csv"']
     else:
         sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} ../data/patterns/TTP7_regex ../data/preprocessed/mix.csv"']
-    # print(args)
+    print(sub_proc_args, file=sys.stderr)
     cpu_time = 0
     for _ in range(args.re_run):
         proc = Popen(sub_proc_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
