@@ -10,18 +10,23 @@ parser = parser = argparse.ArgumentParser(
                 description='Age limit experiment')
 parser.add_argument('--start',
                     default=100,
+                    type=int,
                     help='start of the window size')
 parser.add_argument('--stop',
                     default=3700,
+                    type=int,
                     help='stop of the window size')
 parser.add_argument('--step',
                     default=100,
+                    type=int,
                     help='step of the window size')
 parser.add_argument('--multiplier',
                     default=1,
+                    type=int,
                     help='if != 1, grow the age limit exponentialy by the multiplier')
 parser.add_argument('-r', '--re-run',
                     default=3,
+                    type=int,
                     help='re-run times')
 args = parser.parse_args()
 
