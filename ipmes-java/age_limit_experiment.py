@@ -17,6 +17,9 @@ parser.add_argument('--stop',
 parser.add_argument('--step',
                     default=100,
                     help='step of the window size')
+parser.add_argument('--multiplier',
+                    default=1,
+                    help='if != 1, grow the age limit exponentialy by the multiplier')
 parser.add_argument('-r', '--re-run',
                     default=3,
                     help='re-run times')
@@ -30,8 +33,7 @@ if not os.path.exists('../results'):
 
 os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
-print('Window size, CPU time, Peak pool size')
-for window_size in range(args.start, args.stop, args.step):
+def run(window_size):
     sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} ../data/patterns/TTP7_regex ../data/preprocessed/mix.csv"']
     # print(args)
     cpu_time = 0
@@ -47,3 +49,14 @@ for window_size in range(args.start, args.stop, args.step):
     poolsize = output['PeakPoolSize']
 
     print('{}\t {}\t {}'.format(window_size, cpu_time, poolsize))
+
+print('Window size, CPU time, Peak pool size')
+if args.multiplier == 1:
+    for window_size in range(args.start, args.stop, args.step):
+        run(window_size)
+else:
+    window_size = args.start
+    mul = args.multiplier
+    while window_size < args.stop:
+        run(window_size)
+        window_size *= mul
