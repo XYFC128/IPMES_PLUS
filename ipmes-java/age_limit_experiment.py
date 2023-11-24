@@ -9,8 +9,7 @@ from results import parse_cputime
 parser = parser = argparse.ArgumentParser(
                 description='Age limit experiment')
 parser.add_argument('--darpa',
-                    default=False,
-                    type=bool,
+                    action='store_true',
                     help='run on darpa')
 parser.add_argument('--start',
                     default=100,
