@@ -48,7 +48,7 @@ os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
 def run(window_size):
     if args.darpa:
-        sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="--darpa --regex -w {window_size} ../data/darpa_patterns/TTP1-1_regex ../data/preprocessed/dd1.csv"']
+        sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="--darpa --regex -w {window_size} ../data/darpa_patterns/TTP1-2_regex ../data/preprocessed/dd2.csv"']
     else:
         sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} ../data/patterns/TTP7_regex ../data/preprocessed/mix.csv"']
     print(sub_proc_args, file=sys.stderr)
