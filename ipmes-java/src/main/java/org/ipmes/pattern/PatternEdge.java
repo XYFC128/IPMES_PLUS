@@ -18,9 +18,14 @@ public class PatternEdge {
     public PatternNode getEndNode() { return this.endNode; }
     public Integer getEndId() { return this.endNode.getId(); }
 
-    public PatternEdge(Integer id, String signature, PatternNode startNode, PatternNode endNode) {
+    public PatternEdge(Integer id, String signature, PatternNode startNode, PatternNode endNode, boolean isUniversal) {
         this.id = id;
-        this.signature = String.format("%s#%s#%s", signature, startNode.signature, endNode.signature);
+
+        if (isUniversal)
+            this.signature = signature;
+        else
+            this.signature = String.format("%s#%s#%s", signature, startNode.signature, endNode.signature);
+
         this.startNode = startNode;
         this.endNode = endNode;
     }

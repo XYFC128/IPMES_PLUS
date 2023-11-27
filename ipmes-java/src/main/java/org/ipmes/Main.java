@@ -36,6 +36,11 @@ public class Main {
                 .action(Arguments.storeTrue())
                 .setDefault(false)
                 .help("We are running on DARPA dataset.");
+        parser.addArgument("--pattern-format")
+                .dest("patternFormat")
+                .choices(new String[]{"SPADE", "DARPA", "Universal"})
+                .setDefault("SPADE")
+                .help("Pattern Format");
         parser.addArgument("-w", "--window-size").type(Long.class)
                 .dest("windowSize")
                 .setDefault(1800L)
@@ -67,9 +72,12 @@ public class Main {
         Boolean useRegex = ns.getBoolean("useRegex");
         Boolean isDarpa = ns.getBoolean("darpa");
         Boolean isDebug = ns.getBoolean("debug");
+        String patternFormat = ns.getString("patternFormat");
         String ttpPrefix = ns.getString("pattern_prefix");
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
+        if (isDarpa)
+            patternFormat = "DARPA";
 
         // parse data
         String orelsFile;
@@ -80,17 +88,23 @@ public class Main {
             orelsFile = ttpPrefix + "_oRels.json";
         }
 
-        SigExtractor extractor;
-        if (isDarpa)
-            extractor = new DarpaExtractor();
-        else
-            extractor = new SpadePatternExtractor();
-        PatternGraph spatialPattern = PatternGraph
-                .parse(
-                        new FileReader(ttpPrefix + "_node.json"),
-                        new FileReader(ttpPrefix + "_edge.json"),
-                        extractor)
-                .get();
+        PatternGraph spatialPattern;
+        if (patternFormat.equals("Universal")) {
+            spatialPattern = PatternGraph.parseUniversalPattern(new FileReader(ttpPrefix + ".csv"));
+        } else {
+            SigExtractor extractor;
+            if (patternFormat.equals("DARPA"))
+                extractor = new DarpaExtractor();
+            else
+                extractor = new SpadePatternExtractor();
+            spatialPattern = PatternGraph
+                    .parse(
+                            new FileReader(ttpPrefix + "_node.json"),
+                            new FileReader(ttpPrefix + "_edge.json"),
+                            extractor)
+                    .get();
+        }
+
         TemporalRelation temporalPattern = TemporalRelation.parse(new FileReader(orelsFile)).get();
 
         LiteMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
