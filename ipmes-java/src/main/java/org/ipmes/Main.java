@@ -36,6 +36,11 @@ public class Main {
                 .action(Arguments.storeTrue())
                 .setDefault(false)
                 .help("We are running on DARPA dataset.");
+        parser.addArgument("--dump-results")
+                .dest("dumpResults")
+                .action(Arguments.storeTrue())
+                .setDefault(false)
+                .help("Output match results.");
         parser.addArgument("--pattern-format")
                 .dest("patternFormat")
                 .choices(new String[]{"SPADE", "DARPA", "Universal"})
@@ -72,6 +77,7 @@ public class Main {
         Boolean useRegex = ns.getBoolean("useRegex");
         Boolean isDarpa = ns.getBoolean("darpa");
         Boolean isDebug = ns.getBoolean("debug");
+        Boolean dumpResults = ns.getBoolean("dumpResults");
         String patternFormat = ns.getString("patternFormat");
         String ttpPrefix = ns.getString("pattern_prefix");
         String dataGraphPath = ns.getString("data_graph");
@@ -151,6 +157,19 @@ public class Main {
 
         Collection<FullMatch> results = join.extractAnswer();
         output.put("NumResults", results.size());
+
+        if (dumpResults) {
+            ArrayList<JSONObject> resultOutput = new ArrayList<>();
+            for (FullMatch result : results) {
+                JSONObject obj = new JSONObject();
+                obj.put("StartTime", result.getStartTime());
+                obj.put("EndTime", result.getEndTime());
+                obj.put("MatchIDs", result.getMatchData());
+                resultOutput.add(obj);
+            }
+            output.put("MatchResults", resultOutput);
+        }
+
         if (isDebug) {
             System.err.println("Match Results:");
             for (FullMatch result : results)

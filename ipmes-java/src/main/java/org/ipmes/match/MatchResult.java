@@ -116,7 +116,7 @@ public class MatchResult {
     public FullMatch toFullMatch() {
         FullMatch res = new FullMatch(this.results.size());
         for (Map.Entry<Integer, MatchEdge> entry : this.results.entrySet())
-            res.set(entry.getKey(), entry.getValue().getDataId());
+            res.set(entry.getKey(), entry.getValue());
         return res;
     }
 

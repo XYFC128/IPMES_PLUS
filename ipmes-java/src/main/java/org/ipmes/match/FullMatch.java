@@ -7,13 +7,32 @@ import java.util.Arrays;
  */
 public class FullMatch {
     long[] matchData;
+    long startTime;
+    long endTime;
 
     public FullMatch(int size) {
         this.matchData = new long[size];
+        this.startTime = Long.MAX_VALUE;
+        this.endTime = Long.MIN_VALUE;
     }
 
-    public void set(int patternId, long dataId) {
-        matchData[patternId] = dataId;
+    public void set(int patternId, MatchEdge matchEdge) {
+        matchData[patternId] = matchEdge.getDataId();
+        long timestamp = matchEdge.getTimestamp();
+        this.startTime = Math.min(timestamp, this.startTime);
+        this.endTime = Math.max(timestamp, this.endTime);
+    }
+
+    public long[] getMatchData() {
+        return matchData;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
     }
 
     @Override
