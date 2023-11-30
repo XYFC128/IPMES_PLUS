@@ -46,6 +46,14 @@ parser.add_argument('--columns',
                     default='all',
                     type=str,
                     help='comma seperated list of output columns')
+parser.add_argument('-p', '--pattern',
+                    default='../data/patterns/TTP7_regex',
+                    type=str,
+                    help='pattern prefix')
+parser.add_argument('-d', '--data',
+                    default='../data/preprocessed/mix.csv',
+                    type=str,
+                    help='data graph')
 args = parser.parse_args()
 
 
@@ -71,10 +79,9 @@ def count_clusters(results: list[dict]) -> int:
     return len(clusters)
 
 def run(window_size):
-    if args.darpa:
-        sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="--darpa --regex -w {window_size} --dump-results ../data/darpa_patterns/TTP1-2_regex ../data/preprocessed/dd2.csv"']
-    else:
-        sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} --dump-results ../data/patterns/TTP7_regex ../data/preprocessed/mix.csv"']
+    darpa = '--darpa' if args.darpa else ''
+    regex = '--regex' if args.pattern.endswith('regex') else ''
+    sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="{darpa} {regex} -w {window_size} --dump-results {args.pattern} {args.data}"']
 
     cpu_time = 0
     out_file = os.path.join(log_dir, f'{window_size}s.out')
