@@ -15,11 +15,11 @@ parser.add_argument('--darpa',
                     action='store_true',
                     help='run on darpa')
 parser.add_argument('--start',
-                    default=100,
+                    default=1,
                     type=int,
                     help='start of the window size')
 parser.add_argument('--stop',
-                    default=3700,
+                    default=11,
                     type=int,
                     help='stop of the window size')
 parser.add_argument('--stop-unchanged-poolsize',
@@ -28,7 +28,7 @@ parser.add_argument('--stop-unchanged-poolsize',
                     type=bool,
                     help='stop when the peak pool size is unchanged')
 parser.add_argument('--step',
-                    default=100,
+                    default=1,
                     type=int,
                     help='step of the window size')
 parser.add_argument('--multiplier',
