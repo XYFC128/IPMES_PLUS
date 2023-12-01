@@ -36,6 +36,11 @@ public class Main {
                 .action(Arguments.storeTrue())
                 .setDefault(false)
                 .help("We are running on DARPA dataset.");
+        parser.addArgument("--dump-trigger-counts")
+                .dest("dumpTriggerCounts")
+                .action(Arguments.storeTrue())
+                .setDefault(false)
+                .help("Output trigger counts.");
         parser.addArgument("--dump-results")
                 .dest("dumpResults")
                 .action(Arguments.storeTrue())
@@ -77,6 +82,7 @@ public class Main {
         Boolean useRegex = ns.getBoolean("useRegex");
         Boolean isDarpa = ns.getBoolean("darpa");
         Boolean isDebug = ns.getBoolean("debug");
+        Boolean dumpTriggerCounts = ns.getBoolean("dumpTriggerCounts");
         Boolean dumpResults = ns.getBoolean("dumpResults");
         String patternFormat = ns.getString("patternFormat");
         String ttpPrefix = ns.getString("pattern_prefix");
@@ -153,7 +159,8 @@ public class Main {
         output.put("PeakPoolSize", maxPoolSize);
         output.put("PeakHeapSize", maxHeapSize);
 
-        output.put("TriggerCounts", matcher.getTriggerCounts());
+        if (dumpTriggerCounts)
+            output.put("TriggerCounts", matcher.getTriggerCounts());
 
         Collection<FullMatch> results = join.extractAnswer();
         output.put("NumResults", results.size());
