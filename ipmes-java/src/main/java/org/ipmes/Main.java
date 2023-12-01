@@ -159,7 +159,7 @@ public class Main {
         output.put("NumResults", results.size());
 
         if (dumpResults) {
-            ArrayList<JSONObject> resultOutput = new ArrayList<>();
+            List<JSONObject> resultOutput = new LinkedList<>();
             for (FullMatch result : results) {
                 JSONObject obj = new JSONObject();
                 obj.put("StartTime", result.getStartTime());
