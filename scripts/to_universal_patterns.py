@@ -102,7 +102,7 @@ def convert(input_prefix: str, output_path: str, regex: bool, kind: Literal['dar
     edges = parse(node_file, edge_file, orels_file, kind)
 
     output = {
-        'Version': '0.1',
+        'Version': '0.1.0',
         'UseRegex': regex,
         'Events': edges
     }
