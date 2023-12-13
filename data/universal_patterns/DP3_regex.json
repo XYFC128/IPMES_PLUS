@@ -1,0 +1,274 @@
+{
+    "Version": "0.1",
+    "UseRegex": true,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "EVENT_FORK#SUBJECT_UNIT::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 3,
+            "ObjectID": 7,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "EVENT_CLOSE#SUBJECT_UNIT::.*#OBJECT_UNNAMEPIPE::",
+            "SubjectID": 3,
+            "ObjectID": 8,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 7,
+            "ObjectID": 6,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "EVENT_READ#OBJECT_UNNAMEPIPE::#SUBJECT_PROCESS::.*",
+            "SubjectID": 8,
+            "ObjectID": 6,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "EVENT_WRITE#SUBJECT_UNIT::.*#OBJECT_UNNAMEPIPE::",
+            "SubjectID": 3,
+            "ObjectID": 8,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+            "SubjectID": 6,
+            "ObjectID": 0,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "EVENT_CONNECT#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::.*#OBJECT_UNNAMEPIPE::",
+            "SubjectID": 6,
+            "ObjectID": 9,
+            "Parents": [
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::sh#SUBJECT_PROCESS::.*",
+            "SubjectID": 11,
+            "ObjectID": 1,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "EVENT_FORK#SUBJECT_PROCESS::sh#SUBJECT_PROCESS::sh",
+            "SubjectID": 12,
+            "ObjectID": 11,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "EVENT_SENDMSG#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                10
+            ]
+        },
+        {
+            "ID": 12,
+            "Signature": "EVENT_READ#OBJECT_UNNAMEPIPE::#SUBJECT_UNIT::.*",
+            "SubjectID": 9,
+            "ObjectID": 3,
+            "Parents": [
+                11
+            ]
+        },
+        {
+            "ID": 13,
+            "Signature": "EVENT_RECVMSG#OBJECT_SOCKET::.*:.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 2,
+            "ObjectID": 1,
+            "Parents": [
+                12
+            ]
+        },
+        {
+            "ID": 14,
+            "Signature": "EVENT_CLONE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 1,
+            "ObjectID": 4,
+            "Parents": [
+                13
+            ]
+        },
+        {
+            "ID": 15,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                14
+            ]
+        },
+        {
+            "ID": 16,
+            "Signature": "EVENT_CREATE_OBJECT#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                15
+            ]
+        },
+        {
+            "ID": 17,
+            "Signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+            "SubjectID": 4,
+            "ObjectID": 13,
+            "Parents": [
+                16
+            ]
+        },
+        {
+            "ID": 18,
+            "Signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 13,
+            "ObjectID": 10,
+            "Parents": [
+                17
+            ]
+        },
+        {
+            "ID": 19,
+            "Signature": "EVENT_CLONE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 1,
+            "ObjectID": 14,
+            "Parents": [
+                18
+            ]
+        },
+        {
+            "ID": 20,
+            "Signature": "EVENT_FORK#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 14,
+            "ObjectID": 15,
+            "Parents": [
+                19
+            ]
+        },
+        {
+            "ID": 21,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 15,
+            "ObjectID": 10,
+            "Parents": [
+                20
+            ]
+        },
+        {
+            "ID": 22,
+            "Signature": "EVENT_CONNECT#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+            "SubjectID": 10,
+            "ObjectID": 16,
+            "Parents": [
+                21
+            ]
+        },
+        {
+            "ID": 23,
+            "Signature": "EVENT_SENDMSG#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+            "SubjectID": 10,
+            "ObjectID": 16,
+            "Parents": [
+                22
+            ]
+        },
+        {
+            "ID": 24,
+            "Signature": "EVENT_RECVMSG#OBJECT_SOCKET::.*:.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 16,
+            "ObjectID": 10,
+            "Parents": [
+                23
+            ]
+        },
+        {
+            "ID": 25,
+            "Signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::/bin/uname#SUBJECT_PROCESS::uname",
+            "SubjectID": 19,
+            "ObjectID": 17,
+            "Parents": [
+                24
+            ]
+        },
+        {
+            "ID": 26,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::uname",
+            "SubjectID": 18,
+            "ObjectID": 17,
+            "Parents": [
+                25
+            ]
+        },
+        {
+            "ID": 27,
+            "Signature": "EVENT_FORK#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+            "SubjectID": 10,
+            "ObjectID": 18,
+            "Parents": [
+                26
+            ]
+        },
+        {
+            "ID": 28,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::.*#OBJECT_UNNAMEPIPE::",
+            "SubjectID": 10,
+            "ObjectID": 9,
+            "Parents": [
+                27
+            ]
+        },
+        {
+            "ID": 29,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+            "SubjectID": 10,
+            "ObjectID": 16,
+            "Parents": [
+                28
+            ]
+        }
+    ]
+}

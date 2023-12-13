@@ -1,0 +1,20 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "aaa",
+            "SubjectID": 123,
+            "ObjectID": 456,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "bbb",
+            "SubjectID": 789,
+            "ObjectID": 456,
+            "Parents": [ 0 ]
+        }
+    ]
+}

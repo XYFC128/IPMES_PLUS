@@ -4,6 +4,7 @@ __pycache__/
 data/*
 !data/patterns
 !data/darpa_patterns
+!data/universal_patterns
 
 /results/
 /siddhi-bin/

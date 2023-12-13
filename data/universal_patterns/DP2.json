@@ -1,0 +1,184 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/passwd#SUBJECT_PROCESS::cache",
+            "SubjectID": 1,
+            "ObjectID": 3,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+            "SubjectID": 3,
+            "ObjectID": 1,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+            "SubjectID": 3,
+            "ObjectID": 1,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::180.156.107.146:80",
+            "SubjectID": 3,
+            "ObjectID": 0,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "EVENT_READ#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory#SUBJECT_PROCESS::cache",
+            "SubjectID": 4,
+            "ObjectID": 3,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::180.156.107.146:80",
+            "SubjectID": 8,
+            "ObjectID": 0,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/passwd#SUBJECT_PROCESS::cache",
+            "SubjectID": 1,
+            "ObjectID": 8,
+            "Parents": [
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/group#SUBJECT_PROCESS::cache",
+            "SubjectID": 2,
+            "ObjectID": 8,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/group",
+            "SubjectID": 8,
+            "ObjectID": 2,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+            "SubjectID": 8,
+            "ObjectID": 1,
+            "Parents": [
+                10
+            ]
+        },
+        {
+            "ID": 12,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/group",
+            "SubjectID": 8,
+            "ObjectID": 2,
+            "Parents": [
+                11
+            ]
+        },
+        {
+            "ID": 13,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+            "SubjectID": 8,
+            "ObjectID": 1,
+            "Parents": [
+                12
+            ]
+        },
+        {
+            "ID": 14,
+            "Signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::180.156.107.146:80",
+            "SubjectID": 5,
+            "ObjectID": 0,
+            "Parents": [
+                13
+            ]
+        },
+        {
+            "ID": 15,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/var/log/xtmp",
+            "SubjectID": 5,
+            "ObjectID": 6,
+            "Parents": [
+                14
+            ]
+        },
+        {
+            "ID": 16,
+            "Signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/var/log/xtmp",
+            "SubjectID": 5,
+            "ObjectID": 7,
+            "Parents": [
+                15
+            ]
+        },
+        {
+            "ID": 17,
+            "Signature": "EVENT_CREATE_OBJECT#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/var/log/xtmp",
+            "SubjectID": 5,
+            "ObjectID": 6,
+            "Parents": [
+                16
+            ]
+        },
+        {
+            "ID": 18,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/var/log/xtmp",
+            "SubjectID": 5,
+            "ObjectID": 7,
+            "Parents": [
+                17
+            ]
+        },
+        {
+            "ID": 19,
+            "Signature": "EVENT_UPDATE#FILE_OBJECT_FILE::/var/log/xtmp#FILE_OBJECT_FILE::/var/log/xtmp",
+            "SubjectID": 6,
+            "ObjectID": 7,
+            "Parents": [
+                18
+            ]
+        }
+    ]
+}

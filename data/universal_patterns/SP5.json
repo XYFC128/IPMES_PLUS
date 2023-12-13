@@ -1,0 +1,114 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "fork#Process::hello.sh#Process::hello.sh",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "create#Process::hello.sh#Artifact::file::/home/admin/ipcon.txt",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "fork#Process::hello.sh#Process::hello.sh",
+            "SubjectID": 0,
+            "ObjectID": 6,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "execve#Process::hello.sh#Process::grep",
+            "SubjectID": 6,
+            "ObjectID": 7,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+            "SubjectID": 4,
+            "ObjectID": 7,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "fork#Process::hello.sh#Process::hello.sh",
+            "SubjectID": 0,
+            "ObjectID": 8,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "execve#Process::hello.sh#Process::ifconfig",
+            "SubjectID": 8,
+            "ObjectID": 9,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "load#Artifact::file::/sbin/ifconfig#Process::ifconfig",
+            "SubjectID": 10,
+            "ObjectID": 9,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "execve#Process::hello.sh#Process::grep",
+            "SubjectID": 1,
+            "ObjectID": 3,
+            "Parents": [
+                1,
+                4,
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+            "SubjectID": 4,
+            "ObjectID": 3,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "write#Process::grep#Artifact::file::/home/admin/ipcon.txt",
+            "SubjectID": 3,
+            "ObjectID": 5,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "update#Artifact::file::/home/admin/ipcon.txt#Artifact::file::/home/admin/ipcon.txt",
+            "SubjectID": 2,
+            "ObjectID": 5,
+            "Parents": [
+                10
+            ]
+        }
+    ]
+}

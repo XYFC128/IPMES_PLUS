@@ -1,0 +1,139 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::thunderbird#SUBJECT_PROCESS::thunderbird",
+            "SubjectID": 1,
+            "ObjectID": 0,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::/bin/sh#SUBJECT_PROCESS::thunderbird",
+            "SubjectID": 2,
+            "ObjectID": 1,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "EVENT_CLONE#SUBJECT_PROCESS::thunderbird#SUBJECT_PROCESS::thunderbird",
+            "SubjectID": 0,
+            "ObjectID": 3,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "EVENT_CREATE_OBJECT#SUBJECT_PROCESS::thunderbird#FILE_OBJECT_FILE::/tmp/mozilla_admin0/nZVga8l2.bin.part",
+            "SubjectID": 0,
+            "ObjectID": 9,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "EVENT_CLOSE#SUBJECT_PROCESS::thunderbird#FILE_OBJECT_FILE::/tmp/mozilla_admin0/nZVga8l2.bin.part",
+            "SubjectID": 0,
+            "ObjectID": 9,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "EVENT_CLONE#SUBJECT_PROCESS::thunderbird#SUBJECT_PROCESS::thunderbird",
+            "SubjectID": 0,
+            "ObjectID": 10,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "EVENT_WRITE#SUBJECT_PROCESS::thunderbird#FILE_OBJECT_FILE::/tmp/mozilla_admin0/nZVga8l2.bin.part",
+            "SubjectID": 10,
+            "ObjectID": 9,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "EVENT_RENAME#FILE_OBJECT_FILE::/tmp/mozilla_admin0/nZVga8l2.bin.part#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec",
+            "SubjectID": 9,
+            "ObjectID": 8,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::thunderbird#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "EVENT_UPDATE#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec",
+            "SubjectID": 8,
+            "ObjectID": 4,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "EVENT_UPDATE#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::chmod#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec",
+            "SubjectID": 7,
+            "ObjectID": 5,
+            "Parents": [
+                10
+            ]
+        },
+        {
+            "ID": 12,
+            "Signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::/home/admin/Desktop/tcexec#SUBJECT_PROCESS::tcexec",
+            "SubjectID": 5,
+            "ObjectID": 6,
+            "Parents": [
+                11
+            ]
+        },
+        {
+            "ID": 13,
+            "Signature": "EVENT_FORK#SUBJECT_PROCESS::bash#SUBJECT_PROCESS::bash",
+            "SubjectID": 12,
+            "ObjectID": 11,
+            "Parents": [
+                12
+            ]
+        },
+        {
+            "ID": 14,
+            "Signature": "EVENT_EXECUTE#SUBJECT_PROCESS::bash#SUBJECT_PROCESS::tcexec",
+            "SubjectID": 11,
+            "ObjectID": 6,
+            "Parents": [
+                13
+            ]
+        }
+    ]
+}
