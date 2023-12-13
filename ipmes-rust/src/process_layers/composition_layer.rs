@@ -102,6 +102,7 @@ impl<'p> SubMatcher<'p> {
     ///
     /// That is, if input node x matches pattern node n0, and the start node of the the input
     /// edge matches n0 too, then the start node should be x too.
+    /// todo: what is "nod"; you mean "node"?
     fn has_nod_collision(
         &self,
         input_edge: &InputEdge,
@@ -136,13 +137,13 @@ impl<'p> SubMatcher<'p> {
     }
 }
 
-pub struct OrdMatchLayer<'p, P> {
+pub struct CompositionLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
     sub_matchers: Vec<SubMatcher<'p>>,
 }
 
-impl<'p, P> OrdMatchLayer<'p, P> {
+impl<'p, P> CompositionLayer<'p, P> {
     pub fn new(
         prev_layer: P,
         decomposition: &'p [SubPattern],
@@ -189,7 +190,7 @@ impl<'p, P> OrdMatchLayer<'p, P> {
     }
 }
 
-impl<'p, P> Iterator for OrdMatchLayer<'p, P>
+impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEdge>>>,
 {
@@ -325,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ord_match_layer() {
+    fn test_composition_layer() {
         let pattern_edge1 = PatternEdge {
             id: 0,
             signature: "edge1".to_string(),
@@ -353,7 +354,7 @@ mod tests {
         ];
 
         let mut layer =
-            OrdMatchLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
         let result = layer.next().unwrap();
         assert_eq!(result.len(), 1);
     }
@@ -391,7 +392,7 @@ mod tests {
         ];
 
         let mut layer =
-            OrdMatchLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
         assert!(layer.next().is_none());
     }
 }

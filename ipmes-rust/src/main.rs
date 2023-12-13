@@ -5,7 +5,8 @@ use ipmes_rust::pattern::darpa::DarpaPatternParser;
 use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
 use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::Pattern;
-use ipmes_rust::process_layers::{JoinLayer, OrdMatchLayer, ParseLayer};
+use ipmes_rust::process_layers::{JoinLayer, ParseLayer};
+use ipmes_rust::process_layers::composition_layer::CompositionLayer;
 use ipmes_rust::sub_pattern::decompose;
 
 /// IPMES implemented in rust
@@ -53,9 +54,9 @@ fn main() {
         .has_headers(false)
         .from_path(args.data_graph).expect("Failed to open input graph");
     let parse_layer = ParseLayer::new(&mut csv);
-    let ord_match_layer =
-        OrdMatchLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
-    let join_layer = JoinLayer::new(ord_match_layer, &pattern, &decomposition, window_size);
+    let composition_layer =
+        CompositionLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
+    let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
 
     let mut num_result = 0u32;
     for result in join_layer {

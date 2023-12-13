@@ -3,13 +3,11 @@ mod sub_pattern_buffer;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
-use std::cmp::{max, min};
 pub use sub_pattern_buffer::SubPatternBuffer;
 
-use crate::input_edge::InputEdge;
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
-use crate::process_layers::ord_match_layer::PartialMatch;
+use crate::process_layers::composition_layer::PartialMatch;
 use itertools::Itertools;
 use petgraph::graph::NodeIndex;
 use std::collections::{BinaryHeap, HashMap, HashSet};
