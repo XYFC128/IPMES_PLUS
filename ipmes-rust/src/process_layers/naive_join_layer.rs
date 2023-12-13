@@ -7,7 +7,7 @@ mod entry_wrappers;
 use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
-use crate::process_layers::ord_match_layer::PartialMatch;
+use crate::process_layers::composition_layer::PartialMatch;
 use crate::sub_pattern_match::SubPatternMatch;
 use entry::Entry;
 use entry_wrappers::{EarliestFirst, UniqueEntry};
