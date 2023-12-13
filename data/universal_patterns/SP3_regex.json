@@ -1,0 +1,329 @@
+{
+    "Version": "0.1",
+    "UseRegex": true,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 4,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "update#Process::sh#Process::sh",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "execve#Process::sh#Process::sudo",
+            "SubjectID": 5,
+            "ObjectID": 6,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "setgid#Process::sudo#Process::sudo",
+            "SubjectID": 6,
+            "ObjectID": 6,
+            "Parents": [
+                4,
+                12
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "update#Process::sudo#Process::sudo",
+            "SubjectID": 16,
+            "ObjectID": 6,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 6,
+            "ObjectID": 16,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "read#Artifact::file::/etc/sudoers#Process::sudo",
+            "SubjectID": 20,
+            "ObjectID": 16,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "setgid#Process::sudo#Process::sudo",
+            "SubjectID": 16,
+            "ObjectID": 16,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 16,
+            "ObjectID": 16,
+            "Parents": [
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "lseek#Process::sudo#Artifact::file::/etc/sudoers",
+            "SubjectID": 21,
+            "ObjectID": 20,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "open#Artifact::file::/etc/sudoers#Process::sudo",
+            "SubjectID": 20,
+            "ObjectID": 21,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 21,
+            "ObjectID": 16,
+            "Parents": [
+                10
+            ]
+        },
+        {
+            "ID": 12,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 16,
+            "ObjectID": 21,
+            "Parents": [
+                11
+            ]
+        },
+        {
+            "ID": 13,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 6,
+            "ObjectID": 6,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 14,
+            "Signature": "setuid#Process::sudo#Process::sudo",
+            "SubjectID": 16,
+            "ObjectID": 6,
+            "Parents": [
+                13
+            ]
+        },
+        {
+            "ID": 15,
+            "Signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+            "SubjectID": 12,
+            "ObjectID": 11,
+            "Parents": [
+                14
+            ]
+        },
+        {
+            "ID": 16,
+            "Signature": "open#Artifact::file::/etc/shadow#Process::cp",
+            "SubjectID": 10,
+            "ObjectID": 11,
+            "Parents": [
+                15
+            ]
+        },
+        {
+            "ID": 17,
+            "Signature": "create#Process::cp#Artifact::file::.*",
+            "SubjectID": 11,
+            "ObjectID": 23,
+            "Parents": [
+                16
+            ]
+        },
+        {
+            "ID": 18,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 17,
+            "Parents": [
+                21
+            ]
+        },
+        {
+            "ID": 19,
+            "Signature": "update#Process::sh#Process::sh",
+            "SubjectID": 17,
+            "ObjectID": 18,
+            "Parents": [
+                18
+            ]
+        },
+        {
+            "ID": 20,
+            "Signature": "execve#Process::sh#Process::sudo",
+            "SubjectID": 18,
+            "ObjectID": 19,
+            "Parents": [
+                19
+            ]
+        },
+        {
+            "ID": 21,
+            "Signature": "update#Artifact::file::.*#Artifact::file::.*",
+            "SubjectID": 23,
+            "ObjectID": 24,
+            "Parents": [
+                17
+            ]
+        },
+        {
+            "ID": 22,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": [
+                25
+            ]
+        },
+        {
+            "ID": 23,
+            "Signature": "execve#Process::sh#Process::sshpass",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                22
+            ]
+        },
+        {
+            "ID": 24,
+            "Signature": "load#Artifact::file::/usr/bin/sshpass#Process::sshpass",
+            "SubjectID": 3,
+            "ObjectID": 2,
+            "Parents": [
+                23
+            ]
+        },
+        {
+            "ID": 25,
+            "Signature": "update#Artifact::file::.*#Artifact::file::.*",
+            "SubjectID": 24,
+            "ObjectID": 25,
+            "Parents": [
+                20
+            ]
+        },
+        {
+            "ID": 26,
+            "Signature": "fork#Process::sshpass#Process::sshpass",
+            "SubjectID": 2,
+            "ObjectID": 7,
+            "Parents": [
+                24
+            ]
+        },
+        {
+            "ID": 27,
+            "Signature": "execve#Process::sshpass#Process::scp",
+            "SubjectID": 7,
+            "ObjectID": 8,
+            "Parents": [
+                26
+            ]
+        },
+        {
+            "ID": 28,
+            "Signature": "load#Artifact::file::/usr/bin/scp#Process::scp",
+            "SubjectID": 9,
+            "ObjectID": 8,
+            "Parents": [
+                27
+            ]
+        },
+        {
+            "ID": 29,
+            "Signature": "fork#Process::scp#Process::scp",
+            "SubjectID": 8,
+            "ObjectID": 22,
+            "Parents": [
+                28
+            ]
+        },
+        {
+            "ID": 30,
+            "Signature": "execve#Process::scp#Process::ssh",
+            "SubjectID": 22,
+            "ObjectID": 14,
+            "Parents": [
+                29
+            ]
+        },
+        {
+            "ID": 31,
+            "Signature": "lseek#Process::ssh#Artifact::file::/etc/passwd",
+            "SubjectID": 14,
+            "ObjectID": 13,
+            "Parents": [
+                30
+            ]
+        },
+        {
+            "ID": 32,
+            "Signature": "connect#Process::ssh#Artifact::network socket::.*:.*",
+            "SubjectID": 14,
+            "ObjectID": 15,
+            "Parents": [
+                31
+            ]
+        },
+        {
+            "ID": 33,
+            "Signature": "read#Artifact::network socket::.*:.*#Process::ssh",
+            "SubjectID": 15,
+            "ObjectID": 14,
+            "Parents": [
+                32
+            ]
+        },
+        {
+            "ID": 34,
+            "Signature": "open#Artifact::file::.*#Process::scp",
+            "SubjectID": 25,
+            "ObjectID": 8,
+            "Parents": [
+                33
+            ]
+        },
+        {
+            "ID": 35,
+            "Signature": "write#Process::ssh#Artifact::network socket::.*:.*",
+            "SubjectID": 14,
+            "ObjectID": 15,
+            "Parents": [
+                34
+            ]
+        }
+    ]
+}

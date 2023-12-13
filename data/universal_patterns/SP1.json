@@ -1,0 +1,257 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "load#Artifact::file::/bin/sh#Process::sh",
+            "SubjectID": 22,
+            "ObjectID": 0,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "create#Process::sh#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 10,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 10,
+            "ObjectID": 11,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 11,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 11,
+            "ObjectID": 2,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 15,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 15,
+            "ObjectID": 16,
+            "Parents": [
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 16,
+            "Parents": [
+                8
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 16,
+            "ObjectID": 17,
+            "Parents": [
+                9
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 21,
+            "ObjectID": 17,
+            "Parents": [
+                10
+            ]
+        },
+        {
+            "ID": 12,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 3,
+            "Parents": [
+                11
+            ]
+        },
+        {
+            "ID": 13,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                12
+            ]
+        },
+        {
+            "ID": 14,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 4,
+            "Parents": [
+                13
+            ]
+        },
+        {
+            "ID": 15,
+            "Signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                14
+            ]
+        },
+        {
+            "ID": 16,
+            "Signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 20,
+            "ObjectID": 5,
+            "Parents": [
+                15
+            ]
+        },
+        {
+            "ID": 17,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 12,
+            "Parents": [
+                16
+            ]
+        },
+        {
+            "ID": 18,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 12,
+            "ObjectID": 13,
+            "Parents": [
+                17
+            ]
+        },
+        {
+            "ID": 19,
+            "Signature": "close#Process::cat#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 13,
+            "ObjectID": 14,
+            "Parents": [
+                18
+            ]
+        },
+        {
+            "ID": 20,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 13,
+            "Parents": [
+                18
+            ]
+        },
+        {
+            "ID": 21,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 7,
+            "Parents": [
+                19,
+                20
+            ]
+        },
+        {
+            "ID": 22,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 7,
+            "ObjectID": 8,
+            "Parents": [
+                21
+            ]
+        },
+        {
+            "ID": 23,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 8,
+            "Parents": [
+                22
+            ]
+        },
+        {
+            "ID": 24,
+            "Signature": "close#Process::cat#Artifact::file::/home/admin/text.txt",
+            "SubjectID": 8,
+            "ObjectID": 9,
+            "Parents": [
+                23
+            ]
+        },
+        {
+            "ID": 25,
+            "Signature": "fork#Process::sh#Process::sh",
+            "SubjectID": 0,
+            "ObjectID": 18,
+            "Parents": [
+                24
+            ]
+        },
+        {
+            "ID": 26,
+            "Signature": "execve#Process::sh#Process::cat",
+            "SubjectID": 18,
+            "ObjectID": 19,
+            "Parents": [
+                25
+            ]
+        },
+        {
+            "ID": 27,
+            "Signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+            "SubjectID": 6,
+            "ObjectID": 19,
+            "Parents": [
+                26
+            ]
+        }
+    ]
+}
