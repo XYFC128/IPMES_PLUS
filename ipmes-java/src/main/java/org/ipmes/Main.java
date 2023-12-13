@@ -2,6 +2,7 @@ package org.ipmes;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 import java.lang.Runtime;
 
@@ -27,15 +28,6 @@ public class Main {
         ArgumentParser parser = ArgumentParsers.newFor("ipmes-java").build()
                 .defaultHelp(true)
                 .description("IPMES implemented in Java.");
-        parser.addArgument("-r", "--regex")
-                .dest("useRegex")
-                .setDefault(false)
-                .action(Arguments.storeTrue())
-                .help("Explicitly use regex matching. Default will automatically depend on the pattern prefix name");
-        parser.addArgument("--darpa")
-                .action(Arguments.storeTrue())
-                .setDefault(false)
-                .help("We are running on DARPA dataset.");
         parser.addArgument("--dump-trigger-counts")
                 .dest("dumpTriggerCounts")
                 .action(Arguments.storeTrue())
@@ -46,11 +38,6 @@ public class Main {
                 .action(Arguments.storeTrue())
                 .setDefault(false)
                 .help("Output match results.");
-        parser.addArgument("--pattern-format")
-                .dest("patternFormat")
-                .choices(new String[]{"SPADE", "DARPA", "Universal"})
-                .setDefault("SPADE")
-                .help("Pattern Format");
         parser.addArgument("-w", "--window-size").type(Long.class)
                 .dest("windowSize")
                 .setDefault(1800L)
@@ -59,9 +46,9 @@ public class Main {
                 .action(Arguments.storeTrue())
                 .setDefault(false)
                 .help("Output debug information.");
-        parser.addArgument("pattern_prefix").type(String.class)
+        parser.addArgument("pattern_file").type(String.class)
                 .required(true)
-                .help("The path prefix of pattern's files, e.g. ./data/patterns/TTP11");
+                .help("The path of pattern's file, e.g. ../data/universal_patterns/TTP11.json");
         parser.addArgument("data_graph").type(String.class)
                 .required(true)
                 .help("The path to the preprocessed data graph");
@@ -79,45 +66,24 @@ public class Main {
             parser.handleError(e);
             System.exit(1);
         }
-        Boolean useRegex = ns.getBoolean("useRegex");
-        Boolean isDarpa = ns.getBoolean("darpa");
+
         Boolean isDebug = ns.getBoolean("debug");
         Boolean dumpTriggerCounts = ns.getBoolean("dumpTriggerCounts");
         Boolean dumpResults = ns.getBoolean("dumpResults");
-        String patternFormat = ns.getString("patternFormat");
-        String ttpPrefix = ns.getString("pattern_prefix");
+        String patternFile = ns.getString("pattern_file");
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
-        if (isDarpa)
-            patternFormat = "DARPA";
 
         // parse data
-        String orelsFile;
-        if (ttpPrefix.endsWith("regex")) {
-            useRegex = true;
-            orelsFile = ttpPrefix.substring(0, ttpPrefix.length() - 5) + "oRels.json";
-        } else {
-            orelsFile = ttpPrefix + "_oRels.json";
+        Pattern pattern;
+        try {
+            pattern = PatternParser.parse(patternFile);
+        } catch (IOException exception) {
+            System.err.println("Failed to parse pattern");
+            return;
         }
-
-        PatternGraph spatialPattern;
-        if (patternFormat.equals("Universal")) {
-            spatialPattern = PatternGraph.parseUniversalPattern(new FileReader(ttpPrefix + ".csv"));
-        } else {
-            SigExtractor extractor;
-            if (patternFormat.equals("DARPA"))
-                extractor = new DarpaExtractor();
-            else
-                extractor = new SpadePatternExtractor();
-            spatialPattern = PatternGraph
-                    .parse(
-                            new FileReader(ttpPrefix + "_node.json"),
-                            new FileReader(ttpPrefix + "_edge.json"),
-                            extractor)
-                    .get();
-        }
-
-        TemporalRelation temporalPattern = TemporalRelation.parse(new FileReader(orelsFile)).get();
+        PatternGraph spatialPattern = pattern.patternGraph;
+        TemporalRelation temporalPattern = pattern.temporalRelation;
 
         LiteMatchResult.MAX_NUM_NODES = spatialPattern.numNodes();
 
@@ -140,7 +106,7 @@ public class Main {
         BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
         String line = inputReader.readLine();
 
-        TCMatcher matcher = new TCMatcher(tcQueries, useRegex, windowSize, join);
+        TCMatcher matcher = new TCMatcher(tcQueries, pattern.useRegex, windowSize, join);
         EventSender sender = new EventSender(matcher);
         int maxPoolSize = 0;
         Runtime jvm = Runtime.getRuntime();

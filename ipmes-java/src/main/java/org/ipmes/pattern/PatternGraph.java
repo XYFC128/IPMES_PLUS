@@ -67,37 +67,6 @@ public class PatternGraph {
         return Optional.of(new PatternGraph(nodes, edges));
     }
 
-    public static PatternGraph parseUniversalPattern(Reader reader) throws IOException {
-        BufferedReader bufReader = new BufferedReader(reader);
-        ArrayList<PatternEdge> edges = new ArrayList<>();
-        HashMap<Integer, PatternNode> nodesMap = new HashMap<>();
-
-        String line = bufReader.readLine();
-        int max_node = 0;
-        while (line != null) {
-            String[] fields = line.split(",");
-            String signature = fields[2];
-            int edgeId      = Integer.parseInt(fields[3]);
-            int startId     = Integer.parseInt(fields[4]);
-            int endId       = Integer.parseInt(fields[5]);
-
-            max_node = max(max(startId, endId), max_node);
-
-            nodesMap.putIfAbsent(startId, new PatternNode(startId, ""));
-            nodesMap.putIfAbsent(endId, new PatternNode(endId, ""));
-
-            edges.add(new PatternEdge(edgeId, signature, nodesMap.get(startId), nodesMap.get(endId), true));
-
-            line = bufReader.readLine();
-        }
-
-        ArrayList<PatternNode> nodes = new ArrayList<>();
-        for (int i = 0; i <= max_node; i++) {
-            nodes.add(nodesMap.get(i));
-        }
-        return new PatternGraph(nodes, edges);
-    }
-
     public int numNodes() {
         if (this.nodes == null)
             return 0;
