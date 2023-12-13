@@ -11,9 +11,6 @@ from results import parse_cputime
 parser = parser = argparse.ArgumentParser(
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                 description='Age limit experiment')
-parser.add_argument('--darpa',
-                    action='store_true',
-                    help='run on darpa')
 parser.add_argument('--start',
                     default=1,
                     type=int,
@@ -47,23 +44,24 @@ parser.add_argument('--columns',
                     type=str,
                     help='comma seperated list of output columns')
 parser.add_argument('-p', '--pattern',
-                    default='../data/patterns/TTP7_regex',
+                    default='../data/universal_patterns/TTP7_regex.json',
                     type=str,
                     help='pattern prefix')
 parser.add_argument('-d', '--data',
                     default='../data/preprocessed/mix.csv',
                     type=str,
                     help='data graph')
+parser.add_argument('-o', '--log-dir',
+                    default='../results/agelimits/',
+                    type=str,
+                    help='the output log dir')
 args = parser.parse_args()
 
 
 subprocess.run(['mvn', 'compile'], check=True)
 
-log_dir = '../results/agelimits'
-if args.darpa:
-    log_dir += '_darpa'
+log_dir = args.log_dir
 
-log_dir += '/'
 print('log dir:', log_dir, file=sys.stderr)
 os.makedirs(log_dir, exist_ok=True)
 
@@ -79,9 +77,7 @@ def count_clusters(results: list[dict]) -> int:
     return len(clusters)
 
 def run(window_size):
-    darpa = '--darpa' if args.darpa else ''
-    regex = '--regex' if args.pattern.endswith('regex') else ''
-    sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="{darpa} {regex} -w {window_size} --dump-results {args.pattern} {args.data}"']
+    sub_proc_args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} --dump-results {args.pattern} {args.data}"']
 
     cpu_time = 0
     out_file = os.path.join(log_dir, f'{window_size}s.out')
