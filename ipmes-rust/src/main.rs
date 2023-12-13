@@ -5,8 +5,7 @@ use ipmes_rust::pattern::darpa::DarpaPatternParser;
 use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
 use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::Pattern;
-use ipmes_rust::process_layers::{JoinLayer, ParseLayer};
-use ipmes_rust::process_layers::composition_layer::CompositionLayer;
+use ipmes_rust::process_layers::{JoinLayer, ParseLayer, CompositionLayer, UniquenessLayer};
 use ipmes_rust::sub_pattern::decompose;
 
 /// IPMES implemented in rust
@@ -57,9 +56,10 @@ fn main() {
     let composition_layer =
         CompositionLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
+    let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 
     let mut num_result = 0u32;
-    for result in join_layer {
+    for result in uniqueness_layer {
         num_result += result.len() as u32;
         for pattern_match in result {
             info!("Pattern Match: {}", pattern_match);

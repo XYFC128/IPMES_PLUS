@@ -43,7 +43,6 @@ fn parse(record: Record) -> (InputEdge, Option<InputEdge>) {
     }
 }
 
-// #[derive(serde::Deserialize)]
 pub struct ParseLayer<'a> {
     csv_iter: DeserializeRecordsIter<'a, File, Record>,
     // a min heap

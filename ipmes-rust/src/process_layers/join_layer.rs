@@ -9,19 +9,20 @@ use crate::match_edge::MatchEdge;
 use crate::pattern::Pattern;
 use crate::process_layers::composition_layer::PartialMatch;
 use itertools::Itertools;
+use log::{debug, warn};
 use petgraph::graph::NodeIndex;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::hash::Hash;
 use std::mem;
 use std::rc::Rc;
-use log::{debug, warn};
 
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
     pattern: &'p Pattern,
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     window_size: u64,
-    full_match: HashSet<PatternMatch>,
+    // full_match: HashSet<PatternMatch>,
+    full_match: Vec<PatternMatch>,
 }
 
 impl<'p, P> JoinLayer<'p, P> {
@@ -88,18 +89,20 @@ impl<'p, P> JoinLayer<'p, P> {
             pattern,
             sub_pattern_buffers,
             window_size,
-            full_match: HashSet::new(),
+            full_match: Vec::new(),
         }
     }
 
     /// change the name of the function
     /// "match_edges" is sorted by its match edge ids, and thus "matched_edges" is in good order.
-    fn convert_pattern_match(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> HashSet<PatternMatch> {
-        let mut pattern_matches = HashSet::new();
+    fn convert_pattern_match(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> Vec<PatternMatch> {
+        let mut pattern_matches = Vec::with_capacity(buffer.len());
 
         for mut sub_pattern_match in buffer.drain() {
             debug!("sub_pattern_match id: {}", sub_pattern_match.0.id);
-            let mut matched_edges = Vec::new();
+            let mut matched_edges = Vec::with_capacity(sub_pattern_match.0.match_edges.len());
+            let mut earliest_time = u64::MAX;
+            let mut latest_time = u64::MIN;
             sub_pattern_match
                 .0
                 .match_edges
@@ -107,9 +110,15 @@ impl<'p, P> JoinLayer<'p, P> {
 
             for match_edge in &sub_pattern_match.0.match_edges {
                 matched_edges.push(Rc::clone(&match_edge.input_edge));
+                earliest_time = u64::min(earliest_time, match_edge.input_edge.timestamp);
+                latest_time = u64::max(latest_time, match_edge.input_edge.timestamp);
             }
 
-            pattern_matches.insert(PatternMatch { matched_edges });
+            pattern_matches.push(PatternMatch {
+                matched_edges,
+                earliest_time,
+                latest_time,
+            });
         }
         pattern_matches
     }
@@ -132,9 +141,12 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     /// get the corresponding buffer id of a sub_pattern_match
-    fn get_buffer_id (sub_pattern_id: usize) -> usize {
-        if sub_pattern_id == 0 { 0 }
-        else { 2 * sub_pattern_id - 1 }
+    fn get_buffer_id(sub_pattern_id: usize) -> usize {
+        if sub_pattern_id == 0 {
+            0
+        } else {
+            2 * sub_pattern_id - 1
+        }
     }
 
     /// get the buffer id of the left sibling of "buffer_id"
@@ -185,16 +197,21 @@ impl<'p, P> JoinLayer<'p, P> {
 
         for sub_pattern_match1 in &buffer1 {
             for sub_pattern_match2 in &buffer2 {
-                debug!("now try merging {} and {}", sub_pattern_match1.0.id, sub_pattern_match2.0.id);
+                debug!(
+                    "now try merging {} and {}",
+                    sub_pattern_match1.0.id, sub_pattern_match2.0.id
+                );
                 if let Some(merged) = SubPatternMatch::merge_matches(
                     &mut self.sub_pattern_buffers[my_id],
                     &sub_pattern_match1.0,
                     &sub_pattern_match2.0,
                 ) {
                     matches_to_parent.push(EarliestFirst(merged));
-                }
-                else {
-                    debug!("merge {} and {} failed", sub_pattern_match1.0.id, sub_pattern_match2.0.id);
+                } else {
+                    debug!(
+                        "merge {} and {} failed",
+                        sub_pattern_match1.0.id, sub_pattern_match2.0.id
+                    );
                 }
             }
         }
@@ -237,8 +254,10 @@ impl<'p, P> JoinLayer<'p, P> {
                 .buffer
                 .extend(new_matches);
 
-
-            if self.sub_pattern_buffers[parent_id].new_match_buffer.is_empty() {
+            if self.sub_pattern_buffers[parent_id]
+                .new_match_buffer
+                .is_empty()
+            {
                 debug!("no new match!");
                 break;
             }
@@ -271,7 +290,7 @@ impl<'p, P> Iterator for JoinLayer<'p, P>
 where
     P: Iterator<Item = Vec<PartialMatch<'p>>>,
 {
-    type Item = HashSet<PatternMatch>;
+    type Item = PatternMatch;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.full_match.is_empty() {
@@ -320,6 +339,6 @@ where
             }
         }
 
-        Some(mem::replace(&mut self.full_match, HashSet::new()))
+        self.full_match.pop()
     }
 }
