@@ -1,0 +1,40 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "fork#Process::hello.sh#Process::hello.sh",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "execve#Process::hello.sh#Process::journalctl",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "load#Artifact::file::/usr/bin/journalctl#Process::journalctl",
+            "SubjectID": 4,
+            "ObjectID": 2,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "open#Artifact::directory::/var/log/journal#Process::journalctl",
+            "SubjectID": 3,
+            "ObjectID": 2,
+            "Parents": [
+                2
+            ]
+        }
+    ]
+}

@@ -1,0 +1,85 @@
+{
+    "Version": "0.1",
+    "UseRegex": false,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "load#Artifact::file::/home/admin/.mozilla/firefox/hello.sh#Process::hello.sh",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "lseek#Process::hello.sh#Artifact::file::/home/admin/.mozilla/firefox/hello.sh",
+            "SubjectID": 1,
+            "ObjectID": 0,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "fork#Process::hello.sh#Process::hello.sh",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "execve#Process::hello.sh#Process::vim",
+            "SubjectID": 2,
+            "ObjectID": 3,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "load#Artifact::file::/usr/bin/vim#Process::vim",
+            "SubjectID": 4,
+            "ObjectID": 3,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "open#Artifact::file::/var/spool/cron/crontabs/root#Process::vim",
+            "SubjectID": 5,
+            "ObjectID": 3,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "create#Process::vim#Artifact::file::/var/spool/cron/crontabs/root",
+            "SubjectID": 3,
+            "ObjectID": 6,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "rename (write)#Process::vim#Artifact::file::/var/spool/cron/crontabs/root~",
+            "SubjectID": 3,
+            "ObjectID": 7,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "rename#Artifact::file::/var/spool/cron/crontabs/root#Artifact::file::/var/spool/cron/crontabs/root~",
+            "SubjectID": 5,
+            "ObjectID": 7,
+            "Parents": [
+                5
+            ]
+        }
+    ]
+}

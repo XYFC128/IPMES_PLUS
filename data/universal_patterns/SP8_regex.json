@@ -1,0 +1,96 @@
+{
+    "Version": "0.1",
+    "UseRegex": true,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "fork#Process::.*#Process::.*",
+            "SubjectID": 0,
+            "ObjectID": 6,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+            "SubjectID": 3,
+            "ObjectID": 1,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "execve#Process::.*#Process::cp",
+            "SubjectID": 6,
+            "ObjectID": 1,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "open#Artifact::file::.*#Process::cp",
+            "SubjectID": 2,
+            "ObjectID": 1,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "create#Process::cp#Artifact::file::.*",
+            "SubjectID": 1,
+            "ObjectID": 8,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "execve#Process::.*#Process::cp",
+            "SubjectID": 7,
+            "ObjectID": 4,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "fork#Process::.*#Process::.*",
+            "SubjectID": 0,
+            "ObjectID": 7,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "open#Artifact::file::.*#Process::cp",
+            "SubjectID": 5,
+            "ObjectID": 4,
+            "Parents": [
+                5,
+                6,
+                7
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "create#Process::cp#Artifact::file::.*",
+            "SubjectID": 4,
+            "ObjectID": 9,
+            "Parents": [
+                8
+            ]
+        }
+    ]
+}

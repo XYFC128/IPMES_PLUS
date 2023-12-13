@@ -1,0 +1,112 @@
+{
+    "Version": "0.1",
+    "UseRegex": true,
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "create#Process::.*#Artifact::file::.*",
+            "SubjectID": 0,
+            "ObjectID": 1,
+            "Parents": []
+        },
+        {
+            "ID": 1,
+            "Signature": "update#Artifact::file::.*#Artifact::file::.*",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "fork#Process::.*#Process::.*",
+            "SubjectID": 0,
+            "ObjectID": 3,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "fork#Process::.*#Process::.*",
+            "SubjectID": 3,
+            "ObjectID": 4,
+            "Parents": [
+                2
+            ]
+        },
+        {
+            "ID": 4,
+            "Signature": "execve#Process::.*#Process::sshpass",
+            "SubjectID": 4,
+            "ObjectID": 5,
+            "Parents": [
+                3
+            ]
+        },
+        {
+            "ID": 5,
+            "Signature": "connect#Process::ssh#Artifact::network socket::.*:.*",
+            "SubjectID": 9,
+            "ObjectID": 10,
+            "Parents": [
+                4
+            ]
+        },
+        {
+            "ID": 6,
+            "Signature": "write#Process::ssh#Artifact::network socket::.*:.*",
+            "SubjectID": 9,
+            "ObjectID": 10,
+            "Parents": [
+                5
+            ]
+        },
+        {
+            "ID": 7,
+            "Signature": "read#Artifact::unnamed pipe::#Process::.*",
+            "SubjectID": 6,
+            "ObjectID": 0,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 8,
+            "Signature": "write#Process::awk#Artifact::unnamed pipe::",
+            "SubjectID": 7,
+            "ObjectID": 6,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 9,
+            "Signature": "read#Artifact::unnamed pipe::#Process::awk",
+            "SubjectID": 8,
+            "ObjectID": 7,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 10,
+            "Signature": "write#Process::ssh#Artifact::unnamed pipe::",
+            "SubjectID": 9,
+            "ObjectID": 8,
+            "Parents": [
+                6
+            ]
+        },
+        {
+            "ID": 11,
+            "Signature": "read#Artifact::network socket::.*:.*#Process::ssh",
+            "SubjectID": 10,
+            "ObjectID": 9,
+            "Parents": [
+                6
+            ]
+        }
+    ]
+}
