@@ -1,10 +1,10 @@
-use crate::pattern::{Edge, Pattern};
+use crate::pattern::{Event, Pattern};
 
 #[derive(Debug)]
 pub struct SubPattern<'a> {
     // sub-pattern id
     pub id: usize,
-    pub edges: Vec<&'a Edge>,
+    pub events: Vec<&'a Event>,
 }
 
 impl<'a> SubPattern<'a> {}
@@ -12,12 +12,12 @@ impl<'a> SubPattern<'a> {}
 // maybe we can set a maximum sub-pattern size
 pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
-    let mut parents: Vec<&Edge> = Vec::new();
-    for edge in &pattern.edges {
+    let mut parents: Vec<&Event> = Vec::new();
+    for edge in &pattern.events {
         generate_sub_patterns(pattern, &edge, &mut parents, &mut sub_patterns);
     }
 
-    let mut selected: Vec<SubPattern> = select_sub_patterns(pattern.edges.len(), sub_patterns);
+    let mut selected: Vec<SubPattern> = select_sub_patterns(pattern.events.len(), sub_patterns);
     for (id, x) in selected.iter_mut().enumerate() {
         x.id = id;
     }
@@ -27,8 +27,8 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
 
 fn generate_sub_patterns<'a>(
     pattern: &'a Pattern,
-    edge: &'a Edge,
-    parents: &mut Vec<&'a Edge>,
+    edge: &'a Event,
+    parents: &mut Vec<&'a Event>,
     results: &mut Vec<SubPattern<'a>>,
 ) {
     // if "has_shared_node" is false, the sub-pattern would be disconnected (not allowed)
@@ -38,22 +38,22 @@ fn generate_sub_patterns<'a>(
     parents.push(edge);
     results.push(SubPattern {
         id: 0,
-        edges: parents.clone(),
+        events: parents.clone(),
     });
     for eid in pattern.order.get_next(edge.id) {
-        generate_sub_patterns(pattern, &pattern.edges[eid], parents, results);
+        generate_sub_patterns(pattern, &pattern.events[eid], parents, results);
     }
     parents.pop();
 }
 
-fn has_shared_node(edge: &Edge, parents: &Vec<&Edge>) -> bool {
+fn has_shared_node(edge: &Event, parents: &Vec<&Event>) -> bool {
     if parents.is_empty() {
         return true;
     }
     for parent in parents {
-        let node_shared = if edge.start == parent.start || edge.start == parent.end {
+        let node_shared = if edge.subject == parent.subject || edge.subject == parent.object {
             true
-        } else if edge.end == parent.start || edge.end == parent.end {
+        } else if edge.object == parent.subject || edge.object == parent.object {
             true
         } else {
             false
@@ -67,7 +67,7 @@ fn has_shared_node(edge: &Edge, parents: &Vec<&Edge>) -> bool {
 
 fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> Vec<SubPattern> {
     // sort in decreasing size
-    sub_patterns.sort_by(|x, y| y.edges.len().cmp(&x.edges.len()));
+    sub_patterns.sort_by(|x, y| y.events.len().cmp(&x.events.len()));
 
     let mut selected_sub_patterns: Vec<SubPattern> = Vec::new();
     let mut is_edge_selected: Vec<bool> = vec![false; num_edges];
@@ -76,7 +76,7 @@ fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> V
             continue;
         }
 
-        for edge in &sub_pattern.edges {
+        for edge in &sub_pattern.events {
             is_edge_selected[edge.id] = true;
         }
         selected_sub_patterns.push(sub_pattern);
@@ -86,7 +86,7 @@ fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> V
 }
 
 fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -> bool {
-    for edge in &sub_pattern.edges {
+    for edge in &sub_pattern.events {
         if is_edge_selected[edge.id] {
             return true;
         }
@@ -112,55 +112,55 @@ mod tests {
             )
             .unwrap();
 
-        let edge: &Edge = &pattern.edges[0];
-        let mut parents: Vec<&Edge> = Vec::new();
+        let edge: &Event = &pattern.events[0];
+        let mut parents: Vec<&Event> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
-        println!("{:#?}", pattern.edges);
+        println!("{:#?}", pattern.events);
     }
 
     #[test]
     fn test_hsn() {
-        let e1 = &Edge {
+        let e1 = &Event {
             id: 0,
             signature: "a".to_string(),
-            start: 10,
-            end: 19,
+            subject: 10,
+            object: 19,
         };
-        let e2 = &Edge {
+        let e2 = &Event {
             id: 0,
             signature: "b".to_string(),
-            start: 9,
-            end: 15,
+            subject: 9,
+            object: 15,
         };
-        let e3 = &Edge {
+        let e3 = &Event {
             id: 0,
             signature: "c".to_string(),
-            start: 11,
-            end: 13,
+            subject: 11,
+            object: 13,
         };
-        let e4 = &Edge {
+        let e4 = &Event {
             id: 0,
             signature: "d".to_string(),
-            start: 10,
-            end: 13,
+            subject: 10,
+            object: 13,
         };
 
         // true
-        let parents: Vec<&Edge> = vec![e1, e3];
+        let parents: Vec<&Event> = vec![e1, e3];
         assert!(has_shared_node(e4, &parents));
 
         // false
-        let parents: Vec<&Edge> = vec![e2];
+        let parents: Vec<&Event> = vec![e2];
         assert!(!has_shared_node(e4, &parents));
 
         // true
-        let parents: Vec<&Edge> = vec![e3];
+        let parents: Vec<&Event> = vec![e3];
         assert!(has_shared_node(e4, &parents));
 
         // true
-        let parents: Vec<&Edge> = vec![];
+        let parents: Vec<&Event> = vec![];
         assert!(has_shared_node(e4, &parents));
     }
 
@@ -175,8 +175,8 @@ mod tests {
             )
             .unwrap();
 
-        let edge: &Edge = &pattern.edges[0];
-        let mut parents: Vec<&Edge> = Vec::new();
+        let edge: &Event = &pattern.events[0];
+        let mut parents: Vec<&Event> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
@@ -197,8 +197,8 @@ mod tests {
             )
             .unwrap();
 
-        let edge: &Edge = &pattern.edges[0];
-        let mut parents: Vec<&Edge> = Vec::new();
+        let edge: &Event = &pattern.events[0];
+        let mut parents: Vec<&Event> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 

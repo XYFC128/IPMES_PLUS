@@ -1,5 +1,5 @@
 use std::cmp::max;
-use crate::pattern::{Edge, Pattern};
+use crate::pattern::{Event, Pattern};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
@@ -27,9 +27,9 @@ fn parse_u64(obj: &Value) -> Result<u64, &'static str> {
         .map_err(|_| "ID is not u64")
 }
 pub trait PatternParser {
-    fn node_signature(obj: &Value) -> Option<String>;
+    fn entity_signature(obj: &Value) -> Option<String>;
 
-    fn edge_signature(obj: &Value) -> Option<String>;
+    fn event_signature(obj: &Value) -> Option<String>;
 
     fn parse(
         &self,
@@ -39,17 +39,17 @@ pub trait PatternParser {
     ) -> Result<Pattern, PatternParsingError> {
         info!("Parsing: {node_file}, {edges_file}, {order_relation_file}");
         let (id_convert, node_signatures) = self.parse_node_file(node_file)?;
-        let edges = self.parse_edge_file(edges_file, &id_convert, &node_signatures)?;
-        let num_nodes = edges
+        let events = self.parse_edge_file(edges_file, &id_convert, &node_signatures)?;
+        let num_entities = events
             .iter()
-            .map(|e| max(e.start, e.end))
+            .map(|e| max(e.subject, e.object))
             .max()
             .unwrap() + 1;
 
         Ok(Pattern {
-            edges,
+            events,
             order: OrderRelation::parse(order_relation_file)?,
-            num_nodes
+            num_entities
         })
     }
 
@@ -71,7 +71,7 @@ pub trait PatternParser {
                 parse_u64(&node_obj["id"]).map_err(|e| FormatError(line_num + 1, e))?;
             id_convert.insert(raw_id, line_num);
 
-            let signature = Self::node_signature(node_obj).ok_or(FormatError(
+            let signature = Self::entity_signature(node_obj).ok_or(FormatError(
                 line_num + 1,
                 "Fail to extract node signature, maybe the pattern format is wrong",
             ))?;
@@ -87,10 +87,10 @@ pub trait PatternParser {
         edge_file: &str,
         id_convert: &HashMap<u64, usize>,
         node_sigs: &Vec<String>,
-    ) -> Result<Vec<Edge>, PatternParsingError> {
+    ) -> Result<Vec<Event>, PatternParsingError> {
         use PatternParsingError::*;
 
-        let mut edges = Vec::new();
+        let mut events = Vec::new();
 
         let edge_file = File::open(edge_file)?;
         let edge_reader = BufReader::new(edge_file);
@@ -101,33 +101,33 @@ pub trait PatternParser {
                 .map_err(|e| FormatError(line_num + 1, e))?;
             let raw_end = parse_u64(&edge_obj["end"]["id"])
                 .map_err(|e| FormatError(line_num + 1, e))?;
-            let signature = Self::edge_signature(edge_obj).ok_or(FormatError(
+            let signature = Self::event_signature(edge_obj).ok_or(FormatError(
                 line_num + 1,
                 "Fail to extract edge signature, maybe the pattern format is wrong",
             ))?;
 
             let start_id = id_convert.get(&raw_start).ok_or(FormatError(
                 line_num + 1,
-                "The start id not exist in the node file",
+                "The subject id not exist in the node file",
             ))?;
             let end_id = id_convert.get(&raw_end).ok_or(FormatError(
                 line_num + 1,
-                "The end id not exist in the node file",
+                "The object id not exist in the node file",
             ))?;
 
             let full_signature = format!(
                 "{}#{}#{}",
                 signature, node_sigs[*start_id], node_sigs[*end_id]
             );
-            edges.push(Edge {
+            events.push(Event {
                 id: line_num,
                 signature: full_signature,
-                start: *start_id,
-                end: *end_id,
+                subject: *start_id,
+                object: *end_id,
             })
         }
 
-        Ok(edges)
+        Ok(events)
     }
 }
 
@@ -136,11 +136,11 @@ mod tests {
     use super::*;
     struct TestParser;
     impl PatternParser for TestParser {
-        fn node_signature(obj: &Value) -> Option<String> {
+        fn entity_signature(obj: &Value) -> Option<String> {
             Some(String::from("node"))
         }
 
-        fn edge_signature(obj: &Value) -> Option<String> {
+        fn event_signature(obj: &Value) -> Option<String> {
             Some(String::from("edge"))
         }
     }

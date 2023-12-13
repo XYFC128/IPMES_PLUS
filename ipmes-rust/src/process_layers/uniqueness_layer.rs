@@ -3,15 +3,15 @@ use itertools::Itertools;
 use crate::pattern_match::PatternMatch;
 use crate::pattern_match::EarliestFirst;
 
-pub struct UniquenessLayer<'p, P> {
+pub struct UniquenessLayer<P> {
     prev_layer: P,
     window_size: u64,
-    pattern_match_sequence: BinaryHeap<EarliestFirst(PatternMatch)>,
+    pattern_match_sequence: BinaryHeap<EarliestFirst>,
     uniqueness_pool: HashSet<PatternMatch>,
     unique_matches: Vec<PatternMatch>
 }
 
-impl<'p, P> UniquenessLayer<'p, P> {
+impl<P> UniquenessLayer<P> {
     pub fn new(prev_layer: P, window_size: u64) -> Self {
         Self {
             prev_layer,
@@ -34,7 +34,7 @@ impl<'p, P> UniquenessLayer<'p, P> {
     }
 }
 
-impl<'p, P> Iterator for UniquenessLayer<'p, P>
+impl<P> Iterator for UniquenessLayer<P>
 where
     P: Iterator<Item = PatternMatch>,
 {

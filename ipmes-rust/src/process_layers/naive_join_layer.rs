@@ -4,7 +4,7 @@ mod entry_wrappers;
 // #[cfg(test)]
 // mod tests;
 
-use crate::match_edge::MatchEdge;
+use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
 use crate::process_layers::composition_layer::PartialMatch;
@@ -28,7 +28,7 @@ pub struct NaiveJoinLayer<'p, P> {
 
 impl<'p, P> NaiveJoinLayer<'p, P> {
     fn new(prev_layer: P, pattern: &'p Pattern, time_window: u64) -> Self {
-        let place_holder = Rc::new(Entry::placeholder(pattern.num_nodes));
+        let place_holder = Rc::new(Entry::placeholder(pattern.num_entities));
         let mut unique_entries = HashSet::new();
         unique_entries.insert(UniqueEntry(Rc::clone(&place_holder)));
         let mut table = BinaryHeap::new();
@@ -70,7 +70,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
             .collect_vec();
         for result in merge_result.into_iter() {
             // check if all pattern edges are matched
-            if result.match_edges.len() == self.pattern.edges.len() {
+            if result.match_events.len() == self.pattern.events.len() {
                 self.full_matches.push(result.into());
                 continue;
             }
@@ -90,9 +90,9 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
     /// if they cannot be merged or the merge result is already in the pool.
     ///
     /// So this function will check for:
-    /// 1. shared node & edge
+    /// 1. shared node & event
     /// 2. order relation
-    /// 3. edge & node uniqueness
+    /// 3. event & node uniqueness
     /// If any of the check failed, return None
     fn try_merge(&self, entry1: &Entry<'p>, entry2: &Entry<'p>) -> Option<Entry<'p>> {
         if !self.check_shared_node(entry1, entry2) {
@@ -100,11 +100,11 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         }
 
         let merged_edges = entry1
-            .match_edges
+            .match_events
             .iter()
             .cloned()
-            .merge_by(entry2.match_edges.iter().cloned(), |a, b| {
-                a.input_edge.id < b.input_edge.id
+            .merge_by(entry2.match_events.iter().cloned(), |a, b| {
+                a.input_event.id < b.input_event.id
             })
             .collect_vec();
 
@@ -116,63 +116,63 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
 
         // todo: check node uniqueness
 
-        let merged_nodes = self.merge_nodes(&entry1.match_nodes, &entry2.match_nodes);
+        let merged_nodes = self.merge_nodes(&entry1.match_entities, &entry2.match_entities);
         let hash = UniqueEntry::calc_hash(&mapping);
         Some(Entry {
             earliest_time: min(entry1.earliest_time, entry2.earliest_time),
-            match_edges: merged_edges,
-            match_nodes: merged_nodes,
+            match_events: merged_edges,
+            match_entities: merged_nodes,
             hash,
         })
     }
 
     fn try_merge_edges(
         &self,
-        a: &[MatchEdge<'p>],
-        b: &[MatchEdge<'p>],
-    ) -> Option<Vec<MatchEdge<'p>>> {
+        a: &[MatchEvent<'p>],
+        b: &[MatchEvent<'p>],
+    ) -> Option<Vec<MatchEvent<'p>>> {
         let (mut p1, mut p2) = if a.len() > b.len() {
             (a.iter(), b.iter())
         } else {
             (b.iter(), a.iter())
         };
 
-        let mut mapping = vec![None; self.pattern.edges.len()];
+        let mut mapping = vec![None; self.pattern.events.len()];
         let mut merged = Vec::new();
 
         let mut next1 = p1.next();
         let mut next2 = p2.next();
         while let (Some(edge1), Some(edge2)) = (next1, next2) {
-            if edge1.input_edge.id < edge2.input_edge.id {
+            if edge1.input_event.id < edge2.input_event.id {
                 if mapping[edge1.matched.id].is_some() {
                     return None;
                 }
                 merged.push(edge1.clone());
-                mapping[edge1.matched.id] = Some(edge1.input_edge.timestamp);
+                mapping[edge1.matched.id] = Some(edge1.input_event.timestamp);
                 next1 = p1.next();
             } else {
                 if mapping[edge2.matched.id].is_some() {
                     return None;
                 }
 
-                if edge1.input_edge.id == edge2.input_edge.id {
+                if edge1.input_event.id == edge2.input_event.id {
                     if edge1.matched.id != edge2.matched.id {
                         return None;
                     }
                     next1 = p1.next();
                 }
                 merged.push(edge2.clone());
-                mapping[edge2.matched.id] = Some(edge2.input_edge.timestamp);
+                mapping[edge2.matched.id] = Some(edge2.input_event.timestamp);
                 next2 = p2.next();
             }
         }
 
-        while let Some(edge) = next1 {
-            if mapping[edge.matched.id].is_some() {
+        while let Some(event) = next1 {
+            if mapping[event.matched.id].is_some() {
                 return None;
             }
-            merged.push(edge.clone());
-            mapping[edge.matched.id] = Some(edge.input_edge.timestamp);
+            merged.push(event.clone());
+            mapping[event.matched.id] = Some(event.input_event.timestamp);
             next1 = p1.next();
         }
 
@@ -182,7 +182,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
     /// Check whether input nodes in different entries that match the same pattern node are also
     /// the same input nodes.
     fn check_shared_node(&self, entry1: &Entry<'p>, entry2: &Entry<'p>) -> bool {
-        zip(&entry1.match_nodes, &entry2.match_nodes).all(|pair| {
+        zip(&entry1.match_entities, &entry2.match_entities).all(|pair| {
             if let (Some(n1), Some(n2)) = pair {
                 n1 == n2
             } else {
@@ -191,31 +191,31 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         })
     }
 
-    /// Get the mapping from pattern edge id to match edge. The mapping is stored in a vector,
-    /// with the index as the id of pattern edge.
+    /// Get the mapping from pattern event id to match event. The mapping is stored in a vector,
+    /// with the index as the id of pattern event.
     ///
     /// This function returns [None] when:
-    /// 1. detects 2 input edges with the same id
-    /// 2. detects 2 input edges matches to the same pattern edge
+    /// 1. detects 2 input events with the same id
+    /// 2. detects 2 input events matches to the same pattern event
     ///
-    /// This means it is responsible for checking shared edge and edge uniqueness
+    /// This means it is responsible for checking shared event and event uniqueness
     fn get_mapping<'a>(
         &self,
-        merged_edges: &'a [MatchEdge<'p>],
-    ) -> Option<Vec<Option<&'a MatchEdge<'p>>>> {
-        let mut pattern_match = vec![None; self.pattern.edges.len()];
+        merged_edges: &'a [MatchEvent<'p>],
+    ) -> Option<Vec<Option<&'a MatchEvent<'p>>>> {
+        let mut pattern_match = vec![None; self.pattern.events.len()];
         let mut prev_id = u64::MAX;
-        for edge in merged_edges {
-            if edge.input_edge.id == prev_id {
-                return None; // 2 input edges with the same id
+        for event in merged_edges {
+            if event.input_event.id == prev_id {
+                return None; // 2 input events with the same id
             }
-            prev_id = edge.input_edge.id;
+            prev_id = event.input_event.id;
 
             todo!("This check is not right");
-            if pattern_match[edge.matched.id].is_some() {
-                return None; // 2 input edges matches to the same pattern edge
+            if pattern_match[event.matched.id].is_some() {
+                return None; // 2 input events matches to the same pattern event
             }
-            pattern_match[edge.matched.id] = Some(edge);
+            pattern_match[event.matched.id] = Some(event);
         }
 
         Some(pattern_match)
@@ -225,18 +225,18 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
         &self,
         entry1: &Entry<'p>,
         entry2: &Entry<'p>,
-        pattern_match: &[Option<&MatchEdge<'p>>],
+        pattern_match: &[Option<&MatchEvent<'p>>],
     ) -> bool {
-        let edges = if entry1.match_edges.len() < entry2.match_edges.len() {
-            &entry1.match_edges
+        let events = if entry1.match_events.len() < entry2.match_events.len() {
+            &entry1.match_events
         } else {
-            &entry2.match_edges
+            &entry2.match_events
         };
 
-        for edge1 in edges {
+        for edge1 in events {
             for prev_id in self.pattern.order.get_previous(edge1.matched.id) {
                 if let Some(Some(edge2)) = pattern_match.get(prev_id) {
-                    if edge2.input_edge.timestamp > edge1.input_edge.timestamp {
+                    if edge2.input_event.timestamp > edge1.input_event.timestamp {
                         return false;
                     }
                 }
@@ -244,7 +244,7 @@ impl<'p, P> NaiveJoinLayer<'p, P> {
 
             for next_id in self.pattern.order.get_next(edge1.matched.id) {
                 if let Some(Some(edge2)) = pattern_match.get(next_id) {
-                    if edge2.input_edge.timestamp < edge1.input_edge.timestamp {
+                    if edge2.input_event.timestamp < edge1.input_event.timestamp {
                         return false;
                     }
                 }
@@ -285,21 +285,21 @@ where
             }
 
             for sub_match in sub_pattern_matches {
-                let mut match_nodes = vec![None; self.pattern.num_nodes];
+                let mut match_entities = vec![None; self.pattern.num_entities];
                 let mut earliest_time = u64::MAX;
-                for edge in &sub_match.edges {
-                    match_nodes[edge.matched.start] = Some(edge.input_edge.start);
-                    match_nodes[edge.matched.end] = Some(edge.input_edge.end);
+                for event in &sub_match.events {
+                    match_entities[event.matched.subject] = Some(event.input_event.subject);
+                    match_entities[event.matched.object] = Some(event.input_event.object);
 
-                    earliest_time = min(edge.input_edge.timestamp, earliest_time);
+                    earliest_time = min(event.input_event.timestamp, earliest_time);
                 }
 
-                if let Some(mapping) = self.get_mapping(&sub_match.edges) {
+                if let Some(mapping) = self.get_mapping(&sub_match.events) {
                     let hash = UniqueEntry::calc_hash(&mapping);
                     let entry = Rc::new(Entry {
                         earliest_time,
-                        match_edges: sub_match.edges,
-                        match_nodes,
+                        match_events: sub_match.events,
+                        match_entities,
                         hash,
                     });
                     self.add_entry(entry);

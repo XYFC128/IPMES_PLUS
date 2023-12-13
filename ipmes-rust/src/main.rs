@@ -44,7 +44,7 @@ fn main() {
     let window_size = args.window_size * 1000;
 
     let pattern = parse_pattern(&args).expect("Failed to parse pattern");
-    info!("Pattern Edges: {:#?}", pattern.edges);
+    info!("Pattern Edges: {:#?}", pattern.events);
 
     let decomposition = decompose(&pattern);
     info!("Decomposition results: {:#?}", decomposition);
@@ -59,11 +59,8 @@ fn main() {
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 
     let mut num_result = 0u32;
-    for result in uniqueness_layer {
-        num_result += result.len() as u32;
-        for pattern_match in result {
-            info!("Pattern Match: {}", pattern_match);
-        }
+    for pattern_match in uniqueness_layer {
+        info!("Pattern Match: {}", pattern_match);
     }
     println!("Total number of matches: {num_result}");
     info!("Finished");

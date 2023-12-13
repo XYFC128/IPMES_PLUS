@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use crate::input_edge::InputEdge;
+use crate::input_event::InputEvent;
 use itertools::Itertools;
 use std::fmt;
 use std::fmt::Formatter;
@@ -11,7 +11,7 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct PatternMatch {
     /// Matched edges of this pattern. i-th element is the input edge that matches pattern edge i
-    pub matched_edges: Vec<Rc<InputEdge>>,
+    pub matched_events: Vec<Rc<InputEvent>>,
     pub earliest_time: u64,
     pub latest_time: u64,
 }
@@ -21,7 +21,7 @@ impl fmt::Display for PatternMatch {
         write!(
             f,
             "[{}]",
-            self.matched_edges.iter().map(|e| e.id).join(", ")
+            self.matched_events.iter().map(|e| e.id).join(", ")
         )
     }
 }
@@ -30,35 +30,35 @@ impl Eq for PatternMatch {}
 
 impl PartialEq for PatternMatch {
     fn eq(&self, other: &Self) -> bool {
-        zip(&self.matched_edges, &other.matched_edges).all(|(a, b)| a.id.eq(&b.id))
+        zip(&self.matched_events, &other.matched_events).all(|(a, b)| a.id.eq(&b.id))
     }
 }
 
 impl Hash for PatternMatch {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        for edge in &self.matched_edges {
+        for edge in &self.matched_events {
             edge.id.hash(state);
         }
     }
 }
 
 #[derive(Clone)]
-pub struct EarliestFirst<'p>(pub PatternMatch);
-impl Eq for EarliestFirst<'_> {}
+pub struct EarliestFirst(pub PatternMatch);
+impl Eq for EarliestFirst {}
 
-impl PartialEq<Self> for EarliestFirst<'_> {
+impl PartialEq<Self> for EarliestFirst {
     fn eq(&self, other: &Self) -> bool {
         self.0.earliest_time.eq(&other.0.earliest_time)
     }
 }
 
-impl Ord for EarliestFirst<'_> {
+impl Ord for EarliestFirst {
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.earliest_time.cmp(&other.0.earliest_time).reverse()
     }
 }
 
-impl PartialOrd<Self> for EarliestFirst<'_> {
+impl PartialOrd<Self> for EarliestFirst {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }

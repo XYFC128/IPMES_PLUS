@@ -1,48 +1,45 @@
-use std::fs::File;
 use std::rc::Rc;
-use csv::Reader;
-use itertools::assert_equal;
-use crate::input_edge::InputEdge;
-use crate::pattern::Edge;
+use crate::input_event::InputEvent;
+use crate::pattern::Event;
 use super::*;
 
 #[test]
 /// Fail
 fn test_check_edge_uniqueness_1() {
-    let pattern_edge = Edge {
+    let pattern_edge = Event {
         id: 0,
         signature: "".to_string(),
-        start: 0,
-        end: 0,
+        subject: 0,
+        object: 0,
     };
     let match_edges = vec![
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 1,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge,
         },
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 2,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge
         },
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 2,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge
         }
@@ -54,40 +51,40 @@ fn test_check_edge_uniqueness_1() {
 #[test]
 /// Pass
 fn test_check_edge_uniqueness_2() {
-    let pattern_edge = Edge {
+    let pattern_edge = Event {
         id: 0,
         signature: "".to_string(),
-        start: 0,
-        end: 0,
+        subject: 0,
+        object: 0,
     };
     let match_edges = vec![
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 1,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge,
         },
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 2,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge
         },
-        MatchEdge {
-            input_edge: Rc::new(InputEdge {
+        MatchEvent {
+            input_event: Rc::new(InputEvent {
                 timestamp: 0,
                 signature: "".to_string(),
                 id: 3,
-                start: 0,
-                end: 0,
+                subject: 0,
+                object: 0,
             }),
             matched: &pattern_edge
         }
@@ -123,7 +120,7 @@ fn test_merge_edge_id_map_1() {
         Some(7)
     ];
 
-    assert_eq!(ans, merge_edge_id_map(&edge_id_map1, &edge_id_map2));
+    assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
 }
 
 #[test]
@@ -153,5 +150,5 @@ fn test_merge_edge_id_map_2() {
         Some(7)
     ];
 
-    assert_eq!(ans, merge_edge_id_map(&edge_id_map1, &edge_id_map2));
+    assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
 }

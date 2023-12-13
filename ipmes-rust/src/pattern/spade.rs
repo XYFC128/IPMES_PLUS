@@ -4,7 +4,7 @@ use serde_json::Value;
 pub struct SpadePatternParser;
 
 impl PatternParser for SpadePatternParser {
-    fn node_signature(obj: &Value) -> Option<String> {
+    fn entity_signature(obj: &Value) -> Option<String> {
         let properties = &obj["properties"];
         let node_type = properties["type"].as_str()?;
 
@@ -36,7 +36,7 @@ impl PatternParser for SpadePatternParser {
         }
     }
 
-    fn edge_signature(obj: &Value) -> Option<String> {
+    fn event_signature(obj: &Value) -> Option<String> {
         obj["properties"]["operation"]
             .as_str()
             .map(|s| s.to_string())
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn test_node_signature() {
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Process",
                     "name": ".*"
@@ -61,7 +61,7 @@ mod tests {
         );
 
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Artifact",
                     "subtype": "file",
@@ -72,7 +72,7 @@ mod tests {
         );
 
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Artifact",
                     "subtype": "directory",
@@ -83,7 +83,7 @@ mod tests {
         );
 
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Artifact",
                     "subtype": "network socket",
@@ -95,7 +95,7 @@ mod tests {
         );
 
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Foo",
                 }
@@ -104,7 +104,7 @@ mod tests {
         );
 
         assert_eq!(
-            SpadePatternParser::node_signature(&json!({
+            SpadePatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Artifact",
                     "subtype": "FooBar",
@@ -122,7 +122,7 @@ mod tests {
             }
         });
         assert_eq!(
-            SpadePatternParser::edge_signature(&obj),
+            SpadePatternParser::event_signature(&obj),
             Some(String::from("open"))
         );
     }

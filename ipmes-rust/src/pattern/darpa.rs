@@ -4,7 +4,7 @@ use serde_json::Value;
 pub struct DarpaPatternParser;
 
 impl PatternParser for DarpaPatternParser {
-    fn node_signature(obj: &Value) -> Option<String> {
+    fn entity_signature(obj: &Value) -> Option<String> {
         let properties = &obj["properties"].as_object()?;
 
         let node_type = if let Some(type_val) = properties.get("type") {
@@ -39,7 +39,7 @@ impl PatternParser for DarpaPatternParser {
         Some(format!("{node_type}::{signature}"))
     }
 
-    fn edge_signature(obj: &Value) -> Option<String> {
+    fn event_signature(obj: &Value) -> Option<String> {
         obj["properties"]["type"].as_str().map(|s| s.to_string())
     }
 }
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn test_node_signature() {
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "SUBJECT_PROCESS",
                     "Subject_properties_map_name": ".*"
@@ -62,7 +62,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "SUBJECT_UNIT",
                     "Subject_properties_map_name": ".*"
@@ -72,7 +72,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "FILE_OBJECT_CHAR",
                     "path": "/dev/tty0"
@@ -82,7 +82,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "FILE_OBJECT_FILE",
                     "path": "./hello.sh"
@@ -92,7 +92,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "FILE_OBJECT_DIR",
                     "path": "/tmp"
@@ -102,7 +102,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "type": "Foo",
                 }
@@ -111,7 +111,7 @@ mod tests {
         );
 
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                 }
             })),
@@ -122,7 +122,7 @@ mod tests {
     #[test]
     fn test_node_signature_socket() {
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "NetFlowObject_baseObject_epoch": 10,
                     "NetFlowObject_remoteAddress": "localhost",
@@ -134,7 +134,7 @@ mod tests {
 
         // port's type in some pattern is integer
         assert_eq!(
-            DarpaPatternParser::node_signature(&json!({
+            DarpaPatternParser::entity_signature(&json!({
                 "properties": {
                     "NetFlowObject_baseObject_epoch": 10,
                     "NetFlowObject_remoteAddress": "localhost",
@@ -153,7 +153,7 @@ mod tests {
             }
         });
         assert_eq!(
-            DarpaPatternParser::edge_signature(&obj),
+            DarpaPatternParser::event_signature(&obj),
             Some(String::from("open"))
         );
     }

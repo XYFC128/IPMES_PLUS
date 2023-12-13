@@ -6,17 +6,17 @@ pub mod parser;
 use order_relation::OrderRelation;
 
 #[derive(Debug)]
-pub struct Edge {
+pub struct Event {
     pub id: usize,
     pub signature: String,
     // start node id
-    pub start: usize,
+    pub subject: usize,
     // end node id
-    pub end: usize,
+    pub object: usize,
 }
 
 pub struct Pattern {
-    pub edges: Vec<Edge>,
+    pub events: Vec<Event>,
     pub order: OrderRelation,
-    pub num_nodes: usize
+    pub num_entities: usize
 }

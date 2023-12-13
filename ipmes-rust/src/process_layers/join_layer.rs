@@ -5,13 +5,13 @@ use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
 pub use sub_pattern_buffer::SubPatternBuffer;
 
-use crate::match_edge::MatchEdge;
+use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::composition_layer::PartialMatch;
 use itertools::Itertools;
 use log::{debug, warn};
 use petgraph::graph::NodeIndex;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
 use std::mem;
 use std::rc::Rc;
@@ -39,7 +39,7 @@ impl<'p, P> JoinLayer<'p, P> {
             sub_pattern_buffer1.id,
             &sub_patterns[id],
             sub_pattern_buffer1.max_num_nodes,
-            pattern.edges.len(),
+            pattern.events.len(),
         );
         let relations = SubPatternBuffer::generate_relations(
             &pattern,
@@ -70,8 +70,8 @@ impl<'p, P> JoinLayer<'p, P> {
             0,
             1,
             &sub_patterns[0],
-            pattern.num_nodes,
-            pattern.edges.len(),
+            pattern.num_entities,
+            pattern.events.len(),
         ));
 
         for i in 1..sub_patterns.len() {
@@ -94,28 +94,28 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     /// change the name of the function
-    /// "match_edges" is sorted by its match edge ids, and thus "matched_edges" is in good order.
+    /// "match_events" is sorted by its match edge ids, and thus "matched_event" is in good order.
     fn convert_pattern_match(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> Vec<PatternMatch> {
         let mut pattern_matches = Vec::with_capacity(buffer.len());
 
         for mut sub_pattern_match in buffer.drain() {
             debug!("sub_pattern_match id: {}", sub_pattern_match.0.id);
-            let mut matched_edges = Vec::with_capacity(sub_pattern_match.0.match_edges.len());
+            let mut matched_events = Vec::with_capacity(sub_pattern_match.0.match_events.len());
             let mut earliest_time = u64::MAX;
             let mut latest_time = u64::MIN;
             sub_pattern_match
                 .0
-                .match_edges
+                .match_events
                 .sort_by(|a, b| a.matched.id.cmp(&b.matched.id));
 
-            for match_edge in &sub_pattern_match.0.match_edges {
-                matched_edges.push(Rc::clone(&match_edge.input_edge));
-                earliest_time = u64::min(earliest_time, match_edge.input_edge.timestamp);
-                latest_time = u64::max(latest_time, match_edge.input_edge.timestamp);
+            for match_event in &sub_pattern_match.0.match_events {
+                matched_events.push(Rc::clone(&match_event.input_event));
+                earliest_time = u64::min(earliest_time, match_event.input_event.timestamp);
+                latest_time = u64::max(latest_time, match_event.input_event.timestamp);
             }
 
             pattern_matches.push(PatternMatch {
-                matched_edges,
+                matched_events,
                 earliest_time,
                 latest_time,
             });
@@ -267,22 +267,22 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 }
 
-fn convert_node_id_map(node_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
+fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
     for (i, node_id) in node_ids.iter().enumerate() {
         // "node_id == 0": i-th node is not matched
         if node_id == &0u64 {
             continue;
         }
-        node_id_map.push((node_id.clone(), i as u64));
+        entity_id_map.push((node_id.clone(), i as u64));
     }
 
-    node_id_map.sort();
+    entity_id_map.sort();
 }
 
-/// Convert vector of edges to vector map of edges
-fn create_edge_id_map(edge_id_map: &mut Vec<Option<u64>>, edges: &Vec<MatchEdge>) {
-    for edge in edges {
-        edge_id_map[edge.matched.id] = Some(edge.input_edge.id);
+/// Convert vector of events to vector map of events
+fn create_event_id_map(event_id_map: &mut Vec<Option<u64>>, events: &Vec<MatchEvent>) {
+    for edge in events {
+        event_id_map[edge.matched.id] = Some(edge.input_event.id);
     }
 }
 
@@ -300,28 +300,28 @@ where
             /// Maybe isolate it to be a function?
             for partial_match in partial_matches {
                 debug!("partial match id: {}", partial_match.id);
-                let latest_time = if let Some(edge) = partial_match.edges.last() {
-                    edge.input_edge.timestamp
+                let latest_time = if let Some(edge) = partial_match.events.last() {
+                    edge.input_event.timestamp
                 } else {
                     warn!("Got an empty PartialMatch");
                     continue;
                 };
 
-                let mut node_id_map = Vec::with_capacity(self.pattern.num_nodes);
-                let mut edge_id_map = vec![None; self.pattern.edges.len()];
-                convert_node_id_map(&mut node_id_map, &partial_match.node_id_map);
-                create_edge_id_map(&mut edge_id_map, &partial_match.edges);
+                let mut entity_id_map = Vec::with_capacity(self.pattern.num_entities);
+                let mut event_id_map = vec![None; self.pattern.events.len()];
+                convert_entity_id_map(&mut entity_id_map, &partial_match.entity_id_map);
+                create_event_id_map(&mut event_id_map, &partial_match.events);
 
-                let mut match_edges = partial_match.edges;
-                match_edges.sort_by(|x, y| x.input_edge.id.cmp(&y.input_edge.id));
+                let mut match_events = partial_match.events;
+                match_events.sort_by(|x, y| x.input_event.id.cmp(&y.input_event.id));
 
                 let sub_pattern_match = SubPatternMatch {
                     id: partial_match.id,
                     latest_time,
                     earliest_time: partial_match.timestamp,
-                    match_nodes: node_id_map,
-                    edge_id_map,
-                    match_edges,
+                    match_entities: entity_id_map,
+                    event_id_map,
+                    match_events,
                 };
 
                 /// put the sub-pattern match to its corresponding buffer
@@ -332,7 +332,7 @@ where
 
             for buffer_id in 0..self.sub_pattern_buffers.len() {
                 let new_match_buffer = &self.sub_pattern_buffers[buffer_id].new_match_buffer;
-                if !(new_match_buffer.is_empty()) {
+                if !new_match_buffer.is_empty() {
                     let current_time = new_match_buffer.peek().unwrap().0.latest_time;
                     self.join(current_time, buffer_id);
                 }

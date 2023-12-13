@@ -1,9 +1,8 @@
-use crate::match_edge::MatchEdge;
+use crate::match_event::MatchEvent;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use itertools::Itertools;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
-use std::collections::HashMap;
 
 #[cfg(test)]
 mod tests;
@@ -11,49 +10,49 @@ mod tests;
 #[derive(Clone)]
 pub struct SubPatternMatch<'p> {
     pub id: usize,
-    /// The timestamp of the last edge (in "match_edges"), which is also the latest timestamp; indicating "current time".
+    /// The timestamp of the last edge (in "match_events"), which is also the latest timestamp; indicating "current time".
     pub latest_time: u64,
     /// The timestamp of the earliest edge; for determining expiry.
     pub earliest_time: u64,
 
     /// (input node id, pattern node id)
-    /// match_nodes.len() == number of nodes in this sun-pattern match
-    pub match_nodes: Vec<(u64, u64)>,
+    /// match_entities.len() == number of nodes in this sun-pattern match
+    pub match_entities: Vec<(u64, u64)>,
 
-    /// "edge_id_map[matched_id] = input_id"
+    /// "event_id_map[matched_id] = input_id"
     /// The term "matched edge" and "pattern edge" is used interchangeably.
-    /// edge_id_map.len() == number of edges in the "whole pattern"
-    pub edge_id_map: Vec<Option<u64>>,
+    /// event_id_map.len() == number of edges in the "whole pattern"
+    pub event_id_map: Vec<Option<u64>>,
 
     /// sort this by 'input edge id' for uniqueness determination
-    pub match_edges: Vec<MatchEdge<'p>>,
+    pub match_events: Vec<MatchEvent<'p>>,
 }
 
 /// Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
-fn merge_edge_id_map(
-    edge_id_map1: &Vec<Option<u64>>,
-    edge_id_map2: &Vec<Option<u64>>,
+fn merge_event_id_map(
+    event_id_map1: &Vec<Option<u64>>,
+    event_id_map2: &Vec<Option<u64>>,
 ) -> Vec<Option<u64>> {
-    let mut edge_id_map = vec![None; edge_id_map1.len()];
-    for i in 0..edge_id_map1.len() {
-        match edge_id_map1[i] {
-            Some(T) => edge_id_map[i] = Some(T),
-            None => match edge_id_map2[i] {
-                Some(T) => edge_id_map[i] = Some(T),
+    let mut event_id_map = vec![None; event_id_map1.len()];
+    for i in 0..event_id_map1.len() {
+        match event_id_map1[i] {
+            Some(T) => event_id_map[i] = Some(T),
+            None => match event_id_map2[i] {
+                Some(T) => event_id_map[i] = Some(T),
                 None => (),
             },
         }
     }
-    edge_id_map
+    event_id_map
 }
 
-fn check_edge_uniqueness(match_edges: &Vec<MatchEdge>) -> bool {
+fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
     let mut prev_id = u64::MAX;
-    for edge in match_edges {
-        if edge.input_edge.id == prev_id {
+    for edge in match_events {
+        if edge.input_event.id == prev_id {
             return false;
         }
-        prev_id = edge.input_edge.id;
+        prev_id = edge.input_event.id;
     }
     true
 }
@@ -65,14 +64,14 @@ impl<'p> SubPatternMatch<'p> {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        /// merge "match_edges" (WITHOUT checking "edge uniqueness")
-        let match_edges = sub_pattern_buffer.try_merge_match_edges(
-            &sub_pattern_match1.match_edges,
-            &sub_pattern_match2.match_edges,
+        /// merge "match_events" (WITHOUT checking "edge uniqueness")
+        let match_events = sub_pattern_buffer.try_merge_match_events(
+            &sub_pattern_match1.match_events,
+            &sub_pattern_match2.match_events,
         )?;
 
         /// handle "edge uniqueness"
-        if !check_edge_uniqueness(&match_edges) {
+        if !check_edge_uniqueness(&match_events) {
             return None;
         }
 
@@ -84,15 +83,15 @@ impl<'p> SubPatternMatch<'p> {
         }
 
         /// handle "shared node" and "node uniqueness"
-        let mut match_nodes = sub_pattern_buffer.try_merge_nodes(
-            &sub_pattern_match1.match_nodes,
-            &sub_pattern_match1.match_nodes,
+        let mut match_entities = sub_pattern_buffer.try_merge_entities(
+            &sub_pattern_match1.match_entities,
+            &sub_pattern_match1.match_entities,
         )?;
 
-        /// merge "edge_id_map"
-        let edge_id_map = merge_edge_id_map(
-            &sub_pattern_match1.edge_id_map,
-            &sub_pattern_match2.edge_id_map,
+        /// merge "event_id_map"
+        let event_id_map = merge_event_id_map(
+            &sub_pattern_match1.event_id_map,
+            &sub_pattern_match2.event_id_map,
         );
 
         /// clear workspace
@@ -109,9 +108,9 @@ impl<'p> SubPatternMatch<'p> {
                 sub_pattern_match1.earliest_time,
                 sub_pattern_match2.earliest_time,
             ),
-            match_nodes,
-            edge_id_map,
-            match_edges,
+            match_entities,
+            event_id_map,
+            match_events,
         })
     }
 }

@@ -1,6 +1,6 @@
-use crate::input_edge::InputEdge;
-use crate::match_edge::MatchEdge;
-use crate::pattern::Edge as PatternEdge;
+use crate::input_event::InputEvent;
+use crate::match_event::MatchEvent;
+use crate::pattern::Event as PatternEvent;
 use crate::sub_pattern::SubPattern;
 use itertools::Itertools;
 use regex::Error as RegexError;
@@ -19,8 +19,8 @@ pub struct PartialMatch<'p> {
     /// the earliest timestamp
     pub timestamp: u64,
     /// nodes in pattern is matched to nodes of the input ("0" means not matched)
-    pub node_id_map: Vec<u64>,
-    pub edges: Vec<MatchEdge<'p>>,
+    pub entity_id_map: Vec<u64>,
+    pub events: Vec<MatchEvent<'p>>,
 }
 
 /// Represent a small buffer for matching an edge
@@ -28,7 +28,7 @@ struct SubMatcher<'p> {
     /// regex matcher for the pattern signature
     signature: Regex,
     /// corresponding pattern edge
-    pattern_edge: &'p PatternEdge,
+    pattern_edge: &'p PatternEvent,
     /// if this is the last buffer of a subpattern, sub_pattern_id will be the id of that subpattern
     /// , -1 otherwise
     sub_pattern_id: i64,
@@ -37,9 +37,9 @@ struct SubMatcher<'p> {
 }
 
 impl<'p> SubMatcher<'p> {
-    pub fn new(pattern_edge: &'p PatternEdge, use_regex: bool) -> Result<Self, RegexError> {
+    pub fn new(pattern_edge: &'p PatternEvent, use_regex: bool) -> Result<Self, RegexError> {
         // the regex expression should match whole string, so we add ^ and $ to the front and
-        // end of the expression.
+        // object of the expression.
         let match_syntax = if use_regex {
             format!("^{}$", pattern_edge.signature)
         } else {
@@ -55,73 +55,73 @@ impl<'p> SubMatcher<'p> {
             buffer: VecDeque::new(),
         })
     }
-    pub fn match_against(&mut self, input_edges: &[Rc<InputEdge>]) -> Vec<PartialMatch<'p>> {
+    pub fn match_against(&mut self, input_edges: &[Rc<InputEvent>]) -> Vec<PartialMatch<'p>> {
         input_edges
             .iter()
             .filter(|edge| self.signature.is_match(&edge.signature))
             .cartesian_product(self.buffer.iter())
-            .filter_map(|(input_edge, partial_match)| {
-                self.merge(Rc::clone(input_edge), partial_match)
+            .filter_map(|(input_event, partial_match)| {
+                self.merge(Rc::clone(input_event), partial_match)
             })
             .collect()
     }
 
     fn merge(
         &self,
-        input_edge: Rc<InputEdge>,
+        input_event: Rc<InputEvent>,
         partial_match: &PartialMatch<'p>,
     ) -> Option<PartialMatch<'p>> {
-        if self.has_nod_collision(&input_edge, partial_match)
-            || Self::edge_duplicates(&input_edge, partial_match)
+        if self.has_nod_collision(&input_event, partial_match)
+            || Self::edge_duplicates(&input_event, partial_match)
         {
             return None;
         }
 
         // duplicate the partial match and add the input edge into the new partial match
-        let mut node_id_map = partial_match.node_id_map.clone();
-        let mut edges = partial_match.edges.clone();
-        node_id_map[self.pattern_edge.start] = input_edge.start;
-        node_id_map[self.pattern_edge.end] = input_edge.end;
+        let mut entity_id_map = partial_match.entity_id_map.clone();
+        let mut events = partial_match.events.clone();
+        entity_id_map[self.pattern_edge.subject] = input_event.subject;
+        entity_id_map[self.pattern_edge.object] = input_event.object;
 
-        let timestamp = min(input_edge.timestamp, partial_match.timestamp);
-        let match_edge = MatchEdge {
-            input_edge,
+        let timestamp = min(input_event.timestamp, partial_match.timestamp);
+        let match_edge = MatchEvent {
+            input_event,
             matched: self.pattern_edge,
         };
-        edges.push(match_edge);
+        events.push(match_edge);
 
         Some(PartialMatch {
             id: partial_match.id,
             timestamp,
-            node_id_map,
-            edges,
+            entity_id_map,
+            events,
         })
     }
 
     /// Return `true` if the input edge's endpoints do not match the expected id in the partial match.
     ///
-    /// That is, if input node x matches pattern node n0, and the start node of the the input
-    /// edge matches n0 too, then the start node should be x too.
+    /// That is, if input node x matches pattern node n0, and the subject node of the the input
+    /// edge matches n0 too, then the subject node should be x too.
     /// todo: what is "nod"; you mean "node"?
     fn has_nod_collision(
         &self,
-        input_edge: &InputEdge,
+        input_event: &InputEvent,
         partial_match: &PartialMatch<'p>,
     ) -> bool {
-        // the expected id of start/end node, 0 for any
-        let start_match = partial_match.node_id_map[self.pattern_edge.start];
-        let end_match = partial_match.node_id_map[self.pattern_edge.end];
+        // the expected id of subject/object node, 0 for any
+        let start_match = partial_match.entity_id_map[self.pattern_edge.subject];
+        let end_match = partial_match.entity_id_map[self.pattern_edge.object];
 
-        start_match > 0 && start_match != input_edge.start
-            || end_match > 0 && end_match != input_edge.end
+        start_match > 0 && start_match != input_event.subject
+            || end_match > 0 && end_match != input_event.object
     }
 
     /// Return `true` if the id of input edge already exist in the partial match.
-    fn edge_duplicates(input_edge: &InputEdge, partial_match: &PartialMatch<'p>) -> bool {
+    fn edge_duplicates(input_event: &InputEvent, partial_match: &PartialMatch<'p>) -> bool {
         partial_match
-            .edges
+            .events
             .iter()
-            .find(|edge| edge.input_edge.id == input_edge.id)
+            .find(|edge| edge.input_event.id == input_event.id)
             .is_some()
     }
 
@@ -153,19 +153,19 @@ impl<'p, P> CompositionLayer<'p, P> {
         let mut sub_matchers = Vec::new();
         for sub_pattern in decomposition {
             // create sub-matcher for each edge
-            for edge in &sub_pattern.edges {
+            for edge in &sub_pattern.events {
                 sub_matchers.push(SubMatcher::new(edge, use_regex)?);
             }
             // get the first sub-matcher for this sub-pattern
             if let Some(first) = sub_matchers
                 .iter_mut()
-                .nth_back(sub_pattern.edges.len() - 1)
+                .nth_back(sub_pattern.events.len() - 1)
             {
-                // the node_id_map only need to store up to the maximum node id nodes
+                // the entity_id_map only need to store up to the maximum node id nodes
                 let max_node_id = sub_pattern
-                    .edges
+                    .events
                     .iter()
-                    .map(|e| max(e.start, e.end))
+                    .map(|e| max(e.subject, e.object))
                     .max()
                     .unwrap();
                 // Insert an empty partial match that is never expired. All the partial match for
@@ -173,8 +173,8 @@ impl<'p, P> CompositionLayer<'p, P> {
                 first.buffer.push_back(PartialMatch {
                     id: sub_pattern.id,
                     timestamp: u64::MAX,
-                    node_id_map: vec![0; max_node_id + 1],
-                    edges: vec![],
+                    entity_id_map: vec![0; max_node_id + 1],
+                    events: vec![],
                 })
             }
             if let Some(last) = sub_matchers.last_mut() {
@@ -192,7 +192,7 @@ impl<'p, P> CompositionLayer<'p, P> {
 
 impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
-    P: Iterator<Item = Vec<Rc<InputEdge>>>,
+    P: Iterator<Item = Vec<Rc<InputEvent>>>,
 {
     type Item = Vec<PartialMatch<'p>>;
 
@@ -234,37 +234,37 @@ where
 mod tests {
     use super::*;
 
-    fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEdge> {
-        Rc::new(InputEdge {
+    fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEvent> {
+        Rc::new(InputEvent {
             timestamp: 0,
             signature: signature.to_string(),
             id,
-            start: 1,
-            end: 2,
+            subject: 1,
+            object: 2,
         })
     }
 
-    fn input_edge(id: u64, signature: &str, start: u64, end: u64) -> Rc<InputEdge> {
-        Rc::new(InputEdge {
+    fn input_event(id: u64, signature: &str, subject: u64, object: u64) -> Rc<InputEvent> {
+        Rc::new(InputEvent {
             timestamp: 0,
             signature: signature.to_string(),
             id,
-            start,
-            end,
+            subject,
+            object,
         })
     }
     #[test]
     fn test_sub_matcher_no_regex() {
-        let pattern_edge = PatternEdge {
+        let pattern_edge = PatternEvent {
             id: 0,
             signature: "edge*".to_string(),
-            start: 0,
-            end: 1,
+            subject: 0,
+            object: 1,
         };
 
         let sub_pattern = SubPattern {
             id: 0,
-            edges: vec![&pattern_edge],
+            events: vec![&pattern_edge],
         };
 
         let decomposition = &[sub_pattern];
@@ -273,34 +273,34 @@ mod tests {
         matcher.buffer.push_back(PartialMatch {
             id: 0,
             timestamp: u64::MAX,
-            node_id_map: vec![0; 2],
-            edges: vec![],
+            entity_id_map: vec![0; 2],
+            events: vec![],
         });
 
         let input_edges = vec![
             simple_input_edge(1, "edge*"),
             simple_input_edge(2, "edgee"),
             simple_input_edge(3, "edge1"),
-            simple_input_edge(4, "input_edge"),
+            simple_input_edge(4, "input_event"),
         ];
 
         let result = matcher.match_against(&input_edges);
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].edges[0].input_edge.id, 1);
+        assert_eq!(result[0].events[0].input_event.id, 1);
     }
 
     #[test]
     fn test_sub_matcher_regex() {
-        let pattern_edge = PatternEdge {
+        let pattern_edge = PatternEvent {
             id: 0,
             signature: "edge*".to_string(),
-            start: 0,
-            end: 1,
+            subject: 0,
+            object: 1,
         };
 
         let sub_pattern = SubPattern {
             id: 0,
-            edges: vec![&pattern_edge],
+            events: vec![&pattern_edge],
         };
 
         let decomposition = &[sub_pattern];
@@ -309,48 +309,48 @@ mod tests {
         matcher.buffer.push_back(PartialMatch {
             id: 0,
             timestamp: u64::MAX,
-            node_id_map: vec![0; 2],
-            edges: vec![],
+            entity_id_map: vec![0; 2],
+            events: vec![],
         });
 
         let input_edges = vec![
             simple_input_edge(1, "edge*"),
             simple_input_edge(2, "edgee"),
             simple_input_edge(3, "edge1"),
-            simple_input_edge(4, "input_edge"),
+            simple_input_edge(4, "input_event"),
         ];
 
         let result = matcher.match_against(&input_edges);
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].edges[0].input_edge.id, 2);
+        assert_eq!(result[0].events[0].input_event.id, 2);
     }
 
     #[test]
     fn test_composition_layer() {
-        let pattern_edge1 = PatternEdge {
+        let pattern_edge1 = PatternEvent {
             id: 0,
             signature: "edge1".to_string(),
-            start: 0,
-            end: 1,
+            subject: 0,
+            object: 1,
         };
-        let pattern_edge2 = PatternEdge {
+        let pattern_edge2 = PatternEvent {
             id: 1,
             signature: "edge2".to_string(),
-            start: 1,
-            end: 2,
+            subject: 1,
+            object: 2,
         };
 
         let sub_pattern = SubPattern {
             id: 0,
-            edges: vec![&pattern_edge1, &pattern_edge2],
+            events: vec![&pattern_edge1, &pattern_edge2],
         };
         let decomposition = [sub_pattern];
 
         let time_batch = vec![
-            input_edge(2, "edge2", 2, 3),
-            input_edge(3, "foo", 4, 5),
-            input_edge(4, "bar", 6, 7),
-            input_edge(1, "edge1", 1, 2),
+            input_event(2, "edge2", 2, 3),
+            input_event(3, "foo", 4, 5),
+            input_event(4, "bar", 6, 7),
+            input_event(1, "edge1", 1, 2),
         ];
 
         let mut layer =
@@ -361,34 +361,34 @@ mod tests {
 
     #[test]
     fn test_uniqueness() {
-        let pattern_edge1 = PatternEdge {
+        let pattern_edge1 = PatternEvent {
             id: 0,
             signature: "a".to_string(),
-            start: 0,
-            end: 1,
+            subject: 0,
+            object: 1,
         };
-        let pattern_edge2 = PatternEdge {
+        let pattern_edge2 = PatternEvent {
             id: 1,
             signature: "b".to_string(),
-            start: 1,
-            end: 2,
+            subject: 1,
+            object: 2,
         };
-        let pattern_edge3 = PatternEdge {
+        let pattern_edge3 = PatternEvent {
             id: 2,
             signature: "a".to_string(),
-            start: 3,
-            end: 1,
+            subject: 3,
+            object: 1,
         };
 
         let sub_pattern = SubPattern {
             id: 0,
-            edges: vec![&pattern_edge1, &pattern_edge2, &pattern_edge3],
+            events: vec![&pattern_edge1, &pattern_edge2, &pattern_edge3],
         };
         let decomposition = [sub_pattern];
 
         let time_batch = vec![
-            input_edge(1, "a", 1, 2),
-            input_edge(2, "b", 2, 3),
+            input_event(1, "a", 1, 2),
+            input_event(2, "b", 2, 3),
         ];
 
         let mut layer =

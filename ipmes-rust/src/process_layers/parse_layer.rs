@@ -1,5 +1,5 @@
 use std::cmp::Reverse;
-use crate::input_edge::InputEdge;
+use crate::input_event::InputEvent;
 use csv::DeserializeRecordsIter;
 use std::collections::BinaryHeap;
 use std::fs::File;
@@ -12,30 +12,30 @@ struct Record {
     pub timestamp2: f64,
     pub signature: String,
     pub id: u64,
-    pub start: u64,
-    pub end: u64,
+    pub subject: u64,
+    pub object: u64,
 }
 
-fn parse(record: Record) -> (InputEdge, Option<InputEdge>) {
+fn parse(record: Record) -> (InputEvent, Option<InputEvent>) {
     // let record: Record = data;
     let timestamp1: u64 = (record.timestamp1 * 1000.0).round() as u64;
     let timestamp2: u64 = (record.timestamp2 * 1000.0).round() as u64;
 
-    let edge1 = InputEdge {
+    let edge1 = InputEvent {
         timestamp: timestamp1,
         signature: record.signature.clone(),
         id: record.id,
-        start: record.start,
-        end: record.end,
+        subject: record.subject,
+        object: record.object,
     };
 
     if timestamp1 != timestamp2 {
-        let edge2 = InputEdge {
+        let edge2 = InputEvent {
             timestamp: timestamp2,
             signature: record.signature,
             id: record.id,
-            start: record.start,
-            end: record.end,
+            subject: record.subject,
+            object: record.object,
         };
         (edge1, Some(edge2))
     } else {
@@ -46,7 +46,7 @@ fn parse(record: Record) -> (InputEdge, Option<InputEdge>) {
 pub struct ParseLayer<'a> {
     csv_iter: DeserializeRecordsIter<'a, File, Record>,
     // a min heap
-    buffer: BinaryHeap<Reverse<InputEdge>>,
+    buffer: BinaryHeap<Reverse<InputEvent>>,
     boundary_time: u64,
 }
 impl<'a> ParseLayer<'a> {
@@ -77,8 +77,8 @@ impl<'a> ParseLayer<'a> {
         }
     }
 
-    fn get_batch(&mut self) -> Option<Vec<Rc<InputEdge>>> {
-        let mut edges_to_flush: Vec<Rc<InputEdge>> = Vec::new();
+    fn get_batch(&mut self) -> Option<Vec<Rc<InputEvent>>> {
+        let mut edges_to_flush: Vec<Rc<InputEvent>> = Vec::new();
         loop {
             match self.buffer.peek() {
                 Some(edge) if edge.0.timestamp < self.boundary_time => {
@@ -99,7 +99,7 @@ impl<'a> ParseLayer<'a> {
 }
 
 impl Iterator for ParseLayer<'_> {
-    type Item = Vec<Rc<InputEdge>>;
+    type Item = Vec<Rc<InputEvent>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.nothing_to_send() {

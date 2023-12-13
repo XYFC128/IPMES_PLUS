@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::collections::hash_map::DefaultHasher;
 use std::iter::zip;
 use std::cmp::Ordering;
-use crate::match_edge::MatchEdge;
+use crate::match_event::MatchEvent;
 use crate::process_layers::naive_join_layer::entry::Entry;
 
 /// A wrapper to [Entry]. Can be put int a HashSet
@@ -18,16 +18,16 @@ use crate::process_layers::naive_join_layer::entry::Entry;
 pub struct UniqueEntry<'p>(pub Rc<Entry<'p>>);
 
 impl UniqueEntry<'_> {
-    /// Calculate hash of the mapping from pattern edge id to MatchEdge
+    /// Calculate hash of the mapping from pattern edge id to MatchEvent
     ///
     /// Hash the timestamp and id of input edge.
-    pub fn calc_hash(mapping: &[Option<&MatchEdge<'_>>]) -> u64 {
+    pub fn calc_hash(mapping: &[Option<&MatchEvent<'_>>]) -> u64 {
         let mut hasher = DefaultHasher::new();
         let state = &mut hasher;
         for edge in mapping {
             if let Some(match_edge) = edge {
-                match_edge.input_edge.timestamp.hash(state);
-                match_edge.input_edge.id.hash(state);
+                match_edge.input_event.timestamp.hash(state);
+                match_edge.input_event.id.hash(state);
             } else {
                 state.write_u8(0);
             }
@@ -42,15 +42,15 @@ impl PartialEq for UniqueEntry<'_> {
     /// The equality of 2 entries holds when their mapping
     /// from the pattern to input graph are the same.
     ///
-    /// Since `match_edges` in [Entry] are sorted by their id of input edge, 2 entries with same
-    /// mapping will contain at least the same set of [MatchEdge]s, which results in the same order
-    /// in `match_edges`.
+    /// Since `match_events` in [Entry] are sorted by their id of input edge, 2 entries with same
+    /// mapping will contain at least the same set of [MatchEvent]s, which results in the same order
+    /// in `match_events`.
     fn eq(&self, other: &Self) -> bool {
-        if self.0.match_edges.len() != other.0.match_nodes.len() {
+        if self.0.match_events.len() != other.0.match_entities.len() {
             return false;
         }
-        zip(&self.0.match_edges, &other.0.match_edges).all(|(e1, e2)| {
-            e1.matched.id == e2.matched.id && e1.input_edge.timestamp == e2.input_edge.timestamp
+        zip(&self.0.match_events, &other.0.match_events).all(|(e1, e2)| {
+            e1.matched.id == e2.matched.id && e1.input_event.timestamp == e2.input_event.timestamp
         })
     }
 }
