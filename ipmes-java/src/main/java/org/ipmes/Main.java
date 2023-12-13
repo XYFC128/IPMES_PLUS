@@ -74,7 +74,7 @@ public class Main {
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
 
-        // parse data
+        // parse pattern
         Pattern pattern;
         try {
             pattern = PatternParser.parse(patternFile);

@@ -3,32 +3,40 @@ import subprocess
 from subprocess import Popen
 import os
 import sys
+import re
 
 dataset = 'darpa'
 if len(sys.argv) > 1:
     dataset = sys.argv[1]
 
 if dataset == 'darpa':
-    from darpa import graphs, pattern_file
+    from darpa import graphs
+    pattern_filter = '^DP[0-9]+_regex\.json$'
+    window_size = 1000
 else:
-    from spade import graphs, pattern_file
+    from spade import graphs
+    pattern_filter = '^SP[0-9]+_regex\.json$'
+    window_size = 1800
 
 subprocess.run(['mvn', 'compile'], check=True)
 
-if not os.path.exists('../results'):
-    os.mkdir('../results')
+os.makedirs('../results', exist_ok=True)
 
 os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
-for pattern_name, file_prefix in pattern_file:
+pattern_dir = '../data/universal_patterns'
+
+filename_filter = re.compile(pattern_filter)
+for pattern_file in os.listdir(pattern_dir):
+    if not filename_filter.match(pattern_file):
+        continue
+    pattern_name = pattern_file.removesuffix('_regex.json')
     print(f'Running pattern {pattern_name}')
+    pattern_path = os.path.join(pattern_dir, pattern_file)
+
     pdata: list[tuple] = []
     for graph in graphs:
-        if dataset == 'darpa':
-            args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1000 --darpa ../data/darpa_patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
-        else:
-            args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w 1800 ../data/patterns/{file_prefix} ../data/preprocessed/{graph}.csv"']
-        # args = ['bash', '-c', 'time -p -- mvn -q exec:java -Dexec.args="../data/patterns/TTP11 ../data/preprocessed/interval.csv"']
+        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} {pattern_path} ../data/preprocessed/{graph}.csv"']
         print(args)
         out_file = open(f'../results/{pattern_name}_{graph}.out', 'w')
         err_file = open(f'../results/{pattern_name}_{graph}.err', 'w')
