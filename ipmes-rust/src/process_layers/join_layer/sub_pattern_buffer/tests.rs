@@ -30,7 +30,6 @@ fn test_try_merge_nodes1() {
     let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
     assert_eq!(merged, ans);
 }
-use super::*;
 
 #[test]
 /// input node not unique: Fail
@@ -124,8 +123,8 @@ fn test_try_merge_nodes4() {
 #[test]
 /// pattern edge not shared: Fail
 fn test_try_merge_edges1() {
-    let num_edges1 = 2;
-    let num_edges2 = 3;
+    // num_edges1 = 2;
+    // num_edges2 = 3;
 
     let num_edges = 20;
     let tmp_sub_pattern = SubPattern { id: 0, events: vec![] };
@@ -164,8 +163,8 @@ fn test_try_merge_edges1() {
 #[test]
 /// Pass
 fn test_try_merge_edges2() {
-    let num_edges1 = 2;
-    let num_edges2 = 3;
+    // num_edges1 = 2;
+    // num_edges2 = 3;
 
     let num_edges = 20;
     let tmp_sub_pattern = SubPattern { id: 0, events: vec![] };
