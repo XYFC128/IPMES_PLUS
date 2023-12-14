@@ -136,11 +136,11 @@ mod tests {
     use super::*;
     struct TestParser;
     impl PatternParser for TestParser {
-        fn entity_signature(obj: &Value) -> Option<String> {
+        fn entity_signature(_: &Value) -> Option<String> {
             Some(String::from("node"))
         }
 
-        fn event_signature(obj: &Value) -> Option<String> {
+        fn event_signature(_: &Value) -> Option<String> {
             Some(String::from("edge"))
         }
     }
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn test_parsing() {
         let parser = TestParser;
-        let pattern = parser.parse(
+        let _pattern = parser.parse(
             "../data/patterns/TTP11_node.json",
             "../data/patterns/TTP11_edge.json",
             "../data/patterns/TTP11_orels.json",
