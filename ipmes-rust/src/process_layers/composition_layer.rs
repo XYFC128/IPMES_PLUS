@@ -6,7 +6,7 @@ use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
 use std::cmp::{max, min};
-use std::collections::{VecDeque};
+use std::collections::VecDeque;
 use std::rc::Rc;
 use log::warn;
 
@@ -262,13 +262,6 @@ mod tests {
             object: 1,
         };
 
-        let sub_pattern = SubPattern {
-            id: 0,
-            events: vec![&pattern_edge],
-        };
-
-        let decomposition = &[sub_pattern];
-
         let mut matcher = SubMatcher::new(&pattern_edge, false).unwrap();
         matcher.buffer.push_back(PartialMatch {
             id: 0,
@@ -297,13 +290,6 @@ mod tests {
             subject: 0,
             object: 1,
         };
-
-        let sub_pattern = SubPattern {
-            id: 0,
-            events: vec![&pattern_edge],
-        };
-
-        let decomposition = &[sub_pattern];
 
         let mut matcher = SubMatcher::new(&pattern_edge, true).unwrap();
         matcher.buffer.push_back(PartialMatch {

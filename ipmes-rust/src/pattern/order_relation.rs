@@ -117,17 +117,4 @@ mod tests {
             println!("{:?}", neighbor);
         }
     }
-
-    #[test]
-    fn test_calculate_distances() {
-        let ord = OrderRelation::parse("../data/patterns/TTP11_oRels.json")
-            .expect("fail to parse order relation file");
-
-        // ord.distances_table = ord.calculate_distances().unwrap();
-
-        // println!("{:?}", ord.distances_table);
-
-        // println!("{:?}", ord.distances_table.get(&(NodeIndex::new(1), NodeIndex::new(0))).unwrap());
-        // println!("{:?}", ord.graph.edge_indices());
-    }
 }

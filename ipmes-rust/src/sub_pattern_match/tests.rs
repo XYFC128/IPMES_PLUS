@@ -95,7 +95,6 @@ fn test_check_edge_uniqueness_2() {
 
 #[test]
 fn test_merge_edge_id_map_1() {
-    let num_edges = 5;
     let edge_id_map1 = vec![
         None,
         Some(3),
@@ -125,7 +124,6 @@ fn test_merge_edge_id_map_1() {
 
 #[test]
 fn test_merge_edge_id_map_2() {
-    let num_edges = 5;
     let edge_id_map1 = vec![
         None,
         Some(3),
