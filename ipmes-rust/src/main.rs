@@ -61,6 +61,7 @@ fn main() {
     let mut num_result = 0u32;
     for pattern_match in uniqueness_layer {
         info!("Pattern Match: {}", pattern_match);
+        num_result += 1;
     }
     println!("Total number of matches: {num_result}");
     info!("Finished");
