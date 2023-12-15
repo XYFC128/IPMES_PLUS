@@ -18,6 +18,9 @@ pub enum PatternParsingError {
 
     #[error("Pattern format error at line {0} : {1}")]
     FormatError(usize, &'static str),
+
+    #[error("Key not found or the type is unexpected: {0}")]
+    KeyError(&'static str),
 }
 
 fn parse_u64(obj: &Value) -> Result<u64, &'static str> {
@@ -26,7 +29,21 @@ fn parse_u64(obj: &Value) -> Result<u64, &'static str> {
         .parse::<u64>()
         .map_err(|_| "ID is not u64")
 }
-pub trait PatternParser {
+
+fn get_input_files(input_prefix: &str) -> (String, String, String) {
+    let node_file = format!("{}_node.json", input_prefix);
+    let edge_file = format!("{}_edge.json", input_prefix);
+    let orels_file = if let Some(prefix) = input_prefix.strip_suffix("_regex") {
+        format!("{}_oRels.json", prefix)
+    } else {
+        format!("{}_oRels.json", input_prefix)
+    };
+
+    (node_file, edge_file, orels_file)
+}
+
+/// deprecated pattern parser
+pub trait LegacyParser {
     fn entity_signature(obj: &Value) -> Option<String>;
 
     fn event_signature(obj: &Value) -> Option<String>;
@@ -46,7 +63,10 @@ pub trait PatternParser {
             .max()
             .unwrap() + 1;
 
+        let use_regex = edges_file.ends_with("_regex.json");
+
         Ok(Pattern {
+            use_regex,
             events,
             order: OrderRelation::parse(order_relation_file)?,
             num_entities
@@ -134,13 +154,34 @@ pub trait PatternParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_input_file_name_parsing() {
+        assert_eq!(
+            get_input_files("TTP11"),
+            (
+                "TTP11_node.json".to_string(),
+                "TTP11_edge.json".to_string(),
+                "TTP11_oRels.json".to_string()
+            )
+        );
+
+        assert_eq!(
+            get_input_files("TTP11_regex"),
+            (
+                "TTP11_regex_node.json".to_string(),
+                "TTP11_regex_edge.json".to_string(),
+                "TTP11_oRels.json".to_string()
+            )
+        );
+    }
     struct TestParser;
-    impl PatternParser for TestParser {
-        fn entity_signature(obj: &Value) -> Option<String> {
+    impl LegacyParser for TestParser {
+        fn entity_signature(_: &Value) -> Option<String> {
             Some(String::from("node"))
         }
 
-        fn event_signature(obj: &Value) -> Option<String> {
+        fn event_signature(_: &Value) -> Option<String> {
             Some(String::from("edge"))
         }
     }
@@ -148,7 +189,7 @@ mod tests {
     #[test]
     fn test_parsing() {
         let parser = TestParser;
-        let pattern = parser.parse(
+        let _pattern = parser.parse(
             "../data/patterns/TTP11_node.json",
             "../data/patterns/TTP11_edge.json",
             "../data/patterns/TTP11_orels.json",

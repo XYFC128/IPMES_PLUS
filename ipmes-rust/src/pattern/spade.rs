@@ -1,9 +1,9 @@
-use crate::pattern::parser::PatternParser;
+use crate::pattern::parser::LegacyParser;
 use serde_json::Value;
 
 pub struct SpadePatternParser;
 
-impl PatternParser for SpadePatternParser {
+impl LegacyParser for SpadePatternParser {
     fn entity_signature(obj: &Value) -> Option<String> {
         let properties = &obj["properties"];
         let node_type = properties["type"].as_str()?;

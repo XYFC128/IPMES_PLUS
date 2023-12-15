@@ -1,6 +1,5 @@
 use crate::match_event::MatchEvent;
 use crate::process_layers::join_layer::SubPatternBuffer;
-use itertools::Itertools;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
 
@@ -70,31 +69,31 @@ impl<'p> SubPatternMatch<'p> {
             &sub_pattern_match2.match_events,
         )?;
 
-        /// handle "edge uniqueness"
+        // handle "edge uniqueness"
         if !check_edge_uniqueness(&match_events) {
             return None;
         }
 
-        /// check "order relation"
+        // check "order relation"
         if !sub_pattern_buffer.relation.check_order_relation(
             &timestamps,
         ) {
             return None;
         }
 
-        /// handle "shared node" and "node uniqueness"
-        let mut match_entities = sub_pattern_buffer.try_merge_entities(
+        // handle "shared node" and "node uniqueness"
+        let match_entities = sub_pattern_buffer.try_merge_entities(
             &sub_pattern_match1.match_entities,
             &sub_pattern_match1.match_entities,
         )?;
 
-        /// merge "event_id_map"
+        // merge "event_id_map"
         let event_id_map = merge_event_id_map(
             &sub_pattern_match1.event_id_map,
             &sub_pattern_match2.event_id_map,
         );
 
-        /// clear workspace
+        // clear workspace
         sub_pattern_buffer.clear_workspace();
 
         Some(SubPatternMatch {

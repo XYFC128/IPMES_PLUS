@@ -1,9 +1,6 @@
-use clap::{arg, Parser, ValueEnum};
+use clap::{arg, Parser};
 use log::info;
 
-use ipmes_rust::pattern::darpa::DarpaPatternParser;
-use ipmes_rust::pattern::parser::{PatternParser, PatternParsingError};
-use ipmes_rust::pattern::spade::SpadePatternParser;
 use ipmes_rust::pattern::Pattern;
 use ipmes_rust::process_layers::{JoinLayer, ParseLayer, CompositionLayer, UniquenessLayer};
 use ipmes_rust::sub_pattern::decompose;
@@ -12,29 +9,15 @@ use ipmes_rust::sub_pattern::decompose;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// The path prefix of pattern's files, e.g. ./data/patterns/TTP11
-    pattern_prefix: String,
+    /// The path prefix of pattern's files, e.g. ../data/universal_patterns/SP12.json
+    pattern_file: String,
 
     /// The path to the preprocessed data graph
     data_graph: String,
 
-    /// Explicitly use regex matching. Default will automatically depend on the pattern prefix name
-    #[arg(short, long)]
-    regex: bool,
-
-    /// Pattern signature format.
-    #[arg(short = 'F', long, value_enum, default_value_t = PatternFormat::Spade)]
-    pattern_format: PatternFormat,
-
     /// Window size (sec)
     #[arg(short, long, default_value_t = 1800)]
     window_size: u64,
-}
-
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum PatternFormat {
-    Spade,
-    Darpa,
 }
 
 fn main() {
@@ -43,7 +26,7 @@ fn main() {
     info!("Command line arguments: {:?}", args);
     let window_size = args.window_size * 1000;
 
-    let pattern = parse_pattern(&args).expect("Failed to parse pattern");
+    let pattern = Pattern::parse(&args.pattern_file).expect("Failed to parse pattern");
     info!("Pattern Edges: {:#?}", pattern.events);
 
     let decomposition = decompose(&pattern);
@@ -54,7 +37,7 @@ fn main() {
         .from_path(args.data_graph).expect("Failed to open input graph");
     let parse_layer = ParseLayer::new(&mut csv);
     let composition_layer =
-        CompositionLayer::new(parse_layer, &decomposition, args.regex, window_size).unwrap();
+        CompositionLayer::new(parse_layer, &decomposition, pattern.use_regex, window_size).unwrap();
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 
@@ -62,60 +45,8 @@ fn main() {
     for pattern_match in uniqueness_layer {
         num_result += 1u32;
         info!("Pattern Match: {}", pattern_match);
+        num_result += 1;
     }
     println!("Total number of matches: {num_result}");
     info!("Finished");
-}
-
-fn parse_pattern(args: &Args) -> Result<Pattern, PatternParsingError> {
-    let (node_file, edge_file, orels_file) = get_input_files(&args.pattern_prefix);
-
-    match args.pattern_format {
-        PatternFormat::Spade => {
-            let parser = SpadePatternParser;
-            parser.parse(&node_file, &edge_file, &orels_file)
-        }
-        PatternFormat::Darpa => {
-            let parser = DarpaPatternParser;
-            parser.parse(&node_file, &edge_file, &orels_file)
-        }
-    }
-}
-
-fn get_input_files(input_prefix: &str) -> (String, String, String) {
-    let node_file = format!("{}_node.json", input_prefix);
-    let edge_file = format!("{}_edge.json", input_prefix);
-    let orels_file = if let Some(prefix) = input_prefix.strip_suffix("_regex") {
-        format!("{}_oRels.json", prefix)
-    } else {
-        format!("{}_oRels.json", input_prefix)
-    };
-
-    (node_file, edge_file, orels_file)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::get_input_files;
-
-    #[test]
-    fn test_input_file_name_parsing() {
-        assert_eq!(
-            get_input_files("TTP11"),
-            (
-                "TTP11_node.json".to_string(),
-                "TTP11_edge.json".to_string(),
-                "TTP11_oRels.json".to_string()
-            )
-        );
-
-        assert_eq!(
-            get_input_files("TTP11_regex"),
-            (
-                "TTP11_regex_node.json".to_string(),
-                "TTP11_regex_edge.json".to_string(),
-                "TTP11_oRels.json".to_string()
-            )
-        );
-    }
 }

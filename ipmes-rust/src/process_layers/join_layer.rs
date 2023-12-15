@@ -1,4 +1,5 @@
 mod sub_pattern_buffer;
+mod merge_cache;
 
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
@@ -37,7 +38,7 @@ impl<'p, P> JoinLayer<'p, P> {
             sub_pattern_buffer1.id + 1,
             sub_pattern_buffer1.id,
             &sub_patterns[id],
-            sub_pattern_buffer1.max_num_nodes,
+            sub_pattern_buffer1.max_num_entities,
             pattern.events.len(),
         );
         let relations = SubPatternBuffer::generate_relations(
