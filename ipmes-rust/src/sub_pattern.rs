@@ -96,7 +96,7 @@ fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -
 
 #[cfg(test)]
 mod tests {
-    use crate::pattern::parser::PatternParser;
+    use crate::pattern::parser::LegacyParser;
     // use crate::sub_pattern::SubPattern;
     use super::*;
     use crate::pattern::spade::SpadePatternParser;

@@ -1,9 +1,9 @@
-use crate::pattern::parser::PatternParser;
+use crate::pattern::parser::LegacyParser;
 use serde_json::Value;
 
 pub struct DarpaPatternParser;
 
-impl PatternParser for DarpaPatternParser {
+impl LegacyParser for DarpaPatternParser {
     fn entity_signature(obj: &Value) -> Option<String> {
         let properties = &obj["properties"].as_object()?;
 

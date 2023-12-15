@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::Read;
 
 pub struct OrderRelation {
-    graph: Graph<usize, ()>,
+    pub graph: Graph<usize, ()>,
 }
 
 impl OrderRelation {
