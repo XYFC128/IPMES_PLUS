@@ -11,6 +11,7 @@ use petgraph::adj::DefaultIx;
 use petgraph::graph::NodeIndex;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::hash::Hash;
+use log::debug;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{FirstToSecond, SecondToFirst};
 
 #[derive(Clone)]
@@ -65,21 +66,17 @@ impl Relation {
 pub struct SubPatternBuffer<'p> {
     pub id: usize,
     sibling_id: usize,
-    /// List of ids of pattern nodes contained in this sub-pattern.
+    /// IDs of pattern nodes contained in this sub-pattern.
     node_id_list: HashSet<usize>,
-    /// List of ids of pattern events contained in this sub-pattern.
+    /// IDs of pattern events contained in this sub-pattern.
     edge_id_list: HashSet<usize>,
     pub(crate) buffer: BinaryHeap<EarliestFirst<'p>>,
     pub(crate) new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
 
     pub relation: Relation,
     /// number of nodes in the "whole" pattern
-    pub max_num_nodes: usize,
-
-    /// make sure the largest pattern edge id is "pattern.events.len() - 1"
-    pub used_nodes: Vec<bool>,
-    /// '0' means timestamp not recorded
-    pub timestamps: Vec<u64>,
+    pub max_num_entities: usize,
+    pub max_num_events: usize
 }
 
 impl<'p> SubPatternBuffer<'p> {
@@ -87,8 +84,8 @@ impl<'p> SubPatternBuffer<'p> {
         id: usize,
         sibling_id: usize,
         sub_pattern: &SubPattern,
-        max_num_nodes: usize,
-        max_num_edges: usize,
+        max_num_entities: usize,
+        max_num_events: usize,
     ) -> Self {
         let mut node_id_list = HashSet::new();
         let mut edge_id_list = HashSet::new();
@@ -105,9 +102,8 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
-            max_num_nodes,
-            used_nodes: vec![false; max_num_nodes],
-            timestamps: vec![0; max_num_edges]
+            max_num_entities,
+            max_num_events
         }
     }
 
@@ -121,7 +117,7 @@ impl<'p> SubPatternBuffer<'p> {
         let mut shared_entities = vec![false; pattern.num_entities];
         let mut event_orders = Vec::new();
 
-        // identify shared nodes
+        /// identify shared nodes
         for i in 0..pattern.num_entities {
             if sub_pattern_buffer1.node_id_list.contains(&i)
                 && sub_pattern_buffer2.node_id_list.contains(&i)
@@ -172,15 +168,9 @@ impl<'p> SubPatternBuffer<'p> {
             buffer: BinaryHeap::new(),
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
-            max_num_nodes: sub_pattern_buffer1.max_num_nodes,
-            used_nodes: vec![false; sub_pattern_buffer1.max_num_nodes],
-            timestamps: vec![0; sub_pattern_buffer1.timestamps.len()]
+            max_num_entities: sub_pattern_buffer1.max_num_entities,
+            max_num_events: sub_pattern_buffer1.max_num_events
         }
-    }
-
-    pub fn clear_workspace(&mut self) {
-        self.used_nodes.fill(false);
-        self.timestamps.fill(0);
     }
 
     /// "merge match_edge" and "check edge uniqueness"
@@ -194,7 +184,8 @@ impl<'p> SubPatternBuffer<'p> {
         &mut self,
         a: &[MatchEvent<'p>],
         b: &[MatchEvent<'p>],
-    ) -> Option<Vec<MatchEvent<'p>>> {
+    ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
+        let mut timestamps = vec![0u64; self.max_num_events];
         let mut merged = Vec::with_capacity(a.len() + b.len());
 
         let mut p1 = a.iter();
@@ -205,19 +196,19 @@ impl<'p> SubPatternBuffer<'p> {
         while let (Some(edge1), Some(edge2)) = (next1, next2) {
             if edge1.input_event.id < edge2.input_event.id {
                 merged.push(edge1.clone());
-                self.timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                timestamps[edge1.matched.id] = edge1.input_event.timestamp;
                 next1 = p1.next();
             } else if edge1.input_event.id > edge2.input_event.id {
                 merged.push(edge2.clone());
-                self.timestamps[edge2.matched.id] = edge2.input_event.timestamp;
+                timestamps[edge2.matched.id] = edge2.input_event.timestamp;
                 next2 = p2.next();
             } else {
                 if edge1.matched.id != edge2.matched.id {
-                    println!("pattern edge not shared!");
+                    debug!("pattern edge not shared!");
                     return None;
                 }
                 merged.push(edge1.clone());
-                self.timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                timestamps[edge1.matched.id] = edge1.input_event.timestamp;
                 next1 = p1.next();
                 next2 = p2.next();
             }
@@ -229,12 +220,12 @@ impl<'p> SubPatternBuffer<'p> {
         }
 
         while let Some(edge) = next1 {
-            self.timestamps[edge.matched.id] = edge.input_event.timestamp;
+            timestamps[edge.matched.id] = edge.input_event.timestamp;
             merged.push(edge.clone());
             next1 = p1.next();
         }
 
-        Some(merged)
+        Some((merged, timestamps))
     }
 
     /// Try to merge match nodes, and handle "shared node" and "node uniqueness" in the process.
@@ -246,6 +237,7 @@ impl<'p> SubPatternBuffer<'p> {
         a: &[(u64, u64)],
         b: &[(u64, u64)],
     ) -> Option<Vec<(u64, u64)>> {
+        let mut used_nodes = vec![false; self.max_num_entities];
         let mut merged = Vec::with_capacity(a.len() + b.len());
 
         let mut p1 = a.iter();
@@ -253,24 +245,24 @@ impl<'p> SubPatternBuffer<'p> {
         let mut next1 = p1.next();
         let mut next2 = p2.next();
         while let (Some(node1), Some(node2)) = (next1, next2) {
-            if self.used_nodes[node1.1 as usize] || self.used_nodes[node2.1 as usize] {
+            if used_nodes[node1.1 as usize] || used_nodes[node2.1 as usize] {
                 return None;
             }
 
             if node1.0 < node2.0 {
                 merged.push(node1.clone());
-                self.used_nodes[node1.1 as usize] = true;
+                used_nodes[node1.1 as usize] = true;
                 next1 = p1.next();
             } else if node1.0 > node2.0 {
                 merged.push(node2.clone());
-                self.used_nodes[node2.1 as usize] = true;
+                used_nodes[node2.1 as usize] = true;
                 next2 = p2.next();
             } else {
                 if node1.1 != node2.1 {
                     return None;
                 }
                 merged.push(node1.clone());
-                self.used_nodes[node1.1 as usize] = true;
+                used_nodes[node1.1 as usize] = true;
                 next1 = p1.next();
                 next2 = p2.next();
             }
@@ -282,10 +274,10 @@ impl<'p> SubPatternBuffer<'p> {
         }
 
         while let Some(node) = next1 {
-            if self.used_nodes[node.1 as usize] {
+            if used_nodes[node.1 as usize] {
                 return None;
             }
-            self.used_nodes[node.1 as usize] = true;
+            used_nodes[node.1 as usize] = true;
             merged.push(node.clone());
             next1 = p1.next();
         }

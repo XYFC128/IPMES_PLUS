@@ -1,5 +1,6 @@
 use std::collections::{BinaryHeap, HashSet};
 use itertools::Itertools;
+use log::debug;
 use crate::pattern_match::PatternMatch;
 use crate::pattern_match::EarliestFirst;
 
@@ -31,6 +32,7 @@ impl<P> UniquenessLayer<P> {
                 break;
             }
         }
+        debug!("After flushing: {} pattern matches", self.uniqueness_pool.len());
     }
 }
 
@@ -41,12 +43,19 @@ where
     type Item = PatternMatch;
     fn next(&mut self) -> Option<Self::Item> {
         while self.unique_matches.is_empty() {
-            let pattern_match = self.prev_layer.next()?;
-            let latest_time = pattern_match.latest_time;
-            self.flush_expired(latest_time);
-            if !self.uniqueness_pool.contains(&pattern_match) {
-                self.uniqueness_pool.insert(pattern_match.clone());
-                self.pattern_match_sequence.push(EarliestFirst(pattern_match));
+            debug!("no instance available yet");
+            if let Some(pattern_match) = self.prev_layer.next() {
+                let latest_time = pattern_match.latest_time;
+                self.flush_expired(latest_time);
+                if !self.uniqueness_pool.contains(&pattern_match) {
+                    self.uniqueness_pool.insert(pattern_match.clone());
+                    self.pattern_match_sequence.push(EarliestFirst(pattern_match));
+                }
+                debug!("size of uniqueness_pool: {}", self.uniqueness_pool.len());
+            } else {
+                debug!("prev layer no stuff, flush all");
+                self.flush_expired(u64::MAX);
+                break;
             }
         }
         self.unique_matches.pop()
