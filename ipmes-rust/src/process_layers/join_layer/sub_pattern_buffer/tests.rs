@@ -214,7 +214,7 @@ fn test_try_merge_edges2() {
         (12, 0),
     ];
     let ans_match_edge = gen_match_edges(&ans_pattern_edges, &ans_input_edge_data);
-    let match_edge = res.unwrap();
+    let match_edge = res.unwrap().0;
     for i in 0..match_edge.len() {
         if !cmp_match_edge(&match_edge[i], &ans_match_edge[i]) {
             assert!(false);

@@ -1,5 +1,5 @@
 mod sub_pattern_buffer;
-mod merge_cache;
+mod test;
 
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
@@ -17,6 +17,7 @@ use std::hash::Hash;
 use std::mem;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
     pattern: &'p Pattern,

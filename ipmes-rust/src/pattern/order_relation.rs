@@ -7,11 +7,10 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-
+#[derive(Debug)]
 pub struct OrderRelation {
     pub graph: Graph<usize, ()>,
 }
-
 impl OrderRelation {
     /// Returns an iterator over the id of pattern edges that should appear **before** the given pattern
     /// edge.

@@ -20,6 +20,7 @@ pub struct Event {
     pub object: usize,
 }
 
+#[derive(Debug)]
 pub struct Pattern {
     pub use_regex: bool,
     pub events: Vec<Event>,

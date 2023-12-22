@@ -6,7 +6,7 @@ use std::cmp::{max, min};
 #[cfg(test)]
 mod tests;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SubPatternMatch<'p> {
     pub id: usize,
     /// The timestamp of the last edge (in "match_events"), which is also the latest timestamp; indicating "current time".
@@ -93,9 +93,6 @@ impl<'p> SubPatternMatch<'p> {
             &sub_pattern_match2.event_id_map,
         );
 
-        // clear workspace
-        sub_pattern_buffer.clear_workspace();
-
         Some(SubPatternMatch {
             /// 'id' is meaningless here
             id: 0,
@@ -114,7 +111,7 @@ impl<'p> SubPatternMatch<'p> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
 
 impl Eq for EarliestFirst<'_> {}

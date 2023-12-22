@@ -14,13 +14,13 @@ use std::hash::Hash;
 use log::debug;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{FirstToSecond, SecondToFirst};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum TimeOrder {
     FirstToSecond,
     SecondToFirst,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Relation {
     // shared_entities.len() == num_node
     // If node 'i' is shared, shared_entities[i] = true.
@@ -62,7 +62,7 @@ impl Relation {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SubPatternBuffer<'p> {
     pub id: usize,
     sibling_id: usize,
@@ -129,16 +129,16 @@ impl<'p> SubPatternBuffer<'p> {
         // generate order-relation
         for eid1 in &sub_pattern_buffer1.edge_id_list {
             for eid2 in &sub_pattern_buffer2.edge_id_list {
-                let id1 = NodeIndex::<DefaultIx>::new(eid1.clone());
-                let id2 = NodeIndex::<DefaultIx>::new(eid2.clone());
+                let id1 = NodeIndex::<DefaultIx>::new(*eid1);
+                let id2 = NodeIndex::<DefaultIx>::new(*eid2);
                 let distance_1_2 = distances_table.get(&(id1, id2)).unwrap();
                 let distance_2_1 = distances_table.get(&(id2, id1)).unwrap();
 
                 // "2" is "1"'s parent
                 if distance_1_2 == &i32::MAX && distance_2_1 != &i32::MAX {
-                    event_orders.push((eid1.clone(), eid2.clone(), SecondToFirst));
+                    event_orders.push((*eid1, *eid2, SecondToFirst));
                 } else if distance_1_2 != &i32::MAX && distance_2_1 == &i32::MAX {
-                    event_orders.push((eid1.clone(), eid2.clone(), FirstToSecond));
+                    event_orders.push((*eid1, *eid2, FirstToSecond));
                 }
             }
         }
