@@ -22,10 +22,10 @@ enum TimeOrder {
 
 #[derive(Clone, Debug)]
 pub struct Relation {
-    // shared_entities.len() == num_node
-    // If node 'i' is shared, shared_entities[i] = true.
-    // 'i': pattern node id
-    /// "shared_entities" seems useless.
+    /// shared_entities.len() == num_node
+    /// If node 'i' is shared, shared_entities[i] = true.
+    /// 'i': pattern node id
+    /// "shared_entities" seems useless (?)
     /// (The "structure" has guaranteed nodes to be shared properly, when doing "SubPatternMatch::try_merge_nodes()".)
     shared_entities: Vec<bool>,
 
@@ -108,16 +108,15 @@ impl<'p> SubPatternBuffer<'p> {
     }
 
     pub fn generate_relations(
-        // &mut self,
         pattern: &Pattern,
         sub_pattern_buffer1: &SubPatternBuffer,
         sub_pattern_buffer2: &SubPatternBuffer,
-        distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
+        // distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
     ) -> Relation {
         let mut shared_entities = vec![false; pattern.num_entities];
         let mut event_orders = Vec::new();
 
-        /// identify shared nodes
+        // identify shared nodes
         for i in 0..pattern.num_entities {
             if sub_pattern_buffer1.node_id_list.contains(&i)
                 && sub_pattern_buffer2.node_id_list.contains(&i)
@@ -129,15 +128,13 @@ impl<'p> SubPatternBuffer<'p> {
         // generate order-relation
         for eid1 in &sub_pattern_buffer1.edge_id_list {
             for eid2 in &sub_pattern_buffer2.edge_id_list {
-                let id1 = NodeIndex::<DefaultIx>::new(*eid1);
-                let id2 = NodeIndex::<DefaultIx>::new(*eid2);
-                let distance_1_2 = distances_table.get(&(id1, id2)).unwrap();
-                let distance_2_1 = distances_table.get(&(id2, id1)).unwrap();
+                let distance_1_2 = pattern.order.get_distance(eid1, eid2);
+                let distance_2_1 = pattern.order.get_distance(eid2, eid1);
 
                 // "2" is "1"'s parent
-                if distance_1_2 == &i32::MAX && distance_2_1 != &i32::MAX {
+                if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
                     event_orders.push((*eid1, *eid2, SecondToFirst));
-                } else if distance_1_2 != &i32::MAX && distance_2_1 == &i32::MAX {
+                } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
                     event_orders.push((*eid1, *eid2, FirstToSecond));
                 }
             }
@@ -181,7 +178,7 @@ impl<'p> SubPatternBuffer<'p> {
     ///
     /// All pattern events are unique.
     pub fn try_merge_match_events(
-        &mut self,
+        &self,
         a: &[MatchEvent<'p>],
         b: &[MatchEvent<'p>],
     ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
@@ -233,7 +230,7 @@ impl<'p> SubPatternBuffer<'p> {
     ///
     /// a and b are slices over (input node id, pattern node id)
     pub fn try_merge_entities(
-        &mut self,
+        &self,
         a: &[(u64, u64)],
         b: &[(u64, u64)],
     ) -> Option<Vec<(u64, u64)>> {
@@ -250,18 +247,18 @@ impl<'p> SubPatternBuffer<'p> {
             }
 
             if node1.0 < node2.0 {
-                merged.push(node1.clone());
+                merged.push(*node1);
                 used_nodes[node1.1 as usize] = true;
                 next1 = p1.next();
             } else if node1.0 > node2.0 {
-                merged.push(node2.clone());
+                merged.push(*node2);
                 used_nodes[node2.1 as usize] = true;
                 next2 = p2.next();
             } else {
                 if node1.1 != node2.1 {
                     return None;
                 }
-                merged.push(node1.clone());
+                merged.push(*node1);
                 used_nodes[node1.1 as usize] = true;
                 next1 = p1.next();
                 next2 = p2.next();
@@ -278,7 +275,7 @@ impl<'p> SubPatternBuffer<'p> {
                 return None;
             }
             used_nodes[node.1 as usize] = true;
-            merged.push(node.clone());
+            merged.push(*node);
             next1 = p1.next();
         }
 

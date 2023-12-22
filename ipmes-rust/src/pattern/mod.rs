@@ -124,6 +124,6 @@ impl Pattern {
 
         let graph: Graph<usize, ()> = Graph::from_edges(&orel_edges);
 
-        Ok(OrderRelation { graph })
+        Ok(graph.into())
     }
 }

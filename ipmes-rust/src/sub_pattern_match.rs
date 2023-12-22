@@ -59,7 +59,7 @@ fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
 impl<'p> SubPatternMatch<'p> {
     /// todo: check correctness
     pub fn merge_matches(
-        sub_pattern_buffer: &mut SubPatternBuffer<'p>,
+        sub_pattern_buffer: &SubPatternBuffer<'p>,
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {

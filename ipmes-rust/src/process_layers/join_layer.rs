@@ -32,7 +32,7 @@ impl<'p, P> JoinLayer<'p, P> {
         pattern: &'p Pattern,
         sub_patterns: &'p Vec<SubPattern>,
         sub_pattern_buffers: &mut Vec<SubPatternBuffer>,
-        distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
+        // distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
     ) {
         let mut sub_pattern_buffer1 = sub_pattern_buffers.pop().unwrap();
         let mut sub_pattern_buffer2 = SubPatternBuffer::new(
@@ -46,7 +46,7 @@ impl<'p, P> JoinLayer<'p, P> {
             &pattern,
             &sub_pattern_buffer1,
             &sub_pattern_buffer2,
-            &distances_table,
+            // &distances_table,
         );
         sub_pattern_buffer1.relation = relations.clone();
         sub_pattern_buffer2.relation = relations;
@@ -64,7 +64,7 @@ impl<'p, P> JoinLayer<'p, P> {
         sub_patterns: &'p Vec<SubPattern>,
         window_size: u64,
     ) -> Self {
-        let distances_table = pattern.order.calculate_distances().unwrap();
+        // let distances_table = pattern.order.calculate_distances().unwrap();
         let mut sub_pattern_buffers = Vec::with_capacity(2 * sub_patterns.len() - 1);
 
         sub_pattern_buffers.push(SubPatternBuffer::new(
@@ -81,7 +81,7 @@ impl<'p, P> JoinLayer<'p, P> {
                 pattern,
                 sub_patterns,
                 &mut sub_pattern_buffers,
-                &distances_table,
+                // &distances_table,
             );
         }
 
@@ -192,18 +192,22 @@ impl<'p, P> JoinLayer<'p, P> {
         my_id: usize,
         sibling_id: usize,
     ) -> BinaryHeap<EarliestFirst<'p>> {
+        debug!("join with sibling: (my_id, sibling_id) = ({}, {})", my_id, sibling_id);
         let mut matches_to_parent = BinaryHeap::new();
-        let buffer1 = self.sub_pattern_buffers[my_id].new_match_buffer.clone();
-        let buffer2 = self.sub_pattern_buffers[sibling_id].buffer.clone();
+        let buffer1 = &self.sub_pattern_buffers[my_id].new_match_buffer;
+        let buffer2 = &self.sub_pattern_buffers[sibling_id].buffer;
 
-        for sub_pattern_match1 in &buffer1 {
-            for sub_pattern_match2 in &buffer2 {
+        debug!("buffer1 size: {}", buffer1.len());
+        debug!("buffer2 size: {}", buffer1.len());
+
+        for sub_pattern_match1 in buffer1 {
+            for sub_pattern_match2 in buffer2 {
                 debug!(
                     "now try merging {} and {}",
                     sub_pattern_match1.0.id, sub_pattern_match2.0.id
                 );
                 if let Some(merged) = SubPatternMatch::merge_matches(
-                    &mut self.sub_pattern_buffers[my_id],
+                    &self.sub_pattern_buffers[my_id],
                     &sub_pattern_match1.0,
                     &sub_pattern_match2.0,
                 ) {
@@ -274,7 +278,7 @@ fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64
         if node_id == &0u64 {
             continue;
         }
-        entity_id_map.push((node_id.clone(), i as u64));
+        entity_id_map.push((*node_id, i as u64));
     }
 
     entity_id_map.sort();

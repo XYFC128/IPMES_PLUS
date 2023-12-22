@@ -10,6 +10,17 @@ use std::io::Read;
 #[derive(Debug)]
 pub struct OrderRelation {
     pub graph: Graph<usize, ()>,
+    distances_table: HashMap<(NodeIndex, NodeIndex), i32>
+}
+
+impl From<Graph<usize, ()>> for OrderRelation {
+    fn from(value: Graph<usize, ()>) -> Self {
+        let distances_table = floyd_warshall(&value, |_| 1).ok().unwrap();
+        Self {
+            graph: value,
+            distances_table
+        }
+    }
 }
 impl OrderRelation {
     /// Returns an iterator over the id of pattern edges that should appear **before** the given pattern
@@ -56,9 +67,7 @@ impl OrderRelation {
             edges.push((0, root + 1))
         }
 
-        Self {
-            graph: Graph::from_edges(&edges),
-        }
+        Graph::from_edges(&edges).into()
     }
 
     pub fn parse(order_relation_file: &str) -> Result<Self, PatternParsingError> {
@@ -71,10 +80,7 @@ impl OrderRelation {
             PatternParsingError::FormatError(0, "Json format of order relation file is not right."),
         )?;
 
-        Ok(Self {
-            graph: Graph::from_edges(&orel_edges),
-            // distances_table: HashMap::new(),
-        })
+        Ok(Graph::from_edges(&orel_edges).into())
     }
 
     fn parse_json_obj(json_obj: &Value) -> Option<Vec<(u32, u32)>> {
@@ -99,8 +105,15 @@ impl OrderRelation {
         Some(orel_edges)
     }
 
-    pub fn calculate_distances(&self) -> Option<HashMap<(NodeIndex, NodeIndex), i32>> {
+    fn calculate_distances(&self) -> Option<HashMap<(NodeIndex, NodeIndex), i32>> {
         floyd_warshall(&self.graph, |_| 1).ok()
+    }
+
+    /// Return the distance from "eid1" to "eid2" (in DAG).
+    pub fn get_distance(&self, eid1: &usize, eid2: &usize) -> i32 {
+        let id1 = NodeIndex::<DefaultIx>::new(*eid1 + 1);
+        let id2 = NodeIndex::<DefaultIx>::new(*eid2 + 1);
+        *self.distances_table.get(&(id1, id2)).unwrap()
     }
 }
 
