@@ -197,8 +197,9 @@ impl<'p, P> JoinLayer<'p, P> {
         let buffer1 = &self.sub_pattern_buffers[my_id].new_match_buffer;
         let buffer2 = &self.sub_pattern_buffers[sibling_id].buffer;
 
-        debug!("buffer1 size: {}", buffer1.len());
-        debug!("buffer2 size: {}", buffer1.len());
+        debug!("my new_match_buffer size: {}", buffer1.len());
+        debug!("sibling buffer size: {}", buffer2.len());
+        // debug!("{:#?}", buffer2.peek());
 
         for sub_pattern_match1 in buffer1 {
             for sub_pattern_match2 in buffer2 {
@@ -253,7 +254,7 @@ impl<'p, P> JoinLayer<'p, P> {
                 BinaryHeap::new(),
             );
 
-            debug!("new matches size: {}", new_matches.len());
+            // debug!("new matches size: {}", new_matches.len());
 
             self.sub_pattern_buffers[buffer_id]
                 .buffer
@@ -263,8 +264,12 @@ impl<'p, P> JoinLayer<'p, P> {
                 .new_match_buffer
                 .is_empty()
             {
-                debug!("no new match!");
+                debug!("parent buffer no new match! join terminates");
                 break;
+            }
+            else {
+                debug!("{} new matches pushed to parent", self.sub_pattern_buffers[parent_id].new_match_buffer.len());
+                debug!("------------------------");
             }
 
             buffer_id = parent_id;

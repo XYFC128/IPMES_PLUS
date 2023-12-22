@@ -1,0 +1,11 @@
+1637269350.608,1637269350.608,fork#Process::hello.sh#Process::hello.sh,0,0,1
+1637269350.608,1637269350.608,execve#Process::hello.sh#Process::tar,1,1,2
+1637269350.612,1637269350.612,fork#Process::tar#Process::tar,2,2,3
+1637269350.612,1637269350.612,create#Process::tar#Artifact::file::/home/admin/hello.tar.gz,3,3,4
+1637269351.402,1637269351.402,open#Artifact::file::/lib/x86_64-linux-gnu/libnss_files.so.2#Process::tar,4,5,2
+1637269351.406,1637269351.406,open#Artifact::file::/home/admin/ipcon.txt#Process::tar,5,6,2
+1637269351.406,1637269351.414,read#Artifact::unnamed pipe::#Process::gzip,6,7,8
+1637269351.414,1637269351.414,write#Process::tar#Artifact::unnamed pipe::,7,2,9
+1637269351.414,1637269351.414,update#Artifact::file::/home/admin/hello.tar.gz#Artifact::file::/home/admin/hello.tar.gz,8,4,10
+1637269351.414,1637269351.414,write#Process::gzip#Artifact::file::/home/admin/hello.tar.gz,9,8,10
+1637269351.414,1637269351.414,open#Artifact::directory::/home/admin/doc#Process::tar,10,11,2
