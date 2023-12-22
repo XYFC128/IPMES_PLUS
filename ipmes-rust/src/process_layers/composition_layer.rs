@@ -19,6 +19,7 @@ pub struct PartialMatch<'p> {
     /// the earliest timestamp
     pub timestamp: u64,
     /// nodes in pattern is matched to nodes of the input ("0" means not matched)
+    /// entity_id_map[pattern_edge.node_id] = input_event.node_id
     pub entity_id_map: Vec<u64>,
     pub events: Vec<MatchEvent<'p>>,
 }
@@ -71,7 +72,7 @@ impl<'p> SubMatcher<'p> {
         input_event: Rc<InputEvent>,
         partial_match: &PartialMatch<'p>,
     ) -> Option<PartialMatch<'p>> {
-        if self.has_nod_collision(&input_event, partial_match)
+        if self.has_node_collision(&input_event, partial_match)
             || Self::edge_duplicates(&input_event, partial_match)
         {
             return None;
@@ -103,7 +104,7 @@ impl<'p> SubMatcher<'p> {
     /// That is, if input node x matches pattern node n0, and the subject node of the the input
     /// edge matches n0 too, then the subject node should be x too.
     /// todo: what is "nod"; you mean "node"?
-    fn has_nod_collision(
+    fn has_node_collision(
         &self,
         input_event: &InputEvent,
         partial_match: &PartialMatch<'p>,
@@ -112,8 +113,8 @@ impl<'p> SubMatcher<'p> {
         let start_match = partial_match.entity_id_map[self.pattern_edge.subject];
         let end_match = partial_match.entity_id_map[self.pattern_edge.object];
 
-        start_match > 0 && start_match != input_event.subject
-            || end_match > 0 && end_match != input_event.object
+        (start_match > 0 && start_match != input_event.subject)
+            || (end_match > 0 && end_match != input_event.object)
     }
 
     /// Return `true` if the id of input edge already exist in the partial match.

@@ -153,7 +153,7 @@ if __name__ == '__main__':
     ans_folder = '../data/answer'
     data_folder = '../data/preprocessed'
     out_dir = '../data/temp'
-    pattern = 'SP9_regex'
+    pattern = 'SP8_regex'
     data = 'attack'
 
     os.makedirs(out_dir, exist_ok=True)

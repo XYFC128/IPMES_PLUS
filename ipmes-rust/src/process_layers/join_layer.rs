@@ -203,6 +203,7 @@ impl<'p, P> JoinLayer<'p, P> {
 
         for sub_pattern_match1 in buffer1 {
             for sub_pattern_match2 in buffer2 {
+                debug!("***********************************");
                 debug!(
                     "now try merging\n{}: {:?} and\n{}: {:?}",
                     sub_pattern_match1.0.id,
@@ -223,6 +224,7 @@ impl<'p, P> JoinLayer<'p, P> {
                         sub_pattern_match1.0.id, sub_pattern_match2.0.id
                     );
                 }
+                debug!("***********************************");
             }
         }
 
@@ -314,6 +316,7 @@ where
             /// Maybe isolate it to be a function?
             for partial_match in partial_matches {
                 debug!("partial match id: {}", partial_match.id);
+                debug!("partial match {:?}", partial_match);
                 let latest_time = if let Some(edge) = partial_match.events.last() {
                     edge.input_event.timestamp
                 } else {

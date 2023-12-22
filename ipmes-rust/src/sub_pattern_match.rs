@@ -2,6 +2,7 @@ use crate::match_event::MatchEvent;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
+use log::debug;
 
 #[cfg(test)]
 mod tests;
@@ -63,16 +64,22 @@ impl<'p> SubPatternMatch<'p> {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
+        debug!("try merge_match_events...");
+
         // merge "match_events" (WITHOUT checking "edge uniqueness")
         let (match_events, timestamps) = sub_pattern_buffer.try_merge_match_events(
             &sub_pattern_match1.match_events,
             &sub_pattern_match2.match_events,
         )?;
 
+        debug!("edge uniqueness checking...");
+
         // handle "edge uniqueness"
         if !check_edge_uniqueness(&match_events) {
             return None;
         }
+
+        debug!("order relation checking...");
 
         // check "order relation"
         if !sub_pattern_buffer.relation.check_order_relation(
@@ -80,6 +87,8 @@ impl<'p> SubPatternMatch<'p> {
         ) {
             return None;
         }
+
+        debug!("shared node and node uniqueness checking");
 
         // handle "shared node" and "node uniqueness"
         let match_entities = sub_pattern_buffer.try_merge_entities(
