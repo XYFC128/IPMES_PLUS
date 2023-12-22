@@ -239,8 +239,14 @@ impl<'p> SubPatternBuffer<'p> {
 
         let mut p1 = a.iter();
         let mut p2 = b.iter();
+
+        debug!("p1:{:?} p2:{:?}", p1, p2);
+
         let mut next1 = p1.next();
         let mut next2 = p2.next();
+
+        debug!("next1:{:?} next2:{:?}", next1, next2);
+
         while let (Some(node1), Some(node2)) = (next1, next2) {
             if used_nodes[node1.1 as usize] || used_nodes[node2.1 as usize] {
                 return None;

@@ -1,0 +1,10 @@
+351.703,351.703,fork#Process::sudo#Process::sudo,0,0,1
+351.707,351.707,execve#Process::sudo#Process::cp,1,1,2
+351.707,351.707,load#Artifact::file::/usr/bin/cp#Process::cp,2,3,2
+351.807,351.807,open#Artifact::file::/lib/x86_64-linux-gnu/libacl.so.1#Process::cp,3,4,2
+351.863,351.863,create#Process::cp#Artifact::file::/home/admin/shadow,4,2,5
+445.353,445.353,fork#Process::bash#Process::bash,5,6,7
+490.980,490.980,execve#Process::hello.sh#Process::cp,6,8,9
+490.980,490.980,load#Artifact::file::/usr/bin/cp#Process::cp,7,3,9
+490.984,490.984,create#Process::cp#Artifact::file::/home/admin/doc/text.doc,8,9,10
+490.984,490.984,open#Artifact::file::/lib/x86_64-linux-gnu/libdl.so.2#Process::cp,9,11,9
