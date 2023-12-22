@@ -63,8 +63,8 @@ impl<'p> SubPatternMatch<'p> {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        // merge "match_events" (WITHOUT checking "edge uniqueness")
-        let match_events = sub_pattern_buffer.try_merge_match_events(
+        /// merge "match_events" (WITHOUT checking "edge uniqueness")
+        let (match_events, timestamps) = sub_pattern_buffer.try_merge_match_events(
             &sub_pattern_match1.match_events,
             &sub_pattern_match2.match_events,
         )?;
@@ -76,7 +76,7 @@ impl<'p> SubPatternMatch<'p> {
 
         // check "order relation"
         if !sub_pattern_buffer.relation.check_order_relation(
-            &sub_pattern_buffer.timestamps,
+            &timestamps,
         ) {
             return None;
         }

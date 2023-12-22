@@ -1,4 +1,5 @@
 mod sub_pattern_buffer;
+mod merge_cache;
 
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
@@ -9,7 +10,7 @@ use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::composition_layer::PartialMatch;
 use itertools::Itertools;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use petgraph::graph::NodeIndex;
 use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
@@ -21,7 +22,6 @@ pub struct JoinLayer<'p, P> {
     pattern: &'p Pattern,
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     window_size: u64,
-    // full_match: HashSet<PatternMatch>,
     full_match: Vec<PatternMatch>,
 }
 
@@ -38,7 +38,7 @@ impl<'p, P> JoinLayer<'p, P> {
             sub_pattern_buffer1.id + 1,
             sub_pattern_buffer1.id,
             &sub_patterns[id],
-            sub_pattern_buffer1.max_num_nodes,
+            sub_pattern_buffer1.max_num_entities,
             pattern.events.len(),
         );
         let relations = SubPatternBuffer::generate_relations(
@@ -269,7 +269,7 @@ impl<'p, P> JoinLayer<'p, P> {
 
 fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
     for (i, node_id) in node_ids.iter().enumerate() {
-        // "node_id == 0": i-th node is not matched
+        /// "node_id == 0": i-th node is not matched
         if node_id == &0u64 {
             continue;
         }

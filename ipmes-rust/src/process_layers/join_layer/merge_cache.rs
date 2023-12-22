@@ -1,4 +1,4 @@
-use crate::match_edge::MatchEdge;
+use crate::match_event::MatchEvent;
 
 /// Cache the extra space needed during merge process to prevent frequent allocation
 pub struct MergeCache<'p> {
@@ -7,7 +7,7 @@ pub struct MergeCache<'p> {
 
     pub timestamps: Vec<u64>,
 
-    pub merged_edge: Vec<MatchEdge<'p>>,
+    pub merged_edge: Vec<MatchEvent<'p>>,
 
     pub merged_nodes: Vec<(u64, u64)>,
 }
