@@ -283,13 +283,11 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 }
 
-fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<u64>) {
+fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<Option<u64>>) {
     for (i, node_id) in node_ids.iter().enumerate() {
-        /// "node_id == 0": i-th node is not matched
-        if node_id == &0u64 {
-            continue;
+        if let Some(matched_id) = node_id {
+            entity_id_map.push((*matched_id, i as u64));
         }
-        entity_id_map.push((*node_id, i as u64));
     }
 
     entity_id_map.sort();

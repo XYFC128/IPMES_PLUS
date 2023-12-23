@@ -6,6 +6,7 @@ use itertools::Itertools;
 use regex::Error as RegexError;
 use regex::Regex;
 use std::cmp::{max, min};
+use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::rc::Rc;
 use log::warn;
@@ -13,15 +14,37 @@ use log::warn;
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
 pub struct PartialMatch<'p> {
-    // todo: check whether 'id' is properly initialized
     /// the id of the matched sub-pattern
     pub id: usize,
     /// the earliest timestamp
     pub timestamp: u64,
-    /// nodes in pattern is matched to nodes of the input ("0" means not matched)
-    /// entity_id_map[pattern_edge.node_id] = input_event.node_id
-    pub entity_id_map: Vec<u64>,
+    /// Maps the id of entities in the pattern to the id of input entities
+    /// 
+    /// For example, if the input entity `i` match the pattern entity `p`, then
+    /// `entity_id_map[p] = Some(i)`.
+    /// 
+    /// If the pattern entity `p` doesn't match any pattern in this partial match,
+    /// then `entity_id_map[p] = None`.
+    pub entity_id_map: Vec<Option<u64>>,
     pub events: Vec<MatchEvent<'p>>,
+}
+
+impl<'p> PartialMatch<'p> {
+    /// Return `true` if the input entities in the partial match is unique.
+    fn check_entity_uniqueness(&self) -> bool {
+        let mut used = HashSet::new();
+        for entity_match in &self.entity_id_map {
+            if let Some(entity_id) = entity_match {
+                if used.contains(entity_id) {
+                    return false;
+                } else {
+                    used.insert(entity_id);
+                }
+            }
+        }
+        
+        true
+    }
 }
 
 /// Represent a small buffer for matching an edge
@@ -72,8 +95,8 @@ impl<'p> SubMatcher<'p> {
         input_event: Rc<InputEvent>,
         partial_match: &PartialMatch<'p>,
     ) -> Option<PartialMatch<'p>> {
-        if self.has_node_collision(&input_event, partial_match)
-            || Self::edge_duplicates(&input_event, partial_match)
+        if self.has_entity_collision(&input_event, partial_match)
+            || Self::event_duplicates(&input_event, partial_match)
         {
             return None;
         }
@@ -81,8 +104,8 @@ impl<'p> SubMatcher<'p> {
         // duplicate the partial match and add the input edge into the new partial match
         let mut entity_id_map = partial_match.entity_id_map.clone();
         let mut events = partial_match.events.clone();
-        entity_id_map[self.pattern_edge.subject] = input_event.subject;
-        entity_id_map[self.pattern_edge.object] = input_event.object;
+        entity_id_map[self.pattern_edge.subject] = Some(input_event.subject);
+        entity_id_map[self.pattern_edge.object] = Some(input_event.object);
 
         let timestamp = min(input_event.timestamp, partial_match.timestamp);
         let match_edge = MatchEvent {
@@ -99,26 +122,33 @@ impl<'p> SubMatcher<'p> {
         })
     }
 
-    /// Return `true` if the input edge's endpoints do not match the expected id in the partial match.
+    /// Return `true` if the input event's entities **do not match** the expected id in the partial match.
     ///
-    /// That is, if input node x matches pattern node n0, and the subject node of the the input
-    /// edge matches n0 too, then the subject node should be x too.
-    /// todo: what is "nod"; you mean "node"?
-    fn has_node_collision(
+    /// That is, if the input event's subject (id = `x`) matches pattern entity `n0`, and `n0` in 
+    /// this partial match matches `y`, then `x` must equals to `y` for this input event to be merged
+    /// into the partial match.
+    fn has_entity_collision(
         &self,
         input_event: &InputEvent,
         partial_match: &PartialMatch<'p>,
-    ) -> bool {
-        // the expected id of subject/object node, 0 for any
-        let start_match = partial_match.entity_id_map[self.pattern_edge.subject];
-        let end_match = partial_match.entity_id_map[self.pattern_edge.object];
+    ) -> bool {        
+        if let Some(subject_match) = partial_match.entity_id_map[self.pattern_edge.subject] {
+            if subject_match != input_event.subject {
+                return true;
+            }
+        }
 
-        (start_match > 0 && start_match != input_event.subject)
-            || (end_match > 0 && end_match != input_event.object)
+        if let Some(object_match) = partial_match.entity_id_map[self.pattern_edge.object] {
+            if object_match != input_event.object {
+                return true;
+            }
+        }
+        
+        false
     }
 
-    /// Return `true` if the id of input edge already exist in the partial match.
-    fn edge_duplicates(input_event: &InputEvent, partial_match: &PartialMatch<'p>) -> bool {
+    /// Return `true` if the id of the input event already exist in the partial match.
+    fn event_duplicates(input_event: &InputEvent, partial_match: &PartialMatch<'p>) -> bool {
         partial_match
             .events
             .iter()
@@ -174,7 +204,7 @@ impl<'p, P> CompositionLayer<'p, P> {
                 first.buffer.push_back(PartialMatch {
                     id: sub_pattern.id,
                     timestamp: u64::MAX,
-                    entity_id_map: vec![0; max_node_id + 1],
+                    entity_id_map: vec![None; max_node_id + 1],
                     events: vec![],
                 })
             }
@@ -218,7 +248,9 @@ where
                 if matcher.sub_pattern_id != -1 {
                     // this is the last buffer of a subpattern
                     results.extend(
-                        cur_result.into_iter()
+                        cur_result
+                        .into_iter()
+                        .filter(|partial_match| partial_match.check_entity_uniqueness())
                     );
                     prev_result = Vec::new();
                 } else {
@@ -267,7 +299,7 @@ mod tests {
         matcher.buffer.push_back(PartialMatch {
             id: 0,
             timestamp: u64::MAX,
-            entity_id_map: vec![0; 2],
+            entity_id_map: vec![None; 2],
             events: vec![],
         });
 
@@ -296,7 +328,7 @@ mod tests {
         matcher.buffer.push_back(PartialMatch {
             id: 0,
             timestamp: u64::MAX,
-            entity_id_map: vec![0; 2],
+            entity_id_map: vec![None; 2],
             events: vec![],
         });
 
@@ -346,8 +378,10 @@ mod tests {
         assert_eq!(result.len(), 1);
     }
 
+    /// In this testcase, the pattern event 1 and 3 matches the same input edge 1,
+    /// but (1, 2, 1) is not a valid match state, since the input edge 1 is duplicated.
     #[test]
-    fn test_uniqueness() {
+    fn test_event_uniqueness() {
         let pattern_edge1 = PatternEvent {
             id: 0,
             signature: "a".to_string(),
@@ -376,6 +410,37 @@ mod tests {
         let time_batch = vec![
             input_event(1, "a", 1, 2),
             input_event(2, "b", 2, 3),
+        ];
+
+        let mut layer =
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
+        assert!(layer.next().is_none());
+    }
+
+    #[test]
+    fn test_entity_uniqueness() {
+        let pattern_event1 = PatternEvent {
+            id: 0,
+            signature: "a".to_string(),
+            subject: 0,
+            object: 1,
+        };
+        let pattern_event2 = PatternEvent {
+            id: 1,
+            signature: "b".to_string(),
+            subject: 1,
+            object: 2,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            events: vec![&pattern_event1, &pattern_event2],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            input_event(1, "a", 1, 2),
+            input_event(2, "b", 2, 1), // entity ID duplicated
         ];
 
         let mut layer =
