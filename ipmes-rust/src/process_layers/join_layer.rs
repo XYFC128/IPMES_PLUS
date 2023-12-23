@@ -9,11 +9,8 @@ pub use sub_pattern_buffer::SubPatternBuffer;
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::composition_layer::PartialMatch;
-use itertools::Itertools;
-use log::{debug, info, warn};
-use petgraph::graph::NodeIndex;
-use std::collections::{BinaryHeap, HashMap};
-use std::hash::Hash;
+use log::{debug, warn};
+use std::collections::BinaryHeap;
 use std::mem;
 use std::rc::Rc;
 
@@ -134,7 +131,7 @@ impl<'p, P> JoinLayer<'p, P> {
             &mut self.sub_pattern_buffers[root_id].new_match_buffer,
         ));
 
-        /// for testing
+        // for testing
         assert!(self.sub_pattern_buffers[root_id].buffer.is_empty());
         assert!(self.sub_pattern_buffers[root_id]
             .new_match_buffer
@@ -192,7 +189,10 @@ impl<'p, P> JoinLayer<'p, P> {
         my_id: usize,
         sibling_id: usize,
     ) -> BinaryHeap<EarliestFirst<'p>> {
-        debug!("join with sibling: (my_id, sibling_id) = ({}, {})", my_id, sibling_id);
+        debug!(
+            "join with sibling: (my_id, sibling_id) = ({}, {})",
+            my_id, sibling_id
+        );
         let mut matches_to_parent = BinaryHeap::new();
         let buffer1 = &self.sub_pattern_buffers[my_id].new_match_buffer;
         let buffer2 = &self.sub_pattern_buffers[sibling_id].buffer;
@@ -236,13 +236,13 @@ impl<'p, P> JoinLayer<'p, P> {
         loop {
             debug!("buffer id: {}", buffer_id);
 
-            /// root reached
+            // root reached
             if buffer_id == self.get_root_buffer_id() {
                 self.add_to_answer();
                 break;
             }
 
-            /// Clear only sibling buffer, since we can clear current buffer when needed (deferred).
+            // Clear only sibling buffer, since we can clear current buffer when needed (deferred).
             self.clear_expired(current_time, self.get_sibling_id(buffer_id));
 
             let joined = self.join_with_sibling(buffer_id, self.get_sibling_id(buffer_id));
@@ -254,7 +254,7 @@ impl<'p, P> JoinLayer<'p, P> {
                 .new_match_buffer
                 .extend(joined);
 
-            /// move new matches to buffer
+            // move new matches to buffer
             let new_matches = mem::replace(
                 &mut self.sub_pattern_buffers[buffer_id].new_match_buffer,
                 BinaryHeap::new(),
@@ -272,9 +272,11 @@ impl<'p, P> JoinLayer<'p, P> {
             {
                 debug!("parent buffer no new match! join terminates");
                 break;
-            }
-            else {
-                debug!("{} new matches pushed to parent", self.sub_pattern_buffers[parent_id].new_match_buffer.len());
+            } else {
+                debug!(
+                    "{} new matches pushed to parent",
+                    self.sub_pattern_buffers[parent_id].new_match_buffer.len()
+                );
                 debug!("------------------------");
             }
 
@@ -310,8 +312,8 @@ where
         while self.full_match.is_empty() {
             let partial_matches = self.prev_layer.next()?;
 
-            /// Convert PartialMatch to SubPatternMatch
-            /// Maybe isolate it to be a function?
+            // Convert PartialMatch to SubPatternMatch
+            // Maybe isolate it to be a function?
             for partial_match in partial_matches {
                 debug!("partial match id: {}", partial_match.id);
                 debug!("partial match {:?}", partial_match);
@@ -339,7 +341,7 @@ where
                     match_events,
                 };
 
-                /// put the sub-pattern match to its corresponding buffer
+                // put the sub-pattern match to its corresponding buffer
                 self.sub_pattern_buffers[Self::get_buffer_id(sub_pattern_match.id)]
                     .new_match_buffer
                     .push(EarliestFirst(sub_pattern_match));

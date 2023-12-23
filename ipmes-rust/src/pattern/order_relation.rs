@@ -105,10 +105,6 @@ impl OrderRelation {
         Some(orel_edges)
     }
 
-    fn calculate_distances(&self) -> Option<HashMap<(NodeIndex, NodeIndex), i32>> {
-        floyd_warshall(&self.graph, |_| 1).ok()
-    }
-
     /// Return the distance from "eid1" to "eid2" (in DAG).
     pub fn get_distance(&self, eid1: &usize, eid2: &usize) -> i32 {
         let id1 = NodeIndex::<DefaultIx>::new(*eid1 + 1);

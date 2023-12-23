@@ -36,9 +36,9 @@ fn merge_event_id_map(
     let mut event_id_map = vec![None; event_id_map1.len()];
     for i in 0..event_id_map1.len() {
         match event_id_map1[i] {
-            Some(T) => event_id_map[i] = Some(T),
+            Some(t) => event_id_map[i] = Some(t),
             None => match event_id_map2[i] {
-                Some(T) => event_id_map[i] = Some(T),
+                Some(t) => event_id_map[i] = Some(t),
                 None => (),
             },
         }
@@ -103,7 +103,7 @@ impl<'p> SubPatternMatch<'p> {
         );
 
         Some(SubPatternMatch {
-            /// 'id' is meaningless here
+            // 'id' is meaningless here
             id: 0,
             latest_time: max(
                 sub_pattern_match1.latest_time,

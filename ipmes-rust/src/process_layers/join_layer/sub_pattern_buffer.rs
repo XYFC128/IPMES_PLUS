@@ -6,13 +6,11 @@ use std::cmp::max;
 
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
-use itertools::Itertools;
-use petgraph::adj::DefaultIx;
-use petgraph::graph::NodeIndex;
-use std::collections::{BinaryHeap, HashMap, HashSet};
-use std::hash::Hash;
+use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
+    FirstToSecond, SecondToFirst,
+};
 use log::debug;
-use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{FirstToSecond, SecondToFirst};
+use std::collections::{BinaryHeap, HashSet};
 
 #[derive(Clone, Debug)]
 enum TimeOrder {
@@ -43,17 +41,12 @@ impl Relation {
         }
     }
 
-    pub fn check_order_relation(
-        &self,
-        timestamps: &Vec<u64>,
-    ) -> bool {
+    pub fn check_order_relation(&self, timestamps: &Vec<u64>) -> bool {
         self.event_orders
             .iter()
-            .all(|(pattern_id1, pattern_id2, time_order)| {
-                match time_order {
-                    FirstToSecond => timestamps[*pattern_id1] <= timestamps[*pattern_id2],
-                    SecondToFirst => timestamps[*pattern_id1] >= timestamps[*pattern_id2],
-                }
+            .all(|(pattern_id1, pattern_id2, time_order)| match time_order {
+                FirstToSecond => timestamps[*pattern_id1] <= timestamps[*pattern_id2],
+                SecondToFirst => timestamps[*pattern_id1] >= timestamps[*pattern_id2],
             })
     }
 
@@ -76,7 +69,7 @@ pub struct SubPatternBuffer<'p> {
     pub relation: Relation,
     /// number of nodes in the "whole" pattern
     pub max_num_entities: usize,
-    pub max_num_events: usize
+    pub max_num_events: usize,
 }
 
 impl<'p> SubPatternBuffer<'p> {
@@ -103,7 +96,7 @@ impl<'p> SubPatternBuffer<'p> {
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
             max_num_entities,
-            max_num_events
+            max_num_events,
         }
     }
 
@@ -166,7 +159,7 @@ impl<'p> SubPatternBuffer<'p> {
             new_match_buffer: BinaryHeap::new(),
             relation: Relation::new(),
             max_num_entities: sub_pattern_buffer1.max_num_entities,
-            max_num_events: sub_pattern_buffer1.max_num_events
+            max_num_events: sub_pattern_buffer1.max_num_events,
         }
     }
 

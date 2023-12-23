@@ -1,8 +1,4 @@
-use std::arch::x86_64::_subborrow_u32;
-use itertools::join;
 use super::*;
-use crate::pattern::parser::LegacyParser;
-use crate::pattern::spade::SpadePatternParser;
 use crate::sub_pattern::decompose;
 
 // #[test]

@@ -30,7 +30,7 @@ fn parse_u64(obj: &Value) -> Result<u64, &'static str> {
         .map_err(|_| "ID is not u64")
 }
 
-fn get_input_files(input_prefix: &str) -> (String, String, String) {
+pub fn get_input_files(input_prefix: &str) -> (String, String, String) {
     let node_file = format!("{}_node.json", input_prefix);
     let edge_file = format!("{}_edge.json", input_prefix);
     let orels_file = if let Some(prefix) = input_prefix.strip_suffix("_regex") {

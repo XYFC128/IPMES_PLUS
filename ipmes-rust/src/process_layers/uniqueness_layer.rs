@@ -1,5 +1,4 @@
 use std::collections::{BinaryHeap, HashSet};
-use itertools::Itertools;
 use log::debug;
 use crate::pattern_match::PatternMatch;
 use crate::pattern_match::EarliestFirst;

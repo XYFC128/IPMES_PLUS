@@ -3,13 +3,13 @@ use crate::match_event::MatchEvent;
 use crate::pattern::Event as PatternEvent;
 use crate::sub_pattern::SubPattern;
 use itertools::Itertools;
+use log::warn;
 use regex::Error as RegexError;
 use regex::Regex;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::rc::Rc;
-use log::warn;
 
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
@@ -19,10 +19,10 @@ pub struct PartialMatch<'p> {
     /// the earliest timestamp
     pub timestamp: u64,
     /// Maps the id of entities in the pattern to the id of input entities
-    /// 
+    ///
     /// For example, if the input entity `i` match the pattern entity `p`, then
     /// `entity_id_map[p] = Some(i)`.
-    /// 
+    ///
     /// If the pattern entity `p` doesn't match any pattern in this partial match,
     /// then `entity_id_map[p] = None`.
     pub entity_id_map: Vec<Option<u64>>,
@@ -42,7 +42,7 @@ impl<'p> PartialMatch<'p> {
                 }
             }
         }
-        
+
         true
     }
 }
@@ -124,14 +124,14 @@ impl<'p> SubMatcher<'p> {
 
     /// Return `true` if the input event's entities **do not match** the expected id in the partial match.
     ///
-    /// That is, if the input event's subject (id = `x`) matches pattern entity `n0`, and `n0` in 
+    /// That is, if the input event's subject (id = `x`) matches pattern entity `n0`, and `n0` in
     /// this partial match matches `y`, then `x` must equals to `y` for this input event to be merged
     /// into the partial match.
     fn has_entity_collision(
         &self,
         input_event: &InputEvent,
         partial_match: &PartialMatch<'p>,
-    ) -> bool {        
+    ) -> bool {
         if let Some(subject_match) = partial_match.entity_id_map[self.pattern_edge.subject] {
             if subject_match != input_event.subject {
                 return true;
@@ -143,7 +143,7 @@ impl<'p> SubMatcher<'p> {
                 return true;
             }
         }
-        
+
         false
     }
 
@@ -249,8 +249,8 @@ where
                     // this is the last buffer of a subpattern
                     results.extend(
                         cur_result
-                        .into_iter()
-                        .filter(|partial_match| partial_match.check_entity_uniqueness())
+                            .into_iter()
+                            .filter(|partial_match| partial_match.check_entity_uniqueness()),
                     );
                     prev_result = Vec::new();
                 } else {
@@ -373,7 +373,8 @@ mod tests {
         ];
 
         let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX).unwrap();
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX)
+                .unwrap();
         let result = layer.next().unwrap();
         assert_eq!(result.len(), 1);
     }
@@ -407,13 +408,11 @@ mod tests {
         };
         let decomposition = [sub_pattern];
 
-        let time_batch = vec![
-            input_event(1, "a", 1, 2),
-            input_event(2, "b", 2, 3),
-        ];
+        let time_batch = vec![input_event(1, "a", 1, 2), input_event(2, "b", 2, 3)];
 
         let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX)
+                .unwrap();
         assert!(layer.next().is_none());
     }
 
@@ -444,7 +443,8 @@ mod tests {
         ];
 
         let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX).unwrap();
+            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX)
+                .unwrap();
         assert!(layer.next().is_none());
     }
 }
