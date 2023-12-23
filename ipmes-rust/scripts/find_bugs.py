@@ -182,7 +182,10 @@ if __name__ == '__main__':
     
     if len(false_positive) > 0:
         ids = false_positive[0].split(',')
-        gen_wrong_answer(input_events, ids, os.path.join(out_dir, f'expect_no_{pattern}.csv'), 0)
+        out_graph = os.path.join(out_dir, f'expect_no_{pattern}.csv')
+        gen_wrong_answer(input_events, ids, out_graph, 0)
     else:
         ids = true_negative[0].split(',')
-        gen_wrong_answer(input_events, ids, os.path.join(out_dir, f'expect_{1}_{pattern}.csv'), 0)
+        out_graph = os.path.join(out_dir, f'expect_{pattern}.csv')
+        gen_wrong_answer(input_events, ids, out_graph, 1)
+    print('Use the command `{}` to run on the generated graph'.format(' '.join(run_args[:-1] + [out_graph])))
