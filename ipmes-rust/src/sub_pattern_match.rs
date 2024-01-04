@@ -4,28 +4,33 @@ use std::cmp::Ordering;
 use std::cmp::{max, min};
 use log::debug;
 
+/// Matches of sub-patterns.
 #[derive(Clone, Debug)]
 pub struct SubPatternMatch<'p> {
+    /// The id of the matched sub-pattern.
     pub id: usize,
-    /// The timestamp of the last edge (in "match_events"), which is also the latest timestamp; indicating "current time".
+    /// The timestamp of the last event (in `match_events`), which is also the latest timestamp; indicating "current time".
     pub latest_time: u64,
-    /// The timestamp of the earliest edge; for determining expiry.
+    /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
 
-    /// (input node id, pattern node id)
-    /// match_entities.len() == number of nodes in this sun-pattern match
+    /// `(input entity id, pattern entity id)`.
+    /// 
+    /// `match_entities.len()` == number of entities in this sub-pattern match.
     pub match_entities: Vec<(u64, u64)>,
 
-    /// "event_id_map[matched_id] = input_id"
-    /// The term "matched edge" and "pattern edge" is used interchangeably.
-    /// event_id_map.len() == number of edges in the "whole pattern"
+    /// `event_id_map[matched_id] = input_id`
+    /// 
+    /// `event_id_map.len()` == number of event in the "whole pattern".
+    /// 
+    /// > Note: The terms **matched event** and pattern event are used interchangeably.
     pub event_id_map: Vec<Option<u64>>,
 
-    /// sort this by 'input edge id' for uniqueness determination
+    /// This is sorted by `input_event.id` for event uniqueness determination.
     pub match_events: Vec<MatchEvent<'p>>,
 }
 
-/// Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
+/// > Note: Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
 fn merge_event_id_map(
     event_id_map1: &Vec<Option<u64>>,
     event_id_map2: &Vec<Option<u64>>,
@@ -55,7 +60,7 @@ fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
 }
 
 impl<'p> SubPatternMatch<'p> {
-    /// todo: check correctness
+    // todo: check correctness
     pub fn merge_matches(
         sub_pattern_buffer: &SubPatternBuffer<'p>,
         sub_pattern_match1: &Self,
@@ -65,6 +70,7 @@ impl<'p> SubPatternMatch<'p> {
 
         // merge "match_events" (WITHOUT checking "edge uniqueness")
         let (match_events, timestamps) = sub_pattern_buffer.try_merge_match_events(
+            
             &sub_pattern_match1.match_events,
             &sub_pattern_match2.match_events,
         )?;
@@ -117,6 +123,9 @@ impl<'p> SubPatternMatch<'p> {
     }
 }
 
+/// Helper structure that implements `PartialEq`, `Ord`, `PartialOrd` traits for `SubPatternMatch`.
+/// 
+/// *Earliest* refers to `SubPatternMatch.earliest_time`.
 #[derive(Clone, Debug)]
 pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
 

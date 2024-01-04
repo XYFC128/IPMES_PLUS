@@ -1,8 +1,9 @@
 use crate::pattern::{Event, Pattern};
 
+/// Decomposed sub-pattern of a behavioral pattern
 #[derive(Debug)]
 pub struct SubPattern<'a> {
-    // sub-pattern id
+    /// sub-pattern id, given after decomposition
     pub id: usize,
     pub events: Vec<&'a Event>,
 }
@@ -10,6 +11,7 @@ pub struct SubPattern<'a> {
 impl<'a> SubPattern<'a> {}
 
 // maybe we can set a maximum sub-pattern size
+/// Decompose the input behavioral pattern into disjoint sub-patterns.
 pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
     let mut parents: Vec<&Event> = Vec::new();
@@ -25,6 +27,7 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     selected
 }
 
+/// A DFS search that enumerates all possible sub-patterns.
 fn generate_sub_patterns<'a>(
     pattern: &'a Pattern,
     edge: &'a Event,
@@ -46,6 +49,7 @@ fn generate_sub_patterns<'a>(
     parents.pop();
 }
 
+/// Chekc whether two events have any shared entity (node).
 fn has_shared_node(edge: &Event, parents: &Vec<&Event>) -> bool {
     if parents.is_empty() {
         return true;
@@ -65,6 +69,7 @@ fn has_shared_node(edge: &Event, parents: &Vec<&Event>) -> bool {
     false
 }
 
+/// Select (heuristically) valid ones from all sub-patterns.
 fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> Vec<SubPattern> {
     // sort in decreasing size
     sub_patterns.sort_by(|x, y| y.events.len().cmp(&x.events.len()));
@@ -85,6 +90,7 @@ fn select_sub_patterns(num_edges: usize, mut sub_patterns: Vec<SubPattern>) -> V
     selected_sub_patterns
 }
 
+/// Check whether an event (edge) is already selected.
 fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -> bool {
     for edge in &sub_pattern.events {
         if is_edge_selected[edge.id] {

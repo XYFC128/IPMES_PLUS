@@ -13,12 +13,18 @@ use std::collections::BinaryHeap;
 use std::mem;
 use std::rc::Rc;
 
+/// The layer that joins sub-pattern matches, into pattern matches.
 #[derive(Debug)]
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
+    /// The behavioral pattern.
     pattern: &'p Pattern,
+    /// Binary-tree-structured buffers that store sub-pattern matches. 
+    /// A sub-pattern match in a parent node is joined from sub-patterns in its two children buffers.
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
+    /// See `clear_expired()`.
     window_size: u64,
+    /// Complete pattern matches.
     full_match: Vec<PatternMatch>,
 }
 

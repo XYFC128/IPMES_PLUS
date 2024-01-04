@@ -1,11 +1,16 @@
 use std::cmp::Ordering;
 
+/// Input event, which is an arc of the provenance graph.
 #[derive(Eq, Debug, Clone)]
 pub struct InputEvent {
+    /// Records when this event occurs.
     pub timestamp: u64,
+    /// The labeling of this event.
     pub signature: String,
     pub id: u64,
+    /// The node (entity) where this arc is from.
     pub subject: u64,
+    /// The node (entity) where this arc goes to.
     pub object: u64,
 }
 

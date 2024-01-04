@@ -3,11 +3,16 @@ use log::debug;
 use crate::pattern_match::PatternMatch;
 use crate::pattern_match::EarliestFirst;
 
+/// The layer that handles pattern match uniqueness.
 pub struct UniquenessLayer<P> {
     prev_layer: P,
+    /// See `flush_expired()`.
     window_size: u64,
+    /// A priority queue of pattern matches, where the earliest pattern match is at the top of the queue.
     pattern_match_sequence: BinaryHeap<EarliestFirst>,
+    /// A pool which is used to maintain the uniqueness of pattern matches.
     uniqueness_pool: HashSet<PatternMatch>,
+    /// Unique pattern matches which are ready for the next layer.
     unique_matches: Vec<PatternMatch>
 }
 
@@ -21,6 +26,7 @@ impl<P> UniquenessLayer<P> {
             unique_matches: Vec::new()
         }
     }
+    /// Flush expired pattern matches.
     fn flush_expired(&mut self, latest_time: u64) {
         while let Some(pattern_match) = self.pattern_match_sequence.peek() {
             if latest_time.saturating_sub(self.window_size) > pattern_match.0.earliest_time {

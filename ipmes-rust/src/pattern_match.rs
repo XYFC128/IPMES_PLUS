@@ -10,10 +10,12 @@ use std::rc::Rc;
 /// Complete Pattern Match
 #[derive(Clone, Debug)]
 pub struct PatternMatch {
-    /// Matched edges of this pattern. i-th element is the input edge that matches pattern edge i
+    /// Matched edges of this pattern. `match_events[i]` is the input edge that matches pattern edge `i`.
     pub matched_events: Vec<Rc<InputEvent>>,
-    pub earliest_time: u64,
+    /// The timestamp of the last event (in `matched_events`), which is also the latest timestamp; indicating "current time".
     pub latest_time: u64,
+    /// The timestamp of the earliest event; for determining expiry of this match.
+    pub earliest_time: u64,
 }
 
 impl fmt::Display for PatternMatch {
@@ -42,6 +44,9 @@ impl Hash for PatternMatch {
     }
 }
 
+/// Helper structure that implements `PartialEq`, `Ord`, `PartialOrd` traits for `PatternMatch`.
+/// 
+/// *Earliest* refers to `PatternMatch.earliest_time`.
 #[derive(Clone)]
 pub struct EarliestFirst(pub PatternMatch);
 impl Eq for EarliestFirst {}
