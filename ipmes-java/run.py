@@ -13,7 +13,7 @@ parser.add_argument('-D', '--dataset',
                 default='darpa',
                 type=str,
                 help='darpa or spade')
-parser.add_argument('-d', '--data-graph',
+parser.add_argument('-d', '--data-dir',
                 default='../data/preprocessed/',
                 type=str,
                 help='the folder of data graphs')
