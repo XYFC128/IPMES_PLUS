@@ -58,33 +58,14 @@ fn main() {
         start_time.elapsed().as_secs_f64()
     );
 
-    #[cfg(target_os = "linux")]
-    {
-        print_peak_memory();
-    }
+    print_peak_memory();
 
     info!("Finished");
 }
 
-#[cfg(target_os = "linux")]
 fn print_peak_memory() {
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
-    if let Ok(file) = File::open("/proc/self/status") {
-        let mut buf_reader = BufReader::new(file);
-
-        let mut line = String::new();
-        while let Ok(nread) = buf_reader.read_line(&mut line) {
-            if nread == 0 {
-                break;
-            }
-
-            if let Some(line) = line.strip_prefix("VmHWM:") {
-                println!("Peak memory usage: {}", line.trim());
-                break;
-            }
-
-            line.clear();
-        }
+    use nix::sys::resource::{getrusage, UsageWho};
+    if let Ok(usage) = getrusage(UsageWho::RUSAGE_SELF) {      
+        println!("Peak memory usage: {} kB", usage.max_rss());
     }
 }

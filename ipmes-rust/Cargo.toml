@@ -12,6 +12,7 @@ csv = "1.2.2"
 env_logger = "0.10.0"
 itertools = "0.11.0"
 log = "0.4.20"
+nix = { version = "0.27.1", features = ["resource"] }
 petgraph = "0.6.4"
 regex = "1.10.0"
 serde = { version = "1.0.188", features = ["derive"] }
