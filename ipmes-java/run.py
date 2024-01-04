@@ -4,12 +4,32 @@ from subprocess import Popen
 import os
 import sys
 import re
+import argparse
 
-dataset = 'darpa'
-if len(sys.argv) > 1:
-    dataset = sys.argv[1]
+parser = parser = argparse.ArgumentParser(
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                description='Age limit experiment')
+parser.add_argument('-D', '--dataset',
+                default='darpa',
+                type=str,
+                help='darpa or spade')
+parser.add_argument('-d', '--data-graph',
+                default='../data/preprocessed/',
+                type=str,
+                help='the folder of data graphs')
+parser.add_argument('-p', '--pattern-dir',
+                default='../data/universal_patterns/',
+                type=str,
+                help='the folder of patterns')
+parser.add_argument('-o', '--out-dir',
+                default='../results/ipmes-java/',
+                type=str,
+                help='the output folder')
+args = parser.parse_args()
 
-if dataset == 'darpa':
+data_dir = args.data_dir
+
+if args.dataset == 'darpa':
     from darpa import graphs
     pattern_filter = '^DP[0-9]+_regex\.json$'
     window_size = 1000
@@ -20,11 +40,12 @@ else:
 
 subprocess.run(['mvn', 'compile'], check=True)
 
-os.makedirs('../results', exist_ok=True)
+result_dir = args.out_dir
+os.makedirs(result_dir, exist_ok=True)
 
 os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
-pattern_dir = '../data/universal_patterns'
+pattern_dir = args.pattern_dir
 
 filename_filter = re.compile(pattern_filter)
 for pattern_file in os.listdir(pattern_dir):
@@ -36,10 +57,11 @@ for pattern_file in os.listdir(pattern_dir):
 
     pdata: list[tuple] = []
     for graph in graphs:
-        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} {pattern_path} ../data/preprocessed/{graph}.csv"']
+        graph_path = os.path.join(data_dir, f'{graph}.csv')
+        args = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} {pattern_path} {graph_path}"']
         print(args)
-        out_file = open(f'../results/{pattern_name}_{graph}.out', 'w')
-        err_file = open(f'../results/{pattern_name}_{graph}.err', 'w')
+        out_file = open(os.path.join(result_dir, f'{pattern_name}_{graph}.out'), 'w')
+        err_file = open(os.path.join(result_dir, f'{pattern_name}_{graph}.err'), 'w')
         pdata.append((Popen(args, stdout=out_file, stderr=err_file), out_file, err_file))
         
     for proc, out_file, err_file in pdata:
