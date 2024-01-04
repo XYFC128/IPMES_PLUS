@@ -23,17 +23,18 @@ if __name__ == '__main__':
 
     in_dir = args.in_dir
 
-    if args.dataset == 'darpa':
-        from darpa import graphs, pattern_file
-    else:
-        from spade import graphs, pattern_file
+    import darpa, spade
 
-    print('Results: [NumResults, PeakPoolSize, PeakHeapSize]')
+    run_combination = []
+    for pattern_name, _ in spade.pattern_file:
+        for graph in spade.graphs:
+            run_combination.append((pattern_name, graph))
+    for pattern_name, _ in darpa.pattern_file:
+        for graph in darpa.graphs:
+            run_combination.append((pattern_name, graph))
+    
     run_result = []
-    for pattern_name, _ in pattern_file:
-        cputime = []
-        pattern_usage_count: dict[int, int] = {}
-        for graph in graphs:
+    for pattern_name, graph in run_combination:
             stdout = open(os.path.join(in_dir, f'{pattern_name}_{graph}.out'), 'r').read()
             stderr = open(os.path.join(in_dir, f'{pattern_name}_{graph}.err'), 'r').read()
             cpu_time = parse_cputime(stderr)
