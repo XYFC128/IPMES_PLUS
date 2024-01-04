@@ -8,34 +8,17 @@ def parse_cputime(stderr: str) -> float:
     sys_time = float(lines[-1].split()[1])
     return user_time + sys_time
 
-def tabular_print(data: list[list]):
-    for row in data:
-        print('\t'.join(str(i) for i in row))
-
-def flatten_print(data: list[list]):
-    for row in data:
-        print('\n'.join(str(i) for i in row))
-
-print_methods = {
-    'tabular': tabular_print,
-    'flatten': flatten_print,
-}
-
 if __name__ == '__main__':
     parser = parser = argparse.ArgumentParser(
-                    description='Print the run results')
-    parser.add_argument('-t', '--cpu-time',
-                        choices=print_methods.keys(),
-                        default='flatten',
-                        help='The method to print the measured CPU time')
-    parser.add_argument('-d', '--dataset',
-                        choices=['darpa', 'spade'],
-                        default='darpa',
-                        help='The dataset we ran on.')
+                    description='Convert the run results to csv')
     parser.add_argument('-i', '--in-dir',
                 default='../results/ipmes-java/',
                 type=str,
                 help='the folder containing the run results')
+    parser.add_argument('-o', '--out-file',
+                default='../results/ipmes-java/run_result.csv',
+                type=str,
+                help='the output file')
     args = parser.parse_args()
 
     in_dir = args.in_dir
@@ -45,36 +28,21 @@ if __name__ == '__main__':
     else:
         from spade import graphs, pattern_file
 
-    all_cputime = []
-    all_usage_count: list[dict[int, int]] = []
     print('Results: [NumResults, PeakPoolSize, PeakHeapSize]')
+    run_result = []
     for pattern_name, _ in pattern_file:
         cputime = []
         pattern_usage_count: dict[int, int] = {}
         for graph in graphs:
             stdout = open(os.path.join(in_dir, f'{pattern_name}_{graph}.out'), 'r').read()
             stderr = open(os.path.join(in_dir, f'{pattern_name}_{graph}.err'), 'r').read()
-            cputime.append(parse_cputime(stderr))
+            cpu_time = parse_cputime(stderr)
 
             output = json.loads(stdout)
-            try:
-                usage_count: dict = output['UsageCount']
-                for key, val in usage_count.items():
-                    key = int(key)
-                    count = pattern_usage_count.get(key, 0)
-                    pattern_usage_count[key] = count + val
-                    all_usage_count.append(pattern_usage_count)
-            except:
-                pass
-            print('{}\t {}\t {}'.format(output['NumResults'], output['PeakPoolSize'], output['PeakHeapSize']))
-        all_cputime.append(cputime)
+            peak_heap = float(output['PeakHeapSize']) / 2**20
+            run_result.append([pattern_name, graph, output['NumResults'], cpu_time, output['PeakPoolSize'], peak_heap])
 
-    print('CPU Time (sec):')
-    print_methods[args.cpu_time](all_cputime)
-
-    if len(all_usage_count) > 0:
-        print('TC-Query Trigger Count: [TCQueryLen, Count]')
-        for pattern_usage_count in all_usage_count:
-            for key, val in sorted(pattern_usage_count.items()):
-                print('{}\t {}'.format(key, val))
-            print()
+    import pandas as pd
+    df = pd.DataFrame(data=run_result, columns=['Pattern', 'Data Graph', 'Num Results', 'CPU Time (sec)', 'Peak Pool Size', 'Peak Heap Size (MB)'])
+    print(df.to_string(index=False))
+    df.to_csv(args.out_file, index=False)
