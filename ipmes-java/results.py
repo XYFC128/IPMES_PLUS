@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 def parse_cputime(stderr: str) -> float:
     lines = stderr.strip().split('\n')
@@ -31,7 +32,13 @@ if __name__ == '__main__':
                         choices=['darpa', 'spade'],
                         default='darpa',
                         help='The dataset we ran on.')
+    parser.add_argument('-i', '--in-dir',
+                default='../results/ipmes-java/',
+                type=str,
+                help='the folder containing the run results')
     args = parser.parse_args()
+
+    in_dir = args.in_dir
 
     if args.dataset == 'darpa':
         from darpa import graphs, pattern_file
@@ -45,8 +52,8 @@ if __name__ == '__main__':
         cputime = []
         pattern_usage_count: dict[int, int] = {}
         for graph in graphs:
-            stdout = open(f'../results/{pattern_name}_{graph}.out', 'r').read()
-            stderr = open(f'../results/{pattern_name}_{graph}.err', 'r').read()
+            stdout = open(os.path.join(in_dir, f'{pattern_name}_{graph}.out'), 'r').read()
+            stderr = open(os.path.join(in_dir, f'{pattern_name}_{graph}.err'), 'r').read()
             cputime.append(parse_cputime(stderr))
 
             output = json.loads(stdout)
