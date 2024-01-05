@@ -2,6 +2,7 @@ __pycache__/
 .venv/
 
 data/*
+!README.md
 !data/patterns
 !data/darpa_patterns
 !data/universal_patterns
