@@ -34,7 +34,7 @@ The pattern is represented in [JSON](https://www.json.org) format. The root obje
 **Pattern Event Object**:
 
 - `ID`: the unique id of this pattern event
-- `Signature` the signature of this pattern event. It will match input events in data graph with the same signature. If `UseRegex` is set to `true`, than the signature will be treated as a regex expression to match the signatures of input events in the data graph.
+- `Signature` the signature of this pattern event. It will match input events in data graph with the same signature. If `UseRegex` is set to `true`, the signature will be treated as a regex expression to match the signatures of input events in the data graph.
 - `SubjectID`: the subject of this event. If 2 events are arise from the same subject, they share the subject id.
 - `ObjectID`: the object of this event. If 2 events act on the same object, they share the object id.
 - `Parents`: an array of pattern event id. The pattern event should be matched after all of its parents are matched.
@@ -43,7 +43,7 @@ Current limitations:
 
 - Pattern event id must be assigned in the range `[0, num_id)`, where `num_id` is the number of unique ids.
 
-See the files in `universal_patterns`.
+See the files in `universal_patterns` for more information.
 
 ## Data Graph (Provenance Graph) Format
 
