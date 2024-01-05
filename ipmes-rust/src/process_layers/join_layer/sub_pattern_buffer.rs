@@ -16,18 +16,21 @@ enum TimeOrder {
     SecondToFirst,
 }
 
+/// A structure that holds order relations between sibling buffers.
 #[derive(Clone, Debug)]
 pub struct Relation {
-    /// shared_entities.len() == num_node
-    /// If node 'i' is shared, shared_entities[i] = true.
-    /// 'i': pattern node id
-    /// "shared_entities" seems useless (?)
-    /// (The "structure" has guaranteed nodes to be shared properly, when doing "SubPatternMatch::try_merge_nodes()".)
+    /// `shared_entities.len() == num_node`
+    /// 
+    /// If node `i` is shared, `shared_entities[i] == true`.
+    /// 
+    /// `i`: pattern node id
+    /// 
+    /// (The "overall structure" has guaranteed nodes be shared properly, when performing "SubPatternMatch::try_merge_nodes()".)
     shared_entities: Vec<bool>,
 
-    /// event_orders: (pattern_id1, pattern_id2, TimeOrder)
-    /// "pattern_id1" comes from "sub_pattern1", which is the left part ("sub_pattern2" is the right part)
-    /// left and right is the "relative position" on the "sub_pattern_buffer tree"
+    /// `event_orders: (pattern_id1, pattern_id2, TimeOrder)`
+    /// 
+    /// `pattern_id1` (`pattern_id2`, respectively) is the id of some left  (right, respectively) buffer on `JoinLayer::sub_pattern_buffers`, where the two buffers are siblings.
     event_orders: Vec<(usize, usize, TimeOrder)>,
 }
 
@@ -39,6 +42,7 @@ impl Relation {
         }
     }
 
+    /// Check whether order relations are violated between two pattern matches.
     pub fn check_order_relation(&self, timestamps: &Vec<u64>) -> bool {
         self.event_orders
             .iter()
@@ -53,21 +57,26 @@ impl Relation {
     }
 }
 
+/// A Buffer that holds sub-pattern matches that correspond to a certain sub-pattern.
 #[derive(Clone, Debug)]
 pub struct SubPatternBuffer<'p> {
+    /// Buffer id.
     pub id: usize,
-    /// mainly for debugging
+    /// Mainly for debugging.
     sibling_id: usize,
-    /// IDs of pattern nodes contained in this sub-pattern.
+    /// Ids of pattern entities (nodes) contained in this sub-pattern.
     node_id_list: HashSet<usize>,
-    /// IDs of pattern events contained in this sub-pattern.
+    /// Ids of pattern events (edges) contained in this sub-pattern.
     edge_id_list: HashSet<usize>,
+    /// A buffer that holds sub-pattern matches.
     pub(crate) buffer: BinaryHeap<EarliestFirst<'p>>,
+    /// A buffer that holds newly came sub-pattern matches.
     pub(crate) new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
-
+    /// The order relations between the sub-pattern this buffer corresponds to and the one its sibling buffer corresponds to.
     pub relation: Relation,
-    /// number of nodes in the "whole" pattern
+    /// Number of entities in the overall pattern.
     pub max_num_entities: usize,
+    /// Number of events in the overall pattern.
     pub max_num_events: usize,
 }
 
@@ -99,6 +108,7 @@ impl<'p> SubPatternBuffer<'p> {
         }
     }
 
+    /// Precalculate order relations between sibling buffers.
     pub fn generate_relations(
         pattern: &Pattern,
         sub_pattern_buffer1: &SubPatternBuffer,
@@ -138,6 +148,7 @@ impl<'p> SubPatternBuffer<'p> {
         }
     }
 
+    /// Merge two sub-pattern buffers.
     pub fn merge_buffers(
         sub_pattern_buffer1: &SubPatternBuffer,
         sub_pattern_buffer2: &SubPatternBuffer,
@@ -165,18 +176,13 @@ impl<'p> SubPatternBuffer<'p> {
         }
     }
 
-    /// "merge match_edge" and "check edge uniqueness"
-    /// Analogous to "try_merge_nodes"
-    ///
-    /// Since "check_edge_uniqueness" guarantees the bijective relationship between
-    /// pattern events and input events, the index of "timestamps" can be "pattern edge id".
-    ///
-    /// All pattern events are unique.
+    /// Try to merge two match events and check event uniqueness.
     pub fn try_merge_match_events(
         &self,
         a: &[MatchEvent<'p>],
         b: &[MatchEvent<'p>],
     ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
+        // `timestamps[pattern_event_id] = the timestamp of the corresponding input event.`
         let mut timestamps = vec![0u64; self.max_num_events];
         let mut merged = Vec::with_capacity(a.len() + b.len());
 
@@ -220,10 +226,9 @@ impl<'p> SubPatternBuffer<'p> {
         Some((merged, timestamps))
     }
 
-    /// Try to merge match nodes, and handle "shared node" and "node uniqueness" in the process.
-    /// If the mentioned checks didn't pass, return None.
+    /// Try to merge match entities, and handle "shared entities" and "entity uniqueness".
     ///
-    /// a and b are slices over (input node id, pattern node id)
+    /// (`a` and `b` are slices over `(input node id, pattern node id)`.)
     pub fn try_merge_entities(
         &self,
         a: &[(u64, u64)],

@@ -13,13 +13,14 @@ use std::collections::BinaryHeap;
 use std::mem;
 use std::rc::Rc;
 
-/// The layer that joins sub-pattern matches, into pattern matches.
+/// The layer that joins sub-pattern matches into pattern matches.
 #[derive(Debug)]
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
     /// The behavioral pattern.
     pattern: &'p Pattern,
     /// Binary-tree-structured buffers that store sub-pattern matches. 
+    /// 
     /// A sub-pattern match in a parent node is joined from sub-patterns in its two children buffers.
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     /// See `clear_expired()`.
@@ -94,8 +95,6 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 
     /// Convert "SubPatternMatch" to "PatternMatch".
-    ///
-    /// "match_events" is sorted by its match edge ids, and thus "matched_event" is in good order.
     fn pattern_match_conversion(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> Vec<PatternMatch> {
         let mut pattern_matches = Vec::with_capacity(buffer.len());
 
@@ -146,7 +145,7 @@ impl<'p, P> JoinLayer<'p, P> {
         }
     }
 
-    /// Get the left buffer id among siblings (might be "buffer_id" itself).
+    /// Get the left buffer id among siblings (might be the buffer indicated by `buffer_id` itself).
     fn get_left_buffer_id(buffer_id: usize) -> usize {
         buffer_id - buffer_id % 2
     }
@@ -187,7 +186,7 @@ impl<'p, P> JoinLayer<'p, P> {
         }
     }
 
-    /// Join the new matches of the current buffer ("my_id) with existing matches in its sibling buffer ("sibling_id").
+    /// Join the new matches of the current buffer (`my_id`) with existing matches in its sibling buffer (`sibling_id`).
     fn join_with_sibling(
         &mut self,
         my_id: usize,
@@ -283,7 +282,7 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 }
 
-/// Node id format conversion
+/// Node id format conversion.
 fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<Option<u64>>) {
     for (i, node_id) in node_ids.iter().enumerate() {
         if let Some(matched_id) = node_id {
