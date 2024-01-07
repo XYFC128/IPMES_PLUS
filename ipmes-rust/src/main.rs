@@ -84,7 +84,7 @@ fn print_peak_memory() -> Result<(), Box<dyn Error>> {
     #[cfg(target_family = "unix")]
     {
         use nix::sys::resource::{getrusage, UsageWho};
-        usage = getrusage(UsageWho::RUSAGE_SELF)?;
+        let usage = getrusage(UsageWho::RUSAGE_SELF)?;
         println!("Peak memory usage: {} kB", usage.max_rss());
     }
 
