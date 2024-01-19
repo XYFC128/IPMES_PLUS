@@ -29,3 +29,38 @@ impl Debug for MatchEvent<'_> {
         )
     }
 }
+
+pub trait EventAttributes {
+    fn get_timestamp(&self) -> u64;
+    fn get_signature(&self) -> &str;
+    fn get_id(&self) -> u64;
+    fn get_subject(&self) -> u64;
+    fn get_object(&self) -> u64;
+    fn get_matched(&self) -> &PatternEvent;
+}
+
+impl<'p> EventAttributes for MatchEvent<'p> {
+    fn get_timestamp(&self) -> u64 {
+        self.input_event.timestamp
+    }
+
+    fn get_signature(&self) -> &str {
+        &self.input_event.signature
+    }
+
+    fn get_id(&self) -> u64 {
+        self.input_event.id
+    }
+
+    fn get_subject(&self) -> u64 {
+        self.input_event.subject
+    }
+
+    fn get_object(&self) -> u64 {
+        self.input_event.object   
+    }
+
+    fn get_matched(&self) -> &PatternEvent {
+        self.matched
+    }
+}
