@@ -208,4 +208,54 @@ mod tests {
         assert_eq!(layer.next().unwrap().0.input_event.id, 4);
         assert!(layer.next().is_none());
     }
+
+    #[test]
+    fn test_multiple_time_batch() {
+        let pattern_edge1 = PatternEvent {
+            id: 0,
+            signature: "edge1".to_string(),
+            subject: 0,
+            object: 1,
+        };
+
+        let pattern_edge2 = PatternEvent {
+            id: 1,
+            signature: "edge2".to_string(),
+            subject: 1,
+            object: 0,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            events: vec![&pattern_edge1, &pattern_edge2],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch1 = vec![
+            simple_input_edge(1, "edge0"),
+            simple_input_edge(2, "edge2"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "edge2"),
+        ];
+
+        let time_batch2 = vec![
+            simple_input_edge(5, "edge2"),
+            simple_input_edge(6, "edge0"),
+            simple_input_edge(7, "edge1"),
+        ];
+
+        let mut layer = MatchingLayer::new(
+            [time_batch1, time_batch2].into_iter(),
+            &decomposition,
+            false,
+        )
+        .unwrap();
+    
+        assert_eq!(layer.next().unwrap().0.input_event.id, 3);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 2);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 4);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 7);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 5);
+        assert!(layer.next().is_none());
+    }
 }
