@@ -1,8 +1,11 @@
 use std::rc::Rc;
 
-use regex::Regex;
+use crate::{
+    input_event::InputEvent, match_event::MatchEvent, pattern::Event as PatternEvent,
+    sub_pattern::SubPattern,
+};
 use regex::Error as RegexError;
-use crate::{input_event::InputEvent, match_event::MatchEvent, pattern::Event as PatternEvent, sub_pattern::SubPattern};
+use regex::Regex;
 
 pub struct MatchingLayer<'p, P> {
     prev_layer: P,
@@ -21,8 +24,12 @@ pub struct MatchingLayer<'p, P> {
 }
 
 impl<'p, P> MatchingLayer<'p, P> {
-    fn new(prev_layer:P, decomposition: &'p [SubPattern], use_regex: bool) -> Result<Self, RegexError> {
-        let mut pattern_events:Vec<&PatternEvent> = vec![];
+    pub fn new(
+        prev_layer: P,
+        decomposition: &'p [SubPattern],
+        use_regex: bool,
+    ) -> Result<Self, RegexError> {
+        let mut pattern_events: Vec<&PatternEvent> = vec![];
         let mut signatures = vec![];
         for sub_pattern in decomposition {
             for pattern_event in &sub_pattern.events {
@@ -64,7 +71,7 @@ impl<'p, P> Iterator for MatchingLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEvent>>>,
 {
-    type Item = MatchEvent<'p>;
+    type Item = (MatchEvent<'p>, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -81,11 +88,124 @@ where
             }
 
             if self.is_match_state() {
-                return Some(MatchEvent {
-                    input_event: Rc::clone(&self.cur_time_batch[self.time_batch_state]),
-                    matched: self.pattern_events[self.signature_state],
-                });
+                return Some((
+                    MatchEvent {
+                        input_event: Rc::clone(&self.cur_time_batch[self.time_batch_state]),
+                        matched: self.pattern_events[self.signature_state],
+                    },
+                    self.signature_state,
+                ));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEvent> {
+        Rc::new(InputEvent {
+            timestamp: 0,
+            signature: signature.to_string(),
+            id,
+            subject: 1,
+            object: 2,
+        })
+    }
+
+    #[test]
+    fn test_no_regex() {
+        let pattern_edge1 = PatternEvent {
+            id: 0,
+            signature: "edge[0-9]+".to_string(),
+            subject: 0,
+            object: 1,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            events: vec![&pattern_edge1],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            simple_input_edge(1, "edge[0-9]+"),
+            simple_input_edge(2, "edge1234"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "ed"),
+        ];
+
+        let mut layer =
+            MatchingLayer::new([time_batch].into_iter(), &decomposition, false).unwrap();
+
+        assert_eq!(layer.next().unwrap().0.input_event.id, 1);
+        assert!(layer.next().is_none());
+    }
+
+    #[test]
+    fn test_regex() {
+        let pattern_edge1 = PatternEvent {
+            id: 0,
+            signature: "edge[0-9]+".to_string(),
+            subject: 0,
+            object: 1,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            events: vec![&pattern_edge1],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            simple_input_edge(1, "edge[0-9]+"),
+            simple_input_edge(2, "edge1234"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "ed"),
+        ];
+
+        let mut layer = MatchingLayer::new([time_batch].into_iter(), &decomposition, true).unwrap();
+
+        assert_eq!(layer.next().unwrap().0.input_event.id, 2);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 3);
+        assert!(layer.next().is_none());
+    }
+
+    #[test]
+    fn test_reorder() {
+        let pattern_edge1 = PatternEvent {
+            id: 0,
+            signature: "edge1".to_string(),
+            subject: 0,
+            object: 1,
+        };
+
+        let pattern_edge2 = PatternEvent {
+            id: 1,
+            signature: "edge2".to_string(),
+            subject: 1,
+            object: 0,
+        };
+
+        let sub_pattern = SubPattern {
+            id: 0,
+            events: vec![&pattern_edge1, &pattern_edge2],
+        };
+        let decomposition = [sub_pattern];
+
+        let time_batch = vec![
+            simple_input_edge(1, "edge0"),
+            simple_input_edge(2, "edge2"),
+            simple_input_edge(3, "edge1"),
+            simple_input_edge(4, "edge2"),
+        ];
+
+        let mut layer =
+            MatchingLayer::new([time_batch].into_iter(), &decomposition, false).unwrap();
+        assert_eq!(layer.next().unwrap().0.input_event.id, 3);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 2);
+        assert_eq!(layer.next().unwrap().0.input_event.id, 4);
+        assert!(layer.next().is_none());
     }
 }

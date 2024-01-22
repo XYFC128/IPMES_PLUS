@@ -286,6 +286,7 @@ mod tests {
             object,
         })
     }
+    
     #[test]
     fn test_sub_matcher_no_regex() {
         let pattern_edge = PatternEvent {
