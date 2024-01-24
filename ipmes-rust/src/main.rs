@@ -1,5 +1,7 @@
+use std::error::Error;
+
 use clap::{arg, Parser};
-use log::info;
+use log::{info, warn};
 
 use cpu_time::ProcessTime;
 
@@ -58,14 +60,33 @@ fn main() {
         start_time.elapsed().as_secs_f64()
     );
 
-    print_peak_memory();
+    if let Err(err) = print_peak_memory() {
+        warn!(
+            "Encounter an error when tring to get peak memory usage: {}",
+            err
+        )
+    }
 
     info!("Finished");
 }
 
-fn print_peak_memory() {
-    use nix::sys::resource::{getrusage, UsageWho};
-    if let Ok(usage) = getrusage(UsageWho::RUSAGE_SELF) {      
+fn print_peak_memory() -> Result<(), Box<dyn Error>> {
+    #[cfg(target_family = "windows")]
+    {
+        use windows::System::Diagnostics::ProcessDiagnosticInfo;
+        let info = ProcessDiagnosticInfo::GetForCurrentProcess()?;
+        let mem_usage = info.MemoryUsage()?;
+        let mem_report = mem_usage.GetReport()?;
+        let max_rss = mem_report.PeakWorkingSetSizeInBytes()?;
+        println!("Peak memory usage: {} kB", max_rss / 1024u64);
+    }
+
+    #[cfg(target_family = "unix")]
+    {
+        use nix::sys::resource::{getrusage, UsageWho};
+        let usage = getrusage(UsageWho::RUSAGE_SELF)?;
         println!("Peak memory usage: {} kB", usage.max_rss());
     }
+
+    Ok(())
 }

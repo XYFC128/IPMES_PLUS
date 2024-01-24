@@ -18,6 +18,7 @@ regex = "1.10.0"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.106"
 thiserror = "1.0.48"
+windows = { version = "0.52.0", features = ["System_Diagnostics"] }
 
 [profile.release]
 debug = 1
