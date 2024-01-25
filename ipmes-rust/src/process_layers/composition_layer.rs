@@ -1,15 +1,9 @@
 use crate::input_event::InputEvent;
 use crate::match_event::MatchEvent;
-use crate::pattern::Event as PatternEvent;
 use crate::sub_pattern::SubPattern;
-use itertools::Itertools;
-use log::warn;
-use regex::Error as RegexError;
-use regex::Regex;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::collections::VecDeque;
-use std::rc::Rc;
 
 /// Internal representation of a not complete subpattern match
 #[derive(Debug)]
@@ -49,54 +43,34 @@ impl<'p> PartialMatch<'p> {
 
 /// Represent a small buffer for matching an edge
 struct SubMatcher<'p> {
-    /// regex matcher for the pattern signature
-    signature: Regex,
-    /// corresponding pattern edge
-    pattern_edge: &'p PatternEvent,
-    /// if this is the last buffer of a subpattern, sub_pattern_id will be the id of that subpattern
-    /// , -1 otherwise
-    sub_pattern_id: i64,
+    /// Whether this is the last buffer of some subpattern
+    is_last: bool,
     /// buffer for the partial match results, dequeue is used for windowing
     buffer: VecDeque<PartialMatch<'p>>,
 }
 
 impl<'p> SubMatcher<'p> {
-    pub fn new(pattern_edge: &'p PatternEvent, use_regex: bool) -> Result<Self, RegexError> {
-        // the regex expression should match whole string, so we add ^ and $ to the front and
-        // object of the expression.
-        let match_syntax = if use_regex {
-            format!("^{}$", pattern_edge.signature)
-        } else {
-            // if disable regex matching, simply escape meta characters in the string
-            format!("^{}$", regex::escape(&pattern_edge.signature))
-        };
-        let signature = Regex::new(&match_syntax)?;
-
-        Ok(Self {
-            signature,
-            pattern_edge,
-            sub_pattern_id: -1,
+    pub fn new() -> Self {
+        Self {
+            is_last: false,
             buffer: VecDeque::new(),
-        })
+        }
     }
-    pub fn match_against(&mut self, input_edges: &[Rc<InputEvent>]) -> Vec<PartialMatch<'p>> {
-        input_edges
+
+    pub fn match_against(&mut self, match_event: &MatchEvent<'p>) -> Vec<PartialMatch<'p>> {
+        self.buffer
             .iter()
-            .filter(|edge| self.signature.is_match(&edge.signature))
-            .cartesian_product(self.buffer.iter())
-            .filter_map(|(input_event, partial_match)| {
-                self.merge(Rc::clone(input_event), partial_match)
-            })
+            .filter_map(|partial_match| self.merge(match_event, partial_match))
             .collect()
     }
 
     fn merge(
         &self,
-        input_event: Rc<InputEvent>,
+        match_event: &MatchEvent<'p>,
         partial_match: &PartialMatch<'p>,
     ) -> Option<PartialMatch<'p>> {
-        if self.has_entity_collision(&input_event, partial_match)
-            || Self::event_duplicates(&input_event, partial_match)
+        if self.has_entity_collision(match_event, partial_match)
+            || Self::event_duplicates(&match_event.input_event, partial_match)
         {
             return None;
         }
@@ -104,15 +78,11 @@ impl<'p> SubMatcher<'p> {
         // duplicate the partial match and add the input edge into the new partial match
         let mut entity_id_map = partial_match.entity_id_map.clone();
         let mut events = partial_match.events.clone();
-        entity_id_map[self.pattern_edge.subject] = Some(input_event.subject);
-        entity_id_map[self.pattern_edge.object] = Some(input_event.object);
+        entity_id_map[match_event.matched.subject] = Some(match_event.input_event.subject);
+        entity_id_map[match_event.matched.object] = Some(match_event.input_event.object);
 
-        let timestamp = min(input_event.timestamp, partial_match.timestamp);
-        let match_edge = MatchEvent {
-            input_event,
-            matched: self.pattern_edge,
-        };
-        events.push(match_edge);
+        let timestamp = min(match_event.input_event.timestamp, partial_match.timestamp);
+        events.push(match_event.clone());
 
         Some(PartialMatch {
             id: partial_match.id,
@@ -129,17 +99,17 @@ impl<'p> SubMatcher<'p> {
     /// into the partial match.
     fn has_entity_collision(
         &self,
-        input_event: &InputEvent,
+        match_event: &MatchEvent<'p>,
         partial_match: &PartialMatch<'p>,
     ) -> bool {
-        if let Some(subject_match) = partial_match.entity_id_map[self.pattern_edge.subject] {
-            if subject_match != input_event.subject {
+        if let Some(subject_match) = partial_match.entity_id_map[match_event.matched.subject] {
+            if subject_match != match_event.input_event.subject {
                 return true;
             }
         }
 
-        if let Some(object_match) = partial_match.entity_id_map[self.pattern_edge.object] {
-            if object_match != input_event.object {
+        if let Some(object_match) = partial_match.entity_id_map[match_event.matched.object] {
+            if object_match != match_event.input_event.object {
                 return true;
             }
         }
@@ -175,17 +145,12 @@ pub struct CompositionLayer<'p, P> {
 }
 
 impl<'p, P> CompositionLayer<'p, P> {
-    pub fn new(
-        prev_layer: P,
-        decomposition: &'p [SubPattern],
-        use_regex: bool,
-        window_size: u64,
-    ) -> Result<Self, RegexError> {
+    pub fn new(prev_layer: P, decomposition: &'p [SubPattern], window_size: u64) -> Self {
         let mut sub_matchers = Vec::new();
         for sub_pattern in decomposition {
             // create sub-matcher for each edge
-            for edge in &sub_pattern.events {
-                sub_matchers.push(SubMatcher::new(edge, use_regex)?);
+            for _ in &sub_pattern.events {
+                sub_matchers.push(SubMatcher::new());
             }
             // get the first sub-matcher for this sub-pattern
             if let Some(first) = sub_matchers
@@ -208,243 +173,188 @@ impl<'p, P> CompositionLayer<'p, P> {
                     events: vec![],
                 })
             }
+            // get the last sub-matcher for this sub-pattern
             if let Some(last) = sub_matchers.last_mut() {
-                last.sub_pattern_id = sub_pattern.id as i64;
+                last.is_last = true;
             }
         }
 
-        Ok(Self {
+        Self {
             prev_layer,
             window_size,
             sub_matchers,
-        })
+        }
     }
 }
 
 impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
-    P: Iterator<Item = Vec<Rc<InputEvent>>>,
+    P: Iterator<Item = (MatchEvent<'p>, usize)>,
 {
     type Item = Vec<PartialMatch<'p>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut results = vec![];
+        loop {
+            let (match_event, match_order) = self.prev_layer.next()?;
 
-        while results.is_empty() {
-            let time_batch = self.prev_layer.next()?;
-            let time_bound = if let Some(edge) = time_batch.first() {
-                edge.timestamp.saturating_sub(self.window_size)
-            } else {
-                warn!("Previous layer outputs an empty time batch.");
+            let sub_matcher = &mut self.sub_matchers[match_order];
+
+            let time_bound = match_event
+                .input_event
+                .timestamp
+                .saturating_sub(self.window_size);
+            sub_matcher.clear_expired(time_bound);
+
+            let mut result = sub_matcher.match_against(&match_event);
+            if result.is_empty() {
                 continue;
-            };
+            }
 
-            let mut prev_result = Vec::new();
-            for matcher in &mut self.sub_matchers {
-                matcher.clear_expired(time_bound);
-
-                matcher.buffer.extend(prev_result.into_iter());
-                let cur_result = matcher.match_against(&time_batch);
-                if matcher.sub_pattern_id != -1 {
-                    // this is the last buffer of a subpattern
-                    results.extend(
-                        cur_result
-                            .into_iter()
-                            .filter(|partial_match| partial_match.check_entity_uniqueness()),
-                    );
-                    prev_result = Vec::new();
-                } else {
-                    prev_result = cur_result;
+            if sub_matcher.is_last {
+                result.retain(|partial_match| partial_match.check_entity_uniqueness());
+                if result.is_empty() {
+                    continue;
                 }
+                return Some(result);
+            } else {
+                let next_matcher = &mut self.sub_matchers[match_order + 1];
+                next_matcher.buffer.extend(result.into_iter());
             }
         }
-
-        Some(results)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::Event as PatternEvent;
+    use std::rc::Rc;
 
-    fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEvent> {
-        Rc::new(InputEvent {
-            timestamp: 0,
-            signature: signature.to_string(),
-            id,
-            subject: 1,
-            object: 2,
-        })
-    }
-
-    fn input_event(id: u64, signature: &str, subject: u64, object: u64) -> Rc<InputEvent> {
-        Rc::new(InputEvent {
+    /// Create match event for testing purpose
+    fn match_event<'p>(
+        id: u64,
+        signature: &str,
+        subject: u64,
+        object: u64,
+        matched: &'p PatternEvent,
+    ) -> MatchEvent<'p> {
+        let input_event = Rc::new(InputEvent {
             timestamp: 0,
             signature: signature.to_string(),
             id,
             subject,
             object,
-        })
-    }
-    #[test]
-    fn test_sub_matcher_no_regex() {
-        let pattern_edge = PatternEvent {
-            id: 0,
-            signature: "edge*".to_string(),
-            subject: 0,
-            object: 1,
-        };
-
-        let mut matcher = SubMatcher::new(&pattern_edge, false).unwrap();
-        matcher.buffer.push_back(PartialMatch {
-            id: 0,
-            timestamp: u64::MAX,
-            entity_id_map: vec![None; 2],
-            events: vec![],
         });
 
-        let input_edges = vec![
-            simple_input_edge(1, "edge*"),
-            simple_input_edge(2, "edgee"),
-            simple_input_edge(3, "edge1"),
-            simple_input_edge(4, "input_event"),
-        ];
-
-        let result = matcher.match_against(&input_edges);
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0].events[0].input_event.id, 1);
+        MatchEvent {
+            input_event,
+            matched,
+        }
     }
 
     #[test]
-    fn test_sub_matcher_regex() {
-        let pattern_edge = PatternEvent {
-            id: 0,
-            signature: "edge*".to_string(),
-            subject: 0,
-            object: 1,
-        };
-
-        let mut matcher = SubMatcher::new(&pattern_edge, true).unwrap();
-        matcher.buffer.push_back(PartialMatch {
-            id: 0,
-            timestamp: u64::MAX,
-            entity_id_map: vec![None; 2],
-            events: vec![],
-        });
-
-        let input_edges = vec![
-            simple_input_edge(1, "edge*"),
-            simple_input_edge(2, "edgee"),
-            simple_input_edge(3, "edge1"),
-            simple_input_edge(4, "input_event"),
+    fn test_linear_subpattern() {
+        let patterns = [
+            PatternEvent {
+                id: 0,
+                signature: "edge1".to_string(),
+                subject: 0,
+                object: 1,
+            },
+            PatternEvent {
+                id: 1,
+                signature: "edge2".to_string(),
+                subject: 1,
+                object: 2,
+            },
         ];
-
-        let result = matcher.match_against(&input_edges);
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0].events[0].input_event.id, 2);
-    }
-
-    #[test]
-    fn test_composition_layer() {
-        let pattern_edge1 = PatternEvent {
-            id: 0,
-            signature: "edge1".to_string(),
-            subject: 0,
-            object: 1,
-        };
-        let pattern_edge2 = PatternEvent {
-            id: 1,
-            signature: "edge2".to_string(),
-            subject: 1,
-            object: 2,
-        };
 
         let sub_pattern = SubPattern {
             id: 0,
-            events: vec![&pattern_edge1, &pattern_edge2],
+            events: patterns.iter().collect(),
         };
         let decomposition = [sub_pattern];
 
-        let time_batch = vec![
-            input_event(2, "edge2", 2, 3),
-            input_event(3, "foo", 4, 5),
-            input_event(4, "bar", 6, 7),
-            input_event(1, "edge1", 1, 2),
+        let match_events = vec![
+            (match_event(1, "edge1", 1, 2, &patterns[0]), 0),
+            (match_event(2, "edge2", 2, 3, &patterns[1]), 1),
         ];
 
-        let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, false, u64::MAX)
-                .unwrap();
+        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
         let result = layer.next().unwrap();
         assert_eq!(result.len(), 1);
     }
 
-    /// In this testcase, the pattern event 1 and 3 matches the same input edge 1,
-    /// but (1, 2, 1) is not a valid match state, since the input edge 1 is duplicated.
+    /// In this testcase, the pattern event `p1` and `p3` matches the same input edge `i1`,
+    /// but `(i1, i2, i1)` is not a valid match state, since the input edge `i1` is duplicated.
     #[test]
     fn test_event_uniqueness() {
-        let pattern_edge1 = PatternEvent {
-            id: 0,
-            signature: "a".to_string(),
-            subject: 0,
-            object: 1,
-        };
-        let pattern_edge2 = PatternEvent {
-            id: 1,
-            signature: "b".to_string(),
-            subject: 1,
-            object: 2,
-        };
-        let pattern_edge3 = PatternEvent {
-            id: 2,
-            signature: "a".to_string(),
-            subject: 3,
-            object: 1,
-        };
+        let patterns = [
+            PatternEvent {
+                id: 0,
+                signature: "a".to_string(),
+                subject: 0,
+                object: 1,
+            },
+            PatternEvent {
+                id: 1,
+                signature: "b".to_string(),
+                subject: 1,
+                object: 2,
+            },
+            PatternEvent {
+                id: 2,
+                signature: "a".to_string(),
+                subject: 3,
+                object: 1,
+            },
+        ];
 
         let sub_pattern = SubPattern {
             id: 0,
-            events: vec![&pattern_edge1, &pattern_edge2, &pattern_edge3],
+            events: patterns.iter().collect(),
         };
         let decomposition = [sub_pattern];
 
-        let time_batch = vec![input_event(1, "a", 1, 2), input_event(2, "b", 2, 3)];
+        let match_events = vec![
+            (match_event(1, "a", 1, 2, &patterns[0]), 0),
+            (match_event(2, "b", 2, 3, &patterns[1]), 1),
+            (match_event(1, "a", 1, 2, &patterns[2]), 2),
+        ];
 
-        let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX)
-                .unwrap();
+        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
         assert!(layer.next().is_none());
     }
 
     #[test]
     fn test_entity_uniqueness() {
-        let pattern_event1 = PatternEvent {
-            id: 0,
-            signature: "a".to_string(),
-            subject: 0,
-            object: 1,
-        };
-        let pattern_event2 = PatternEvent {
-            id: 1,
-            signature: "b".to_string(),
-            subject: 1,
-            object: 2,
-        };
+        let patterns = [
+            PatternEvent {
+                id: 0,
+                signature: "edge1".to_string(),
+                subject: 0,
+                object: 1,
+            },
+            PatternEvent {
+                id: 1,
+                signature: "edge2".to_string(),
+                subject: 1,
+                object: 2,
+            },
+        ];
 
         let sub_pattern = SubPattern {
             id: 0,
-            events: vec![&pattern_event1, &pattern_event2],
+            events: patterns.iter().collect(),
         };
         let decomposition = [sub_pattern];
 
-        let time_batch = vec![
-            input_event(1, "a", 1, 2),
-            input_event(2, "b", 2, 1), // entity ID duplicated
+        let match_events = vec![
+            (match_event(1, "edge1", 1, 2, &patterns[0]), 0),
+            (match_event(2, "edge2", 2, 1, &patterns[1]), 1), // entity ID 1 duplicated
         ];
 
-        let mut layer =
-            CompositionLayer::new([time_batch].into_iter(), &decomposition, true, u64::MAX)
-                .unwrap();
+        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
         assert!(layer.next().is_none());
     }
 }
