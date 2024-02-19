@@ -1,20 +1,50 @@
 {
-    "Version": "0.1.0",
-    "UseRegex": false,
-    "Events": [
-        {
-            "ID": 0,
-            "Signature": "aaa",
-            "SubjectID": 123,
-            "ObjectID": 456,
-            "Parents": []
-        },
-        {
-            "ID": 1,
-            "Signature": "bbb",
-            "SubjectID": 789,
-            "ObjectID": 456,
-            "Parents": [ 0 ]
-        }
-    ]
+  "Version": "0.2.0",
+  "UseRegex": false,
+  "Entities": [
+    {
+      "ID": 0,
+      "Signature": "ent1"
+    },
+    {
+      "ID": 1,
+      "Signature": "ent2"
+    },
+    {
+      "ID": 2,
+      "Signature": "ent3"
+    },
+    {
+      "ID": 3,
+      "Signature": "ent4"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 0,
+      "Signature": "aaa",
+      "SubjectID": 0,
+      "ObjectID": 1
+    },
+    {
+      "ID": 1,
+      "Type": "Frequency",
+      "Frequency": 3,
+      "Signature": "bbb",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        0
+      ]
+    },
+    {
+      "ID": 2,
+      "Type": "Flow",
+      "SubjectID": 2,
+      "ObjectID": 3,
+      "Parents": [
+        0
+      ]
+    }
+  ]
 }
