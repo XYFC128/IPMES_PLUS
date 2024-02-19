@@ -15,8 +15,7 @@ def add_freq_and_flow(input_pattern: str) -> str:
     
     for event in old_obj['Events']:
         signatures = event['Signature'].split('#')
-        if len(signatures) != 3:
-            raise 'Signature format error in event {}'.format(event['ID'])
+        assert len(signatures) == 3, 'Signature format error in event {}'.format(event['ID'])
         
         event_sig, sub_sig, obj_sig = signatures
         new_event = {
@@ -62,8 +61,7 @@ def upgrade_file(pattern_file: TextIO, target_version: str) -> str:
 
     upgrader_chain = []
     while version != target_version:
-        if version not in upgrade_map:
-            raise f'No available method to upgrade to {target_version}'
+        assert version in upgrade_map, f'No available method to upgrade to {target_version}'
         upgrader, new_version = upgrade_map[version]
         upgrader_chain.append(upgrader)
         version = new_version
@@ -103,4 +101,4 @@ if __name__ == '__main__':
                 f.write(new_content)
             
         except Exception as e:
-            print(f'Failed to upgrade pattern file {file_path}: {e}')
+            print('Failed to upgrade pattern file {} due to {}: {}'.format(file_path, type(e).__name__, e))
