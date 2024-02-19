@@ -11,6 +11,10 @@ from results import parse_cputime
 parser = parser = argparse.ArgumentParser(
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                 description='Age limit experiment')
+parser.add_argument('-l', '--ws-list',
+                    default='',
+                    type=str,
+                    help='comma seperated list of window sizes')
 parser.add_argument('--start',
                     default=1,
                     type=int,
@@ -44,7 +48,7 @@ parser.add_argument('--columns',
                     type=str,
                     help='comma seperated list of output columns')
 parser.add_argument('-p', '--pattern',
-                    default='../data/universal_patterns/TTP7_regex.json',
+                    default='../data/universal_patterns/SP7_regex.json',
                     type=str,
                     help='pattern prefix')
 parser.add_argument('-d', '--data',
@@ -84,7 +88,7 @@ def run(window_size):
     metadata_file = os.path.join(log_dir, f'{window_size}s_metadata.pkl')
 
     if not args.dry or not os.path.exists(out_file) or not os.path.exists(metadata_file):
-        print(sub_proc_args, file=sys.stderr)
+        print(' '.join(sub_proc_args), file=sys.stderr)
         for _ in range(args.re_run):
             out_redirect = open(out_file, 'w')
             proc = Popen(sub_proc_args, stdout=out_redirect, stderr=subprocess.PIPE)
@@ -120,7 +124,11 @@ def run(window_size):
 
     return cpu_time, poolsize
 
-if args.multiplier == 1:
+if len(args.ws_list) > 0:
+    ws_list = [int(x) for x in args.ws_list.split(',')]
+    for window_size in ws_list:
+        run(window_size)
+elif args.multiplier == 1:
     for window_size in range(args.start, args.stop, args.step):
         run(window_size)
 else:
