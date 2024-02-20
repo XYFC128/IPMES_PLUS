@@ -1,6 +1,7 @@
-package org.ipmes;
+package org.ipmes.event;
 
-import io.siddhi.core.stream.input.InputHandler;
+import org.ipmes.EventEdge;
+import org.ipmes.decomposition.TCMatcher;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,14 +21,12 @@ import java.util.PriorityQueue;
  * out-of-order events.
  * </p>
  */
-public class CEPEventSender {
-    InputHandler inputHandler;
-    EventSorter sorter;
+public class DefaultEventSender implements EventSender {
+    TCMatcher tcMatcher;
     ArrayList<EventEdge> timeBuffer;
     PriorityQueue<EventEdge> eventPriorityQueue;
-    CEPEventSender(InputHandler handler, EventSorter sorter) {
-        this.inputHandler = handler;
-        this.sorter = sorter;
+    public DefaultEventSender(TCMatcher matcher) {
+        this.tcMatcher = matcher;
         this.timeBuffer = new ArrayList<>();
         this.eventPriorityQueue = new PriorityQueue<>(Comparator.comparingLong(e -> e.timestamp));
     }
@@ -77,12 +76,7 @@ public class CEPEventSender {
      * Sort the time buffer by total order and send to CEP.
      */
     void flushTimeBuffer() throws InterruptedException {
-        if (timeBuffer.isEmpty())
-            return;
-        long timestamp = timeBuffer.get(0).timestamp;
-        ArrayList<Object[]> sorted = sorter.rearrangeToEventData(timeBuffer);
-        for (Object[] data : sorted)
-            inputHandler.send(timestamp, data);
+        tcMatcher.sendAll(timeBuffer);
         timeBuffer.clear();
     }
 

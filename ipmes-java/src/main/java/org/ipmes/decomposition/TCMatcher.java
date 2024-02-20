@@ -1,5 +1,6 @@
-package org.ipmes;
+package org.ipmes.decomposition;
 
+import org.ipmes.EventEdge;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.join.Join;
 import org.ipmes.match.MatchEdge;
@@ -147,7 +148,7 @@ public class TCMatcher {
         return totalOrder.get(ord).getSignature().equals(eventEdge.signature);
     }
 
-    ArrayList<long[]> getTriggerCounts() {
+    public ArrayList<long[]> getTriggerCounts() {
         ArrayList<long[]> triggerCounts = new ArrayList<>();
         int start = 0;
         for (int i = 1; i < this.tcQueryId.length; ++i) {

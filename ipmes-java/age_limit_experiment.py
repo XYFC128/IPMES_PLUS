@@ -14,7 +14,7 @@ parser = parser = argparse.ArgumentParser(
 parser.add_argument('-l', '--ws-list',
                     default='',
                     type=str,
-                    help='comma seperated list of window sizes')
+                    help='comma separated list of window sizes')
 parser.add_argument('--start',
                     default=1,
                     type=int,
@@ -35,7 +35,7 @@ parser.add_argument('--step',
 parser.add_argument('--multiplier',
                     default=1,
                     type=int,
-                    help='if != 1, grow the age limit exponentialy by the multiplier')
+                    help='if != 1, grow the age limit exponentially by the multiplier')
 parser.add_argument('-r', '--re-run',
                     default=3,
                     type=int,
@@ -46,7 +46,7 @@ parser.add_argument('--dry',
 parser.add_argument('--columns',
                     default='all',
                     type=str,
-                    help='comma seperated list of output columns')
+                    help='comma separated list of output columns')
 parser.add_argument('-p', '--pattern',
                     default='../data/universal_patterns/SP7_regex.json',
                     type=str,
@@ -116,7 +116,7 @@ def run(window_size):
 
     output_table.append({
         'WindowSize': window_size,
-        'AvgCpuTime': metadata['Avg CPU Time'],
+        'AvgCpuTime': '{:.2f}'.format(metadata['Avg CPU Time']),
         'PoolSize': poolsize,
         'NumResults': num_reults,
         'NumClusters': num_clusters,

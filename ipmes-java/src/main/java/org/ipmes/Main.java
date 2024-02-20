@@ -12,9 +12,13 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
+import org.ipmes.decomposition.TCMatcher;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
+import org.ipmes.event.DefaultEventSender;
+import org.ipmes.event.EventSender;
 import org.ipmes.join.Join;
+import org.ipmes.join.NaiveJoin;
 import org.ipmes.join.PriorityJoin;
 import org.ipmes.match.FullMatch;
 import org.ipmes.match.LiteMatchResult;
@@ -52,6 +56,14 @@ public class Main {
         parser.addArgument("data_graph").type(String.class)
                 .required(true)
                 .help("The path to the preprocessed data graph");
+        parser.addArgument("--cep")
+                .action(Arguments.storeTrue())
+                .setDefault(false)
+                .help("Use CEP (Siddhi) in matching layer.");
+        parser.addArgument("--naive-join")
+                .action(Arguments.storeTrue())
+                .setDefault(false)
+                .help("Use naive join in join layer.");
 
         return parser;
     }
@@ -73,6 +85,7 @@ public class Main {
         String patternFile = ns.getString("pattern_file");
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
+        Boolean useNaiveJoin = ns.getBoolean("naive_join");
 
         // parse pattern
         Pattern pattern;
@@ -101,16 +114,26 @@ public class Main {
             tcQueries.forEach(System.err::println);
         }
 
-        Join join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
+        // Create join layer
+        Join join;
+        if (useNaiveJoin) {
+            join = new NaiveJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
+        } else {
+            join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
+        }
 
-        BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
-        String line = inputReader.readLine();
-
+        // Create matching layer
         TCMatcher matcher = new TCMatcher(tcQueries, pattern.useRegex, windowSize, join);
-        EventSender sender = new EventSender(matcher);
+
+        // Create parse layer
+        EventSender sender = new DefaultEventSender(matcher);
+
+        // main process loop
         int maxPoolSize = 0;
         Runtime jvm = Runtime.getRuntime();
         long maxHeapSize = jvm.totalMemory();
+        BufferedReader inputReader = new BufferedReader(new FileReader(dataGraphPath));
+        String line = inputReader.readLine();
         while (line != null) {
             sender.sendLine(line);
             line = inputReader.readLine();

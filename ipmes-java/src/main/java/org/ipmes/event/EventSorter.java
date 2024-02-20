@@ -1,5 +1,6 @@
-package org.ipmes;
+package org.ipmes.event;
 
+import org.ipmes.EventEdge;
 import org.ipmes.decomposition.TCQuery;
 import org.ipmes.pattern.PatternEdge;
 import java.util.regex.Pattern;
