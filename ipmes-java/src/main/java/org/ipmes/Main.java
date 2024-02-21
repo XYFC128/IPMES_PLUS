@@ -59,7 +59,7 @@ public class Main {
         parser.addArgument("--cep")
                 .action(Arguments.storeTrue())
                 .setDefault(false)
-                .help("Use CEP (Siddhi) in matching layer.");
+                .help("Use CEP (Siddhi) in composition layer.");
         parser.addArgument("--naive-join")
                 .action(Arguments.storeTrue())
                 .setDefault(false)
