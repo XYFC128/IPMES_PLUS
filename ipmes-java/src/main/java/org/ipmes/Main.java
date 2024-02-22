@@ -15,7 +15,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.ipmes.decomposition.TCMatcher;
 import org.ipmes.decomposition.TCQGenerator;
 import org.ipmes.decomposition.TCQuery;
-import org.ipmes.event.DefaultEventSender;
+import org.ipmes.decomposition.matcher.CEPMatcher;
+import org.ipmes.decomposition.matcher.CustomMatcher;
 import org.ipmes.event.EventSender;
 import org.ipmes.join.Join;
 import org.ipmes.join.NaiveJoin;
@@ -85,6 +86,7 @@ public class Main {
         String patternFile = ns.getString("pattern_file");
         String dataGraphPath = ns.getString("data_graph");
         long windowSize = ns.getLong("windowSize") * 1000;
+        Boolean useCEP = ns.getBoolean("cep");
         Boolean useNaiveJoin = ns.getBoolean("naive_join");
 
         // parse pattern
@@ -122,11 +124,16 @@ public class Main {
             join = new PriorityJoin(temporalPattern, spatialPattern, windowSize, tcQueries);
         }
 
-        // Create matching layer
-        TCMatcher matcher = new TCMatcher(tcQueries, pattern.useRegex, windowSize, join);
+        // Create compositions layer
+        TCMatcher matcher;
+        if (useCEP) {
+            matcher = new CEPMatcher(pattern, tcQueries, windowSize, join);
+        } else {
+            matcher = new CustomMatcher(tcQueries, pattern.useRegex, windowSize, join);
+        }
 
         // Create parse layer
-        EventSender sender = new DefaultEventSender(matcher);
+        EventSender sender = new EventSender(matcher);
 
         // main process loop
         int maxPoolSize = 0;
