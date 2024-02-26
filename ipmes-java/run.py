@@ -41,7 +41,7 @@ def run(pattern_path: str, graph_path: str, window_size: int, options: str = '',
         total_cpu_time += cpu_time
         total_mem_usage += mem_usage
 
-    return num_result, round(total_cpu_time / re_run, 2), round(total_mem_usage / re_run, 2)
+    return num_result, total_cpu_time / re_run, total_mem_usage / re_run
 
 class Runner:
     def __init__(self, pattern_dir: str, graph_dir: str, pattern_filter: str, graphs: list[str]):
