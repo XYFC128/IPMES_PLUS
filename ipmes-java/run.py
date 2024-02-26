@@ -103,8 +103,13 @@ class Runner:
             cpu_time_columns.extend(column_names)
             mem_usage_columns.extend(column_names)
         
-        cpu_time_df = pd.DataFrame(cpu_time_table, columns=cpu_time_columns)
+        cpu_time_df = pd.DataFrame(cpu_time_table, columns=cpu_time_columns, )
+        cpu_time_df = cpu_time_df.set_index('pattern')
+        cpu_time_df.loc['Average'] = cpu_time_df.mean(numeric_only=True)
+
         mem_usage_df = pd.DataFrame(mem_usage_table, columns=mem_usage_columns)
+        mem_usage_df = mem_usage_df.set_index('pattern')
+        mem_usage_df.loc['Average'] = mem_usage_df.mean(numeric_only=True)
         return cpu_time_df, mem_usage_df
     
 if __name__ == '__main__':
@@ -155,15 +160,15 @@ if __name__ == '__main__':
         cpu_time_df, mem_usage_df = runner.run_all(window_size, args.re_run)
 
         print(f'{dataset.upper()} CPU Time (sec)')
-        print(cpu_time_df.to_string(index=False))
+        print(cpu_time_df)
         cpu_time_save_path = os.path.join(result_dir, f'{dataset}_cpu_time.csv')
-        cpu_time_df.to_csv(cpu_time_save_path, index=False)
+        cpu_time_df.to_csv(cpu_time_save_path)
         print(f'This table is saved to {cpu_time_save_path}')
         print()
         print(f'{dataset.upper()} Memory Usage (MB)')
-        print(mem_usage_df.to_string(index=False))
+        print(mem_usage_df)
         mem_usage_save_path = os.path.join(result_dir, f'{dataset}_mem_usage.csv')
-        mem_usage_df.to_csv(mem_usage_save_path, index=False)
+        mem_usage_df.to_csv(mem_usage_save_path)
         print(f'This table is saved to {mem_usage_save_path}')
         print()
 
