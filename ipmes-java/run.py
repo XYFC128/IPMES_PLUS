@@ -14,23 +14,34 @@ def parse_cpu_time(stderr: str) -> float:
     sys_time = float(lines[-1].split()[1])
     return user_time + sys_time
 
-def run(pattern_path: str, graph_path: str, window_size: int, options: str = '') -> tuple[float, float]:
+def run(pattern_path: str, graph_path: str, window_size: int, options: str = '', re_run = 1) -> tuple[float, float]:
     '''
     Return CPU-time and peak memory usage (in MB)
     '''
 
     run_cmd = ['bash', '-c', f'time -p -- mvn -q exec:java -Dexec.args="-w {window_size} {pattern_path} {graph_path} {options}"']
-    print('Running:', ' '.join(run_cmd))
+    if re_run > 1:
+        print(f'Running ({re_run} times):', ' '.join(run_cmd))
+    else:
+        print('Running:', ' '.join(run_cmd))
+        if re_run < 1:
+            return 0, 0, 0
     
-    proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding='utf-8')
-    outs, errs = proc.communicate()
+    total_cpu_time = 0
+    total_mem_usage = 0
+    for _ in range(re_run):
+        proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding='utf-8')
+        outs, errs = proc.communicate()
 
-    cpu_time = parse_cpu_time(errs)
-    output = json.loads(outs)
-    mem_usage = float(output['PeakHeapSize']) / 2**20
-    num_result = output['NumResults']
+        cpu_time = parse_cpu_time(errs)
+        output = json.loads(outs)
+        mem_usage = float(output['PeakHeapSize']) / 2**20 # convert to MB
+        num_result = output['NumResults']
 
-    return num_result, cpu_time, mem_usage
+        total_cpu_time += cpu_time
+        total_mem_usage += mem_usage
+
+    return num_result, round(total_cpu_time / re_run, 2), round(total_mem_usage / re_run, 2)
 
 class Runner:
     def __init__(self, pattern_dir: str, graph_dir: str, pattern_filter: str, graphs: list[str]):
@@ -50,13 +61,13 @@ class Runner:
 
     def new_spade(pattern_dir: str, graph_dir: str):
         spade_graphs = ['attack.csv', 'mix.csv', 'benign.csv']
-        pattern_filter = '^SP[0-9]+_regex\.json$'
+        pattern_filter = '^SP[0-9]+_regex\\.json$'
         return Runner(pattern_dir, graph_dir, pattern_filter, spade_graphs)
     
 
     def new_darpa(pattern_dir: str, graph_dir: str):
-        darpa_graphs = ['dd1', 'dd2', 'dd3', 'dd4']
-        pattern_filter = '^DP[0-9]+_regex\.json$'
+        darpa_graphs = ['dd1.csv', 'dd2.csv', 'dd3.csv', 'dd4.csv']
+        pattern_filter = '^DP[0-9]+_regex\\.json$'
         return Runner(pattern_dir, graph_dir, pattern_filter, darpa_graphs)
 
     def run_all(self, window_size: int, re_run: int = 1):
@@ -67,15 +78,15 @@ class Runner:
             cpu_time_row = [pattern_name]
             mem_usage_row = [pattern_name]
             for graph_path in self.graph_files:
-                n1, cpu_time, mem_usage = run(pattern, graph_path, window_size)
+                n1, cpu_time, mem_usage = run(pattern, graph_path, window_size, re_run=re_run)
                 cpu_time_row.append(cpu_time)
                 mem_usage_row.append(mem_usage)
 
-                n2, cpu_time, mem_usage = run(pattern, graph_path, window_size, '--naive-join')
+                n2, cpu_time, mem_usage = run(pattern, graph_path, window_size, options='--naive-join', re_run=re_run)
                 cpu_time_row.append(cpu_time)
                 mem_usage_row.append(mem_usage)
 
-                n3, cpu_time, mem_usage = run(pattern, graph_path, window_size, '--cep')
+                n3, cpu_time, mem_usage = run(pattern, graph_path, window_size, options='--cep', re_run=re_run)
                 cpu_time_row.append(cpu_time)
                 mem_usage_row.append(mem_usage)
 
@@ -95,7 +106,6 @@ class Runner:
         cpu_time_df = pd.DataFrame(cpu_time_table, columns=cpu_time_columns)
         mem_usage_df = pd.DataFrame(mem_usage_table, columns=mem_usage_columns)
         return cpu_time_df, mem_usage_df
-
     
 if __name__ == '__main__':
     parser = parser = argparse.ArgumentParser(
@@ -118,6 +128,10 @@ if __name__ == '__main__':
                     default='../results/ipmes-java/',
                     type=str,
                     help='the output folder')
+    parser.add_argument('-r', '--re-run',
+                    default=1,
+                    type=int,
+                    help='number of re-runs, cpu-time and memory usage will be the mean of re-runs')
     args = parser.parse_args()
 
 
@@ -128,28 +142,36 @@ if __name__ == '__main__':
 
     os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
+    def run_and_save(dataset: str):
+        if dataset == 'spade':
+            runner = Runner.new_spade(args.pattern_dir, args.data_dir)
+            window_size = 1800
+        elif dataset == 'darpa':
+            runner = Runner.new_darpa(args.pattern_dir, args.data_dir)
+            window_size = 1000
+        else:
+            return
+        
+        cpu_time_df, mem_usage_df = runner.run_all(window_size, args.re_run)
+
+        print(f'{dataset.upper()} CPU Time (sec)')
+        print(cpu_time_df.to_string(index=False))
+        cpu_time_save_path = os.path.join(result_dir, f'{dataset}_cpu_time.csv')
+        cpu_time_df.to_csv(cpu_time_save_path, index=False)
+        print(f'This table is saved to {cpu_time_save_path}')
+        print()
+        print(f'{dataset.upper()} Memory Usage (MB)')
+        print(mem_usage_df.to_string(index=False))
+        mem_usage_save_path = os.path.join(result_dir, f'{dataset}_mem_usage.csv')
+        mem_usage_df.to_csv(mem_usage_save_path, index=False)
+        print(f'This table is saved to {mem_usage_save_path}')
+        print()
+
     run_spade = args.dataset in ['spade', 'all']
     run_darpa = args.dataset in ['darpa', 'all']
 
     if run_spade:
-        runner = Runner.new_spade(args.pattern_dir, args.data_dir)
-        cpu_time_df, mem_usage_df = runner.run_all(1800)
-        print('SPADE CPU Time (sec)')
-        print(cpu_time_df.to_string(index=False))
-        cpu_time_df.to_csv(os.path.join(result_dir, 'spade_cpu_time.csv'), index=False)
-        print()
-        print('SPADE Memory Usage (MB)')
-        print(mem_usage_df.to_string(index=False))
-        mem_usage_df.to_csv(os.path.join(result_dir, 'spade_mem_usage.csv'), index=False)
-        print()
-        
+        run_and_save('spade')
+
     if run_darpa:
-        runner = Runner.new_darpa(args.pattern_dir, args.data_dir)
-        cpu_time_df, mem_usage_df = runner.run_all(1000)
-        print('DARPA CPU Time (sec)')
-        print(cpu_time_df.to_string(index=False))
-        cpu_time_df.to_csv(os.path.join(result_dir, 'darpa_cpu_time.csv'), index=False)
-        print()
-        print('DARPA Memory Usage (MB)')
-        print(mem_usage_df.to_string(index=False))
-        mem_usage_df.to_csv(os.path.join(result_dir, 'darpa_mem_usage.csv'), index=False)
+        run_and_save('darpa')
