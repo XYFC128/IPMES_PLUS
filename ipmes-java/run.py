@@ -7,6 +7,13 @@ import argparse
 import pandas as pd
 import json
 import sys
+from typing import Tuple, List
+
+# to support older python version
+def remove_suffix(input_string: str, suffix: str) -> str:
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 def parse_cpu_time(stderr: str) -> float:
     lines = stderr.strip().split('\n')
@@ -14,7 +21,7 @@ def parse_cpu_time(stderr: str) -> float:
     sys_time = float(lines[-1].split()[1])
     return user_time + sys_time
 
-def run(pattern_path: str, graph_path: str, window_size: int, options: str = '', re_run = 1) -> tuple[float, float]:
+def run(pattern_path: str, graph_path: str, window_size: int, options: str = '', re_run = 1) -> Tuple[float, float]:
     '''
     Return CPU-time and peak memory usage (in MB)
     '''
@@ -44,7 +51,7 @@ def run(pattern_path: str, graph_path: str, window_size: int, options: str = '',
     return num_result, total_cpu_time / re_run, total_mem_usage / re_run
 
 class Runner:
-    def __init__(self, pattern_dir: str, graph_dir: str, pattern_filter: str, graphs: list[str]):
+    def __init__(self, pattern_dir: str, graph_dir: str, pattern_filter: str, graphs: List[str]):
         self.pattern_files = []
         filename_filter = re.compile(pattern_filter)
         for pattern_file in os.listdir(pattern_dir):
@@ -74,7 +81,7 @@ class Runner:
         cpu_time_table = []
         mem_usage_table = []
         for pattern in self.pattern_files:
-            pattern_name = os.path.basename(pattern).removesuffix('.json')
+            pattern_name = remove_suffix(os.path.basename(pattern), '.json')
             cpu_time_row = [pattern_name]
             mem_usage_row = [pattern_name]
             for graph_path in self.graph_files:
@@ -98,7 +105,7 @@ class Runner:
         cpu_time_columns = ['pattern']
         mem_usage_columns = ['pattern']
         for graph_path in self.graph_files:
-            graph_name = os.path.basename(graph_path).removesuffix('.csv')
+            graph_name = remove_suffix(os.path.basename(graph_path), '.csv')
             column_names = [f'{graph_name}', f'{graph_name}-naive', f'{graph_name}-cep']
             cpu_time_columns.extend(column_names)
             mem_usage_columns.extend(column_names)
