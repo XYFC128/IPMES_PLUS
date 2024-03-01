@@ -6,6 +6,8 @@ data/*
 !data/darpa_patterns
 !data/universal_patterns
 
+ipmes-rust/*
+
 /results/
 /siddhi-bin/
 project/target/
