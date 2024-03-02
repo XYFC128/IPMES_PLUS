@@ -144,6 +144,10 @@ if __name__ == '__main__':
                     default=1,
                     type=int,
                     help='number of re-runs, cpu-time and memory usage will be the mean of re-runs')
+    parser.add_argument('-M', '--mem-limit',
+                        default=100,
+                        type=int,
+                        help='set the memory limit of JVM in GB')
     args = parser.parse_args()
 
 
@@ -152,7 +156,7 @@ if __name__ == '__main__':
     result_dir = args.out_dir
     os.makedirs(result_dir, exist_ok=True)
 
-    os.environ['MAVEN_OPTS'] = '-Xmx100G'
+    os.environ['MAVEN_OPTS'] = f'-Xmx{args.mem_limit}G'
 
     def run_and_save(dataset: str):
         if dataset == 'spade':
