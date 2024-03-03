@@ -53,7 +53,7 @@ public class Main {
                 .help("Output debug information.");
         parser.addArgument("pattern_file").type(String.class)
                 .required(true)
-                .help("The path of pattern's file, e.g. ../data/universal_patterns/TTP11.json");
+                .help("The path to the pattern file, e.g. ../data/universal_patterns/TTP11.json");
         parser.addArgument("data_graph").type(String.class)
                 .required(true)
                 .help("The path to the preprocessed data graph");
