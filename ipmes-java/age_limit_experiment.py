@@ -7,6 +7,7 @@ import argparse
 import sys
 import pickle
 from results import parse_cputime
+from typing import Tuple, List
 
 parser = parser = argparse.ArgumentParser(
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -71,9 +72,9 @@ os.makedirs(log_dir, exist_ok=True)
 
 os.environ['MAVEN_OPTS'] = '-Xmx100G'
 
-output_table: list[dict] = []
+output_table: List[dict] = []
 
-def count_clusters(results: list[dict]) -> int:
+def count_clusters(results: List[dict]) -> int:
     clusters = {}
     for res in results:
         clusters.setdefault(res['StartTime'], 0)
