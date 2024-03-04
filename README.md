@@ -2,21 +2,22 @@
 
 ## Overview
 
-- Introduction (2 human minute)
-- Configuration and Installation (1 human minute, 6 compute minutes)
-	- Dependency (3 compute minutes)
-	- Build IPMES (3 compute minutes)
-- Reproduce and Validate Experiment Results (15 human minutes, 7 compute days)
-	- Preparation (5 compute minutes)
-	- Matching efficiency (7 compute days)
-	- Window size (5 compute minutes)
-- Execution / How to reuse beyond paper (12 human minutes, 1 compute minute)
+- Introduction (2 human-minute)
+- Configuration and Installation (1 human-minute, 6 compute-minutes)
+	- Dependency (3 compute-minutes)
+	- Build IPMES (3 compute-minutes)
+- Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
+	- Preparation (5 compute-minutes)
+	- Matching efficiency (7 compute-days)
+	- Window size (5 compute-minutes)
+- Execution / How to reuse beyond paper (12 human-minutes, 1 compute-minute)
 	- Command-line Syntax
 	- Input Graph Format
 	- Pattern Format
 	- Output and Side Effects
+- Authors (1 human-minute)
 
-## Introduction
+## Introduction (2 human-minute)
 
 **IPMES** (**I**ncremental Behavioral **P**attern **M**atching Algorithm over the System Audit **E**vent **S**tream for APT Detection) is a system that performs incremental pattern matching over event streams.
 
@@ -24,9 +25,9 @@ The core concept of IPMES involves decomposing a target behavioral pattern into 
 
 ![IPMES Flow Chart](images/flow_chart.png)
 
-## Configuration and Installation
+## Configuration and Installation (1 human-minute, 6 compute-minutes)
 
-### Dependency
+### Dependency (3 compute-minutes)
 
 - Java(JDK) >= 11
 - Apache Maven >= 3.6.0
@@ -38,7 +39,7 @@ sudo apt-get update
 sudo apt-get install openjdk-11-jdk maven
 ```
 
-### Build IPMES
+### Build IPMES (3 compute-minutes)
 
 With Maven, IPMES can be built with a simple command:
 
@@ -49,17 +50,19 @@ mvn compile
 
 The first build will take longer due to downloading the dependencies.
 
-## Reproduce and Validate Experiment Results
+## Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
 
 This section describes how to reproduce the experiment results in our paper.
 
-### Preparation
+### Preparation (5 compute-minutes)
 
 #### Experiment environment
 
 We use Python scripts to automate the experiment. The experiment environment requires:
 
 - RAM >= 100 GB
+    - Running experiment on SPADE require 32 ~ 48 GB
+    - Running on DARPA require 100 GB
 - Unix-like environment (tested on Ubuntu 18.04 and 22.04)
     - GNU bash >= 4.4.20
 - Python >= 3.6.9
@@ -87,7 +90,7 @@ Extract the file to a location of your choice. In the following example, we assu
  unzip preprocessed.zip -d <root of source files>/data/
 ```
 
-### Matching efficiency (Sec. IV.A, Table IV, Table V)
+### Matching efficiency (Sec. IV.A, Table IV, Table V) (7 compute-days)
 
 This experiment compares different implementations of IPMES (purposed method, naive method, and CEP) across different patterns on different data graphs.
 
@@ -145,6 +148,12 @@ Running: bash -c time -p -- mvn -q exec:java -Dexec.args="-w 1000 ../data/univer
 ...
 ```
 
+The meaning of each output column: `<Dataset Name>[-<IPMES Setting>]`. Available settings:
+
+- When no setting is specified, the default setting is the purposed method in out paper.
+- `naive`: naive implementation in the Join layer.
+- `cep`: Use CEP tool to implement composition layer.
+
 Note that collecting all the data points may be time-consuming. You can utilize `-D` option of the runner script to specify the dataset (`spade` or `darpa`). The SPADE dataset takes less time to run compared to the DARPA dataset. The following command only runs on the SPADE dataset, and it will output the result similar to Table IV in our paper:
 
 ```shell 
@@ -164,7 +173,7 @@ python3 run.py -D all\
 
 However, this could result in OOM error reported by JVM causing IPMES to exit and may reduce the performance.
 
-### Window size (Sec. IV.B, Fig.6, Fig 7)
+### Window size (Sec. IV.B, Fig.6, Fig 7) (5 compute-minutes)
 
 The following command reproduces Fig.6 and Fig.7 in section IV.B of our paper. It will run IPMES to match SP7 on the graph `mix` with different window size options.
 
@@ -198,7 +207,15 @@ WindowSize, AvgCpuTime, PoolSize, NumResults, NumClusters
 51200    51.34   235111  1690    13
 ```
 
-## Execution / How to reuse beyond paper
+The meaning of each output column:
+
+- `WindowSize`: the window size in seconds.
+- `AvgCpuTime`: the CPU Time (in seconds) it took to run on the given configuration.
+- `PoolSize`: the maximum number of instances in the pool during matching.
+- `NumResults`: the number of match results.
+- `NumClusters`: the number of attack cluster. Each cluster represent a single attack behavior.
+
+## Execution / How to reuse beyond paper (12 human-minutes, 1 compute-minute)
 
 ### Command-line Syntax
 
@@ -336,3 +353,11 @@ The meaning of each key:
 - `NumResults`: the number of match results
 - `PeakPoolSize`: the maximum number of instances in the pool
     - This number is meaningless when `--cep` option is enabled since the CEP tool doesn't allow us to obtain the pool size information
+
+## Authors
+
+- Hong-Wei Li (Research Center for Information Technology Innovation, Academia Sinica, Taiwan) <g6_7893000@hotmail.com>
+- Ping-Ting Liu (Department of Computer Science, National Yang Ming Chiao Tung University, Taiwan) <xyfc128@gmail.com>
+- Bo-Wei Lin (Department of Computer Science, National Yang Ming Chiao Tung University, Taiwan) <0800680274united@gmail.com>
+- Yi-Chun Liao (Department of Computer Science and Information Engineering, National Taiwan University, Taiwan) <lyck92@gmail.com>
+- Yennun Huang (Research Center for Information Technology Innovation, Academia Sinica, Taiwan) <yennunhuang@citi.sinica.edu.tw>
