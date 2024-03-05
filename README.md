@@ -84,7 +84,7 @@ The RAM requirement is high because the experiment involves running IPMES with a
 
 #### Data Graph
 
-Our experiments use the preprocessed data graph as the input to IPMES. You can download the preprocessed provenance graph for our experiment at [link](https://drive.google.com/file/d/1Iwydm_JaF1p2fls1KXazExIxfnjygUeY/view?usp=sharing).
+Our experiments use the preprocessed data graph as the input to IPMES. You can download the preprocessed provenance graph for our experiment at [link](https://figshare.com/articles/dataset/IPMES_Preprocessed_Data_Graph/25329568).
 
 Extract the file to a location of your choice. In the following example, we assume that the location of preprocessed data graph is located at `<root of source files>/data/preprocessed/`.
 
@@ -262,7 +262,7 @@ Data graphs are in CSV format. The columns in the CSV are: [`start_time`, `end_t
 - `start_id`:   id of the start node
 - `end_id`:     id of the end node
 
-A preprocessed provanence graph can be downloaded at [link](https://drive.google.com/file/d/1Iwydm_JaF1p2fls1KXazExIxfnjygUeY/view?usp=sharing).
+A preprocessed provanence graph can be downloaded at [link](https://figshare.com/articles/dataset/IPMES_Preprocessed_Data_Graph/25329568).
 
 ### Pattern Format
 
