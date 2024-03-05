@@ -78,6 +78,8 @@ cd ipmes-java
 pip3 install -r requirements.txt
 ```
 
+It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
+
 The RAM requirement is high because the experiment involves running IPMES with and without optimizations for comparison. The unoptimized version may need a significant amount of memory to achieve results comparable to the optimized one. However, the optimized IPMES should be runnable on a personal computer with 32 GB of memory.
 
 #### Data Graph
