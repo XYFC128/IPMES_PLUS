@@ -38,8 +38,6 @@ fn main() {
     let decomposition = decompose(&pattern);
     info!("Decomposition results: {:#?}", decomposition);
 
-    let start_time = ProcessTime::now();
-
     let mut csv = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(args.data_graph)
@@ -50,6 +48,8 @@ fn main() {
     let composition_layer = CompositionLayer::new(matching_layer, &decomposition, window_size);
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
+
+    let start_time = ProcessTime::now();
 
     let mut num_result = 0u32;
     for pattern_match in uniqueness_layer {
