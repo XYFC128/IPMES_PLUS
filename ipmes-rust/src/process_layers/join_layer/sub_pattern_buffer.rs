@@ -1,6 +1,5 @@
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::EarliestFirst;
-use std::cmp::max;
 
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
@@ -9,6 +8,8 @@ use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
 };
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
+
+use super::{get_sibling_id, get_parent_id};
 
 #[derive(Clone, Debug)]
 enum TimeOrder {
@@ -158,14 +159,14 @@ impl<'p> SubPatternBuffer<'p> {
         node_id_list.extend(&sub_pattern_buffer2.node_id_list);
         edge_id_list.extend(&sub_pattern_buffer2.edge_id_list);
 
-        let id = max(sub_pattern_buffer1.id, sub_pattern_buffer2.id) + 1;
+        let id = get_parent_id(sub_pattern_buffer1.id);
 
         // dummy code (no use)
         sub_pattern_buffer1.sibling_id;
 
         Self {
             id,
-            sibling_id: id + 1,
+            sibling_id: get_sibling_id(id),
             node_id_list,
             edge_id_list,
             buffer: BinaryHeap::new(),
@@ -284,6 +285,7 @@ impl<'p> SubPatternBuffer<'p> {
         Some(merged)
     }
 }
+
 
 #[cfg(test)]
 mod tests {
