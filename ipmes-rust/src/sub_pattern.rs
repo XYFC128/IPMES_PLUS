@@ -49,7 +49,7 @@ fn generate_sub_patterns<'a>(
     parents.pop();
 }
 
-/// Chekc whether two events have any shared entity (node).
+/// Check whether two events have any shared entity (node).
 fn has_shared_node(edge: &Event, parents: &Vec<&Event>) -> bool {
     if parents.is_empty() {
         return true;

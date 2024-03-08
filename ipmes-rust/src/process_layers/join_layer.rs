@@ -9,7 +9,7 @@ use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::composition_layer::PartialMatch;
 use log::{debug, warn};
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
 use std::mem;
 use std::rc::Rc;
 
@@ -19,8 +19,8 @@ pub struct JoinLayer<'p, P> {
     prev_layer: P,
     /// The behavioral pattern.
     pattern: &'p Pattern,
-    /// Binary-tree-structured buffers that store sub-pattern matches. 
-    /// 
+    /// Binary-tree-structured buffers that store sub-pattern matches.
+    ///
     /// A sub-pattern match in a parent node is joined from sub-patterns in its two children buffers.
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     /// See `clear_expired()`.
@@ -32,33 +32,24 @@ pub struct JoinLayer<'p, P> {
 impl<'p, P> JoinLayer<'p, P> {
     /// Create and initialize a pair of sub-pattern buffers.
     fn create_buffer_pair(
-        id: usize,
+        buffer_id: usize,
         pattern: &'p Pattern,
-        sub_patterns: &'p Vec<SubPattern>,
-        sub_pattern_buffers: &mut Vec<SubPatternBuffer>,
+        init_buffers: &mut HashMap<usize, SubPatternBuffer>,
     ) {
-        let mut sub_pattern_buffer1 = sub_pattern_buffers.pop().unwrap();
-        let mut sub_pattern_buffer2 = SubPatternBuffer::new(
-            sub_pattern_buffer1.id + 1,
-            sub_pattern_buffer1.id,
-            &sub_patterns[id],
-            sub_pattern_buffer1.max_num_entities,
-            pattern.events.len(),
-        );
         let relations = SubPatternBuffer::generate_relations(
             &pattern,
-            &sub_pattern_buffer1,
-            &sub_pattern_buffer2,
+            &init_buffers[&buffer_id],
+            &init_buffers[&(buffer_id + 1)]
         );
-        sub_pattern_buffer1.relation = relations.clone();
-        sub_pattern_buffer2.relation = relations;
 
-        sub_pattern_buffers.push(sub_pattern_buffer1.clone());
-        sub_pattern_buffers.push(sub_pattern_buffer2.clone());
-        sub_pattern_buffers.push(SubPatternBuffer::merge_buffers(
-            &sub_pattern_buffer1,
-            &sub_pattern_buffer2,
-        ));
+        // update
+        init_buffers.get_mut(&buffer_id).unwrap().relation = relations.clone();
+        init_buffers.get_mut(&(buffer_id + 1)).unwrap().relation = relations;
+
+        init_buffers.insert(
+            get_parent_id(buffer_id),
+            SubPatternBuffer::merge_buffers(&init_buffers[&buffer_id], &init_buffers[&(buffer_id + 1)]),
+        );
     }
     pub fn new(
         prev_layer: P,
@@ -66,23 +57,30 @@ impl<'p, P> JoinLayer<'p, P> {
         sub_patterns: &'p Vec<SubPattern>,
         window_size: u64,
     ) -> Self {
-        let mut sub_pattern_buffers = Vec::with_capacity(2 * sub_patterns.len() - 1);
+        let buffer_len = 2 * sub_patterns.len() - 1;
+        let mut sub_pattern_buffers = Vec::with_capacity(buffer_len);
+        let mut init_buffers = HashMap::new();
 
-        sub_pattern_buffers.push(SubPatternBuffer::new(
-            0,
-            1,
-            &sub_patterns[0],
-            pattern.num_entities,
-            pattern.events.len(),
-        ));
-
-        for i in 1..sub_patterns.len() {
-            Self::create_buffer_pair(
-                i,
-                pattern,
-                sub_patterns,
-                &mut sub_pattern_buffers,
+        for i in 0..sub_patterns.len() {
+            let buffer_id = get_buffer_id(i, buffer_len);
+            init_buffers.insert(
+                buffer_id,
+                SubPatternBuffer::new(
+                    buffer_id,
+                    get_sibling_id(buffer_id),
+                    &sub_patterns[i],
+                    pattern.num_entities,
+                    pattern.events.len(),
+                ),
             );
+        }
+
+        for buffer_id in (1..buffer_len - 1).step_by(2).rev() {
+            Self::create_buffer_pair(buffer_id, pattern, &mut init_buffers);
+        }
+
+        for buffer_id in 0..buffer_len {
+            sub_pattern_buffers.push(init_buffers[&buffer_id].clone());
         }
 
         Self {
@@ -127,52 +125,13 @@ impl<'p, P> JoinLayer<'p, P> {
     ///
     /// The uniqueness of matches is handled in the next layer (The Uniqueness Layer).
     fn add_to_answer(&mut self) {
-        let root_id = self.sub_pattern_buffers.len() - 1;
+        let root_id = get_root_buffer_id();
         self.full_match.extend(Self::pattern_match_conversion(
             &mut self.sub_pattern_buffers[root_id].buffer,
         ));
         self.full_match.extend(Self::pattern_match_conversion(
             &mut self.sub_pattern_buffers[root_id].new_match_buffer,
         ));
-    }
-
-    /// Get the corresponding buffer id of a sub-pattern match.
-    fn get_buffer_id(sub_pattern_id: usize) -> usize {
-        if sub_pattern_id == 0 {
-            0
-        } else {
-            2 * sub_pattern_id - 1
-        }
-    }
-
-    /// Get the left buffer id among siblings (might be the buffer indicated by `buffer_id` itself).
-    fn get_left_buffer_id(buffer_id: usize) -> usize {
-        buffer_id - buffer_id % 2
-    }
-
-    /// Get sibling's buffer id.
-    ///
-    /// Siblings' buffer ids only differ by their LSB.
-    fn get_sibling_id(&self, buffer_id: usize) -> usize {
-        // root has no sibling
-        if buffer_id == self.get_root_buffer_id() {
-            return buffer_id;
-        }
-        buffer_id ^ 1
-    }
-
-    /// Get parent buffer's id.
-    fn get_parent_id(&self, buffer_id: usize) -> usize {
-        // root has no parent
-        if buffer_id == self.get_root_buffer_id() {
-            return buffer_id;
-        }
-        Self::get_left_buffer_id(buffer_id) + 2
-    }
-
-    /// Get the root buffer's id.
-    fn get_root_buffer_id(&self) -> usize {
-        self.sub_pattern_buffers.len() - 1
     }
 
     /// Clear sub-pattern matches whose earliest event goes beyond the window.
@@ -239,16 +198,16 @@ impl<'p, P> JoinLayer<'p, P> {
             debug!("buffer id: {}", buffer_id);
 
             // root reached
-            if buffer_id == self.get_root_buffer_id() {
+            if buffer_id == get_root_buffer_id() {
                 self.add_to_answer();
                 break;
             }
 
             // Clear only the sibling buffer, since we can clear the current buffer when needed (deferred).
-            self.clear_expired(current_time, self.get_sibling_id(buffer_id));
+            self.clear_expired(current_time, get_sibling_id(buffer_id));
 
-            let joined = self.join_with_sibling(buffer_id, self.get_sibling_id(buffer_id));
-            let parent_id = self.get_parent_id(buffer_id);
+            let joined = self.join_with_sibling(buffer_id, get_sibling_id(buffer_id));
+            let parent_id = get_parent_id(buffer_id);
 
             self.sub_pattern_buffers[parent_id]
                 .new_match_buffer
@@ -300,6 +259,46 @@ fn create_event_id_map(event_id_map: &mut Vec<Option<u64>>, events: &Vec<MatchEv
     }
 }
 
+/// Get the corresponding buffer id of a sub-pattern match.
+fn get_buffer_id(sub_pattern_id: usize, buffer_len: usize) -> usize {
+    sub_pattern_id + buffer_len / 2
+}
+
+// /// Get the left buffer id among siblings (might be the buffer indicated by `buffer_id` itself).
+// fn get_left_buffer_id(buffer_id: usize) -> usize {
+//     buffer_id + buffer_id % 2 - 1
+// }
+
+/// Get sibling's buffer id.
+///
+/// Siblings' buffer ids only differ by their LSB.
+fn get_sibling_id(buffer_id: usize) -> usize {
+    // root has no sibling
+    if buffer_id == get_root_buffer_id() {
+        return buffer_id;
+    }
+    if buffer_id % 2 == 0 {
+        buffer_id - 1
+    } else {
+        buffer_id + 1
+    }
+}
+
+/// Get parent buffer's id.
+fn get_parent_id(buffer_id: usize) -> usize {
+    // root has no parent
+    if buffer_id == get_root_buffer_id() {
+        return buffer_id;
+    }
+    // get_left_buffer_id(buffer_id) + 2
+    (buffer_id - 1) / 2
+}
+
+/// Get the root buffer's id.
+fn get_root_buffer_id() -> usize {
+    0
+}
+
 impl<'p, P> Iterator for JoinLayer<'p, P>
 where
     P: Iterator<Item = Vec<PartialMatch<'p>>>,
@@ -338,8 +337,9 @@ where
                     match_events,
                 };
 
+                let buffer_id = get_buffer_id(sub_pattern_match.id, self.sub_pattern_buffers.len());
                 // put the sub-pattern match to its corresponding buffer
-                self.sub_pattern_buffers[Self::get_buffer_id(sub_pattern_match.id)]
+                self.sub_pattern_buffers[buffer_id]
                     .new_match_buffer
                     .push(EarliestFirst(sub_pattern_match));
             }
@@ -356,7 +356,6 @@ where
         self.full_match.pop()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
