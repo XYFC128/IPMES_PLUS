@@ -21,6 +21,9 @@ pub enum PatternParsingError {
     #[error("unexpected type of json object: {0}")]
     TypeError(&'static str),
 
+    #[error("there must be at least one pattern event")]
+    NoEventInPattern,
+
     #[error("the pattern version is too old or invalid: {0}")]
     UnsupportedVersion(String),
 
@@ -32,6 +35,12 @@ pub enum PatternParsingError {
 
     #[error("undefined event id: {0}")]
     UndefinedEventId(usize),
+
+    #[error("frequency must be an integer that > 1, but {0} is provided")]
+    InvalidFrequency(u32),
+
+    #[error("cycle detected in the dependency graph")]
+    DependencyCycle,
 }
 
 pub fn get_input_files(input_prefix: &str) -> (String, String, String) {
@@ -66,7 +75,11 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
         .as_array()
         .ok_or(PatternParsingError::KeyError("Events"))?;
     let events = parse_events(events_json, &entity_id2index)?;
+    
     let order = parse_order_relation(&events_json)?;
+    if !order.is_valid() {
+        return Err(PatternParsingError::DependencyCycle);
+    }
 
     Ok(Pattern {
         use_regex,
@@ -104,6 +117,10 @@ fn parse_events(
     events_json: &[Value],
     entity_id2idx: &HashMap<usize, usize>,
 ) -> Result<Vec<PatternEvent>, PatternParsingError> {
+    if events_json.is_empty() {
+        return Err(PatternParsingError::NoEventInPattern);
+    }
+
     let mut events = vec![];
     for event in events_json {
         let id = event["ID"]
@@ -118,6 +135,9 @@ fn parse_events(
                     .as_u64()
                     .ok_or(PatternParsingError::KeyError("Frequency"))?
                     as u32;
+                if freq <= 1 {
+                    return Err(PatternParsingError::InvalidFrequency(freq));
+                }
                 PatternEventType::Frequency(freq)
             }
             "Flow" => PatternEventType::Flow,
@@ -131,6 +151,8 @@ fn parse_events(
         let signature = event["Signature"].as_str().unwrap_or_default().to_string();
         if event_type == PatternEventType::Flow && !signature.is_empty() {
             warn!("Signature on pattern event of type Flow will be ignored");
+        } else if signature.is_empty() {
+            warn!("Empty signature detected, the matching behavior is undefined");
         }
 
         let subject_id = event["SubjectID"]

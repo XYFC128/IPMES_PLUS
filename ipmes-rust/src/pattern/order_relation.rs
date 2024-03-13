@@ -1,10 +1,10 @@
 use crate::pattern::parser::PatternParsingError;
 use petgraph::algo::floyd_warshall;
-use petgraph::graph::NodeIndex;
 use petgraph::graph::{DefaultIx, Graph};
+use petgraph::graph::{Node, NodeIndex};
 use petgraph::Direction;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 
@@ -122,6 +122,38 @@ impl OrderRelation {
         let id2 = NodeIndex::<DefaultIx>::new(*eid2 + 1);
         *self.distances_table.get(&(id1, id2)).unwrap()
     }
+
+    /// Validate the order relation. That is, check if there exist
+    /// a cycle in the dependency graph. If a cycle is found, return
+    /// `false`, otherwise return `true`.
+    pub fn is_valid(&self) -> bool {
+        for root in self.get_roots() {
+            let mut ancestors = HashSet::new();
+            let mut visited = HashSet::new();
+            let root = NodeIndex::<DefaultIx>::new(root);
+            if self.contains_cycle(root, &mut ancestors, &mut visited) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn contains_cycle(&self, root: NodeIndex, ancestors: &mut HashSet<NodeIndex>, visited: &mut HashSet<NodeIndex>) -> bool {
+        if visited.contains(&root) {
+            return false;
+        }
+
+        ancestors.insert(root);
+        visited.insert(root);
+        let neighbors = self.graph.neighbors_directed(root, Direction::Outgoing);
+        for nxt in neighbors {
+            if ancestors.contains(&nxt) || self.contains_cycle(nxt, ancestors, visited) {
+                return true;
+            }
+        }
+        ancestors.remove(&root);
+        false
+    }
 }
 
 #[cfg(test)]
@@ -135,5 +167,25 @@ mod tests {
         for neighbor in ord.get_previous(1) {
             println!("{:?}", neighbor);
         }
+    }
+
+    #[test]
+    fn test_cycle_detection() {
+        let normal_rules = [
+            (0, 1),
+            (1, 2),
+            (2, 3),
+        ];
+        let order = OrderRelation::from_order_rules(&normal_rules, &[0]);
+        assert!(order.is_valid());
+
+        let cycle_rules = [
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 1),
+        ];
+        let order = OrderRelation::from_order_rules(&cycle_rules, &[0]);
+        assert!(!order.is_valid());
     }
 }
