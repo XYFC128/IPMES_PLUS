@@ -1,7 +1,7 @@
 use crate::pattern::parser::PatternParsingError;
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::{DefaultIx, Graph};
-use petgraph::graph::{Node, NodeIndex};
+use petgraph::graph::NodeIndex;
 use petgraph::Direction;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -138,7 +138,12 @@ impl OrderRelation {
         true
     }
 
-    fn contains_cycle(&self, root: NodeIndex, ancestors: &mut HashSet<NodeIndex>, visited: &mut HashSet<NodeIndex>) -> bool {
+    fn contains_cycle(
+        &self,
+        root: NodeIndex,
+        ancestors: &mut HashSet<NodeIndex>,
+        visited: &mut HashSet<NodeIndex>,
+    ) -> bool {
         if visited.contains(&root) {
             return false;
         }
@@ -171,20 +176,11 @@ mod tests {
 
     #[test]
     fn test_cycle_detection() {
-        let normal_rules = [
-            (0, 1),
-            (1, 2),
-            (2, 3),
-        ];
+        let normal_rules = [(0, 1), (1, 2), (2, 3)];
         let order = OrderRelation::from_order_rules(&normal_rules, &[0]);
         assert!(order.is_valid());
 
-        let cycle_rules = [
-            (0, 1),
-            (1, 2),
-            (2, 3),
-            (3, 1),
-        ];
+        let cycle_rules = [(0, 1), (1, 2), (2, 3), (3, 1)];
         let order = OrderRelation::from_order_rules(&cycle_rules, &[0]);
         assert!(!order.is_valid());
     }
