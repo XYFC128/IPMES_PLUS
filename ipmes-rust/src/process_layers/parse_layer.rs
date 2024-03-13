@@ -1,10 +1,10 @@
-use std::cmp::Reverse;
 use crate::input_event::InputEvent;
+use ::std::rc::Rc;
 use csv::DeserializeRecordsIter;
+use log::warn;
+use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::File;
-use::std::rc::Rc;
-use log::warn;
 
 #[derive(Debug, serde::Deserialize)]
 struct Record {
@@ -62,7 +62,7 @@ impl<'a> ParseLayer<'a> {
         while let Some(result) = self.csv_iter.next() {
             match result {
                 Ok(record) => return Some(record),
-                Err(e) => warn!("Error occurred in input file: {e}")
+                Err(e) => warn!("Error occurred in input file: {e}"),
             };
         }
         None
@@ -70,9 +70,7 @@ impl<'a> ParseLayer<'a> {
 
     fn nothing_to_send(&self) -> bool {
         match self.buffer.peek() {
-            Some(edge) => {
-                edge.0.timestamp >= self.boundary_time
-            },
+            Some(edge) => edge.0.timestamp >= self.boundary_time,
             None => true,
         }
     }
@@ -129,7 +127,8 @@ mod tests {
     fn test() {
         let mut csv = csv::ReaderBuilder::new()
             .has_headers(false)
-            .from_path("testcases/test.csv").unwrap();
+            .from_path("testcases/test.csv")
+            .unwrap();
         let parse_layer = ParseLayer::new(&mut csv);
 
         for batch in parse_layer {

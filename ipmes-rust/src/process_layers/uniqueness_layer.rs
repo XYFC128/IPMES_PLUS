@@ -1,7 +1,7 @@
-use std::collections::{BinaryHeap, HashSet};
-use log::debug;
-use crate::pattern_match::PatternMatch;
 use crate::pattern_match::EarliestFirst;
+use crate::pattern_match::PatternMatch;
+use log::debug;
+use std::collections::{BinaryHeap, HashSet};
 
 /// The layer that handles pattern match uniqueness.
 pub struct UniquenessLayer<P> {
@@ -13,7 +13,7 @@ pub struct UniquenessLayer<P> {
     /// A pool which is used to maintain the uniqueness of pattern matches.
     uniqueness_pool: HashSet<PatternMatch>,
     /// Unique pattern matches which are ready for the next layer.
-    unique_matches: Vec<PatternMatch>
+    unique_matches: Vec<PatternMatch>,
 }
 
 impl<P> UniquenessLayer<P> {
@@ -23,7 +23,7 @@ impl<P> UniquenessLayer<P> {
             window_size,
             pattern_match_sequence: BinaryHeap::new(),
             uniqueness_pool: HashSet::new(),
-            unique_matches: Vec::new()
+            unique_matches: Vec::new(),
         }
     }
     /// Flush expired pattern matches.
@@ -37,7 +37,10 @@ impl<P> UniquenessLayer<P> {
                 break;
             }
         }
-        debug!("After flushing: {} pattern matches", self.uniqueness_pool.len());
+        debug!(
+            "After flushing: {} pattern matches",
+            self.uniqueness_pool.len()
+        );
     }
 }
 
@@ -54,7 +57,8 @@ where
                 self.flush_expired(latest_time);
                 if !self.uniqueness_pool.contains(&pattern_match) {
                     self.uniqueness_pool.insert(pattern_match.clone());
-                    self.pattern_match_sequence.push(EarliestFirst(pattern_match));
+                    self.pattern_match_sequence
+                        .push(EarliestFirst(pattern_match));
                 }
                 debug!("size of uniqueness_pool: {}", self.uniqueness_pool.len());
             } else {

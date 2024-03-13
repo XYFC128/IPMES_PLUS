@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    input_event::InputEvent, match_event::MatchEvent, pattern::Event as PatternEvent,
+    input_event::InputEvent, match_event::MatchEvent, pattern::PatternEvent,
     sub_pattern::SubPattern,
 };
 use regex::Error as RegexError;
@@ -103,6 +103,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::PatternEventType;
 
     fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEvent> {
         Rc::new(InputEvent {
@@ -118,6 +119,7 @@ mod tests {
     fn test_no_regex() {
         let pattern_edge1 = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "edge[0-9]+".to_string(),
             subject: 0,
             object: 1,
@@ -147,6 +149,7 @@ mod tests {
     fn test_regex() {
         let pattern_edge1 = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "edge[0-9]+".to_string(),
             subject: 0,
             object: 1,
@@ -176,6 +179,7 @@ mod tests {
     fn test_reorder() {
         let pattern_edge1 = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "edge1".to_string(),
             subject: 0,
             object: 1,
@@ -183,6 +187,7 @@ mod tests {
 
         let pattern_edge2 = PatternEvent {
             id: 1,
+            event_type: PatternEventType::Default,
             signature: "edge2".to_string(),
             subject: 1,
             object: 0,
@@ -213,6 +218,7 @@ mod tests {
     fn test_multiple_time_batch() {
         let pattern_edge1 = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "edge1".to_string(),
             subject: 0,
             object: 1,
@@ -220,6 +226,7 @@ mod tests {
 
         let pattern_edge2 = PatternEvent {
             id: 1,
+            event_type: PatternEventType::Default,
             signature: "edge2".to_string(),
             subject: 1,
             object: 0,
@@ -250,7 +257,7 @@ mod tests {
             false,
         )
         .unwrap();
-    
+
         assert_eq!(layer.next().unwrap().0.input_event.id, 3);
         assert_eq!(layer.next().unwrap().0.input_event.id, 2);
         assert_eq!(layer.next().unwrap().0.input_event.id, 4);

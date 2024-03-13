@@ -39,7 +39,7 @@ impl<'p, P> JoinLayer<'p, P> {
         let relations = SubPatternBuffer::generate_relations(
             &pattern,
             &init_buffers[&buffer_id],
-            &init_buffers[&(buffer_id + 1)]
+            &init_buffers[&(buffer_id + 1)],
         );
 
         // update
@@ -48,7 +48,10 @@ impl<'p, P> JoinLayer<'p, P> {
 
         init_buffers.insert(
             get_parent_id(buffer_id),
-            SubPatternBuffer::merge_buffers(&init_buffers[&buffer_id], &init_buffers[&(buffer_id + 1)]),
+            SubPatternBuffer::merge_buffers(
+                &init_buffers[&buffer_id],
+                &init_buffers[&(buffer_id + 1)],
+            ),
         );
     }
     pub fn new(
@@ -69,7 +72,7 @@ impl<'p, P> JoinLayer<'p, P> {
                     buffer_id,
                     get_sibling_id(buffer_id),
                     &sub_patterns[i],
-                    pattern.num_entities,
+                    pattern.entities.len(),
                     pattern.events.len(),
                 ),
             );
@@ -320,7 +323,7 @@ where
                     continue;
                 };
 
-                let mut entity_id_map = Vec::with_capacity(self.pattern.num_entities);
+                let mut entity_id_map = Vec::with_capacity(self.pattern.entities.len());
                 let mut event_id_map = vec![None; self.pattern.events.len()];
                 convert_entity_id_map(&mut entity_id_map, &partial_match.entity_id_map);
                 create_event_id_map(&mut event_id_map, &partial_match.events);

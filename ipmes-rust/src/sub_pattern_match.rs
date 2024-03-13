@@ -1,8 +1,8 @@
 use crate::match_event::MatchEvent;
 use crate::process_layers::join_layer::SubPatternBuffer;
+use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
-use log::debug;
 
 /// Matches of sub-patterns.
 #[derive(Clone, Debug)]
@@ -15,14 +15,14 @@ pub struct SubPatternMatch<'p> {
     pub earliest_time: u64,
 
     /// `(input entity id, pattern entity id)`.
-    /// 
+    ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
     pub match_entities: Vec<(u64, u64)>,
 
     /// `event_id_map[matched_id] = input_id`
-    /// 
+    ///
     /// `event_id_map.len()` == number of event in the "whole pattern".
-    /// 
+    ///
     /// > Note: The terms **matched event** and pattern event are used interchangeably.
     pub event_id_map: Vec<Option<u64>>,
 
@@ -70,7 +70,6 @@ impl<'p> SubPatternMatch<'p> {
 
         // merge "match_events" (WITHOUT checking "edge uniqueness")
         let (match_events, timestamps) = sub_pattern_buffer.try_merge_match_events(
-            
             &sub_pattern_match1.match_events,
             &sub_pattern_match2.match_events,
         )?;
@@ -85,9 +84,10 @@ impl<'p> SubPatternMatch<'p> {
         debug!("order relation checking...");
 
         // check "order relation"
-        if !sub_pattern_buffer.relation.check_order_relation(
-            &timestamps,
-        ) {
+        if !sub_pattern_buffer
+            .relation
+            .check_order_relation(&timestamps)
+        {
             return None;
         }
 
@@ -124,7 +124,7 @@ impl<'p> SubPatternMatch<'p> {
 }
 
 /// Helper structure that implements `PartialEq`, `Ord`, `PartialOrd` traits for `SubPatternMatch`.
-/// 
+///
 /// *Earliest* refers to `SubPatternMatch.earliest_time`.
 #[derive(Clone, Debug)]
 pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
@@ -151,15 +151,15 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-    use crate::input_event::InputEvent;
-    use crate::pattern::Event;
     use super::*;
+    use crate::input_event::InputEvent;
+    use crate::pattern::PatternEvent;
+    use std::rc::Rc;
 
     #[test]
     /// Fail
     fn test_check_edge_uniqueness_1() {
-        let pattern_edge = Event {
+        let pattern_edge = PatternEvent {
             id: 0,
             signature: "".to_string(),
             subject: 0,
@@ -184,7 +184,7 @@ mod tests {
                     subject: 0,
                     object: 0,
                 }),
-                matched: &pattern_edge
+                matched: &pattern_edge,
             },
             MatchEvent {
                 input_event: Rc::new(InputEvent {
@@ -194,8 +194,8 @@ mod tests {
                     subject: 0,
                     object: 0,
                 }),
-                matched: &pattern_edge
-            }
+                matched: &pattern_edge,
+            },
         ];
 
         assert_eq!(check_edge_uniqueness(&match_edges), false);
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     /// Pass
     fn test_check_edge_uniqueness_2() {
-        let pattern_edge = Event {
+        let pattern_edge = PatternEvent {
             id: 0,
             signature: "".to_string(),
             subject: 0,
@@ -229,7 +229,7 @@ mod tests {
                     subject: 0,
                     object: 0,
                 }),
-                matched: &pattern_edge
+                matched: &pattern_edge,
             },
             MatchEvent {
                 input_event: Rc::new(InputEvent {
@@ -239,8 +239,8 @@ mod tests {
                     subject: 0,
                     object: 0,
                 }),
-                matched: &pattern_edge
-            }
+                matched: &pattern_edge,
+            },
         ];
 
         assert_eq!(check_edge_uniqueness(&match_edges), true);
@@ -248,58 +248,22 @@ mod tests {
 
     #[test]
     fn test_merge_edge_id_map_1() {
-        let edge_id_map1 = vec![
-            None,
-            Some(3),
-            Some(2),
-            None,
-            None
-        ];
+        let edge_id_map1 = vec![None, Some(3), Some(2), None, None];
 
-        let edge_id_map2 = vec![
-            Some(1),
-            None,
-            None,
-            None,
-            Some(7)
-        ];
+        let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
 
-        let ans = vec![
-            Some(1),
-            Some(3),
-            Some(2),
-            None,
-            Some(7)
-        ];
+        let ans = vec![Some(1), Some(3), Some(2), None, Some(7)];
 
         assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
     }
 
     #[test]
     fn test_merge_edge_id_map_2() {
-        let edge_id_map1 = vec![
-            None,
-            Some(3),
-            None,
-            None,
-            None
-        ];
+        let edge_id_map1 = vec![None, Some(3), None, None, None];
 
-        let edge_id_map2 = vec![
-            Some(1),
-            None,
-            None,
-            None,
-            Some(7)
-        ];
+        let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
 
-        let ans = vec![
-            Some(1),
-            Some(3),
-            None,
-            None,
-            Some(7)
-        ];
+        let ans = vec![Some(1), Some(3), None, None, Some(7)];
 
         assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
     }

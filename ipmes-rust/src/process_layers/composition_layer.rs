@@ -227,7 +227,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::Event as PatternEvent;
+    use crate::pattern::PatternEvent;
     use std::rc::Rc;
 
     /// Create match event for testing purpose

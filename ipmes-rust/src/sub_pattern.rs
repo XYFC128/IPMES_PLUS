@@ -1,11 +1,11 @@
-use crate::pattern::{Event, Pattern};
+use crate::pattern::{Pattern, PatternEvent};
 
 /// Decomposed sub-pattern of a behavioral pattern
 #[derive(Debug)]
 pub struct SubPattern<'a> {
     /// sub-pattern id, given after decomposition
     pub id: usize,
-    pub events: Vec<&'a Event>,
+    pub events: Vec<&'a PatternEvent>,
 }
 
 impl<'a> SubPattern<'a> {}
@@ -14,7 +14,7 @@ impl<'a> SubPattern<'a> {}
 /// Decompose the input behavioral pattern into disjoint sub-patterns.
 pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
-    let mut parents: Vec<&Event> = Vec::new();
+    let mut parents: Vec<&PatternEvent> = Vec::new();
     for edge in &pattern.events {
         generate_sub_patterns(pattern, &edge, &mut parents, &mut sub_patterns);
     }
@@ -30,8 +30,8 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
 /// A DFS search that enumerates all possible sub-patterns.
 fn generate_sub_patterns<'a>(
     pattern: &'a Pattern,
-    edge: &'a Event,
-    parents: &mut Vec<&'a Event>,
+    edge: &'a PatternEvent,
+    parents: &mut Vec<&'a PatternEvent>,
     results: &mut Vec<SubPattern<'a>>,
 ) {
     // if "has_shared_node" is false, the sub-pattern would be disconnected (not allowed)
@@ -50,7 +50,7 @@ fn generate_sub_patterns<'a>(
 }
 
 /// Check whether two events have any shared entity (node).
-fn has_shared_node(edge: &Event, parents: &Vec<&Event>) -> bool {
+fn has_shared_node(edge: &PatternEvent, parents: &Vec<&PatternEvent>) -> bool {
     if parents.is_empty() {
         return true;
     }
@@ -102,87 +102,61 @@ fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -
 
 #[cfg(test)]
 mod tests {
-    use crate::pattern::parser::LegacyParser;
-    // use crate::sub_pattern::SubPattern;
     use super::*;
-    use crate::pattern::spade::SpadePatternParser;
+    use crate::pattern::{Pattern, PatternEventType};
 
     #[test]
     fn test_gsp() {
-        let parser = SpadePatternParser;
-        let pattern = parser
-            .parse(
-                "../data/patterns/TTP9_node.json",
-                "../data/patterns/TTP9_edge.json",
-                "../data/patterns/TTP9_oRels.json",
-            )
-            .unwrap();
+        let pattern = Pattern::parse("../data/universal_patterns/SP9.json").unwrap();
 
-        let edge: &Event = &pattern.events[0];
-        let mut parents: Vec<&Event> = Vec::new();
+        let edge: &PatternEvent = &pattern.events[0];
+        let mut parents: Vec<&PatternEvent> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
         println!("{:#?}", pattern.events);
     }
 
+    fn simple_pattern_event(signature: &str, subject: usize, object: usize) -> PatternEvent {
+        PatternEvent {
+            id: 0,
+            signature: signature.to_string(),
+            event_type: PatternEventType::Default,
+            subject,
+            object,
+        }
+    }
+
     #[test]
     fn test_hsn() {
-        let e1 = &Event {
-            id: 0,
-            signature: "a".to_string(),
-            subject: 10,
-            object: 19,
-        };
-        let e2 = &Event {
-            id: 0,
-            signature: "b".to_string(),
-            subject: 9,
-            object: 15,
-        };
-        let e3 = &Event {
-            id: 0,
-            signature: "c".to_string(),
-            subject: 11,
-            object: 13,
-        };
-        let e4 = &Event {
-            id: 0,
-            signature: "d".to_string(),
-            subject: 10,
-            object: 13,
-        };
+        let e1 = &simple_pattern_event("a", 10, 19);
+        let e2 = &simple_pattern_event("b", 9, 15);
+        let e3 = &simple_pattern_event("c", 11, 13);
+        let e4 = &simple_pattern_event("d", 10, 13);
 
         // true
-        let parents: Vec<&Event> = vec![e1, e3];
+        let parents: Vec<&PatternEvent> = vec![e1, e3];
         assert!(has_shared_node(e4, &parents));
 
         // false
-        let parents: Vec<&Event> = vec![e2];
+        let parents: Vec<&PatternEvent> = vec![e2];
         assert!(!has_shared_node(e4, &parents));
 
         // true
-        let parents: Vec<&Event> = vec![e3];
+        let parents: Vec<&PatternEvent> = vec![e3];
         assert!(has_shared_node(e4, &parents));
 
         // true
-        let parents: Vec<&Event> = vec![];
+        let parents: Vec<&PatternEvent> = vec![];
         assert!(has_shared_node(e4, &parents));
     }
 
     #[test]
     fn test_ssp() {
-        let parser = SpadePatternParser;
-        let pattern = parser
-            .parse(
-                "../data/patterns/TTP11_node.json",
-                "../data/patterns/TTP11_edge.json",
-                "../data/patterns/TTP11_oRels.json",
-            )
-            .unwrap();
+        let pattern = Pattern::parse("../data/universal_patterns/SP12.json").unwrap();
 
-        let edge: &Event = &pattern.events[0];
-        let mut parents: Vec<&Event> = Vec::new();
+        let edge: &PatternEvent = &pattern.events[0];
+        let mut parents: Vec<&PatternEvent> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
@@ -194,17 +168,10 @@ mod tests {
 
     #[test]
     fn test_cse() {
-        let parser = SpadePatternParser;
-        let pattern = parser
-            .parse(
-                "../data/patterns/TTP11_node.json",
-                "../data/patterns/TTP11_edge.json",
-                "../data/patterns/TTP11_oRels.json",
-            )
-            .unwrap();
+        let pattern = Pattern::parse("../data/universal_patterns/SP12.json").unwrap();
 
-        let edge: &Event = &pattern.events[0];
-        let mut parents: Vec<&Event> = Vec::new();
+        let edge: &PatternEvent = &pattern.events[0];
+        let mut parents: Vec<&PatternEvent> = Vec::new();
         let mut results: Vec<SubPattern> = Vec::new();
         generate_sub_patterns(&pattern, edge, &mut parents, &mut results);
 
@@ -227,14 +194,7 @@ mod tests {
 
     #[test]
     fn test_decompose() {
-        let parser = SpadePatternParser;
-        let pattern = parser
-            .parse(
-                "../data/patterns/TTP9_node.json",
-                "../data/patterns/TTP9_edge.json",
-                "../data/patterns/TTP9_oRels.json",
-            )
-            .unwrap();
+        let pattern = Pattern::parse("../data/universal_patterns/SP9.json").unwrap();
 
         println!("{:#?}", decompose(&pattern));
     }

@@ -1,8 +1,8 @@
+use crate::input_event::InputEvent;
+use crate::pattern::PatternEvent;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use crate::input_event::InputEvent;
-use crate::pattern::Event as PatternEvent;
 
 /// The structure that pairs up an input event with the pattern event it matches.
 #[derive(Clone)]
@@ -13,8 +13,7 @@ pub struct MatchEvent<'p> {
     pub matched: &'p PatternEvent,
 }
 
-impl<'p> MatchEvent<'p> {
-}
+impl<'p> MatchEvent<'p> {}
 
 impl Debug for MatchEvent<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -57,7 +56,7 @@ impl<'p> EventAttributes for MatchEvent<'p> {
     }
 
     fn get_object(&self) -> u64 {
-        self.input_event.object   
+        self.input_event.object
     }
 
     fn get_matched(&self) -> &PatternEvent {

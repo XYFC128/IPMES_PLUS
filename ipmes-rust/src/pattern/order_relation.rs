@@ -7,10 +7,11 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+
 #[derive(Debug)]
 pub struct OrderRelation {
     pub graph: Graph<usize, ()>,
-    distances_table: HashMap<(NodeIndex, NodeIndex), i32>
+    distances_table: HashMap<(NodeIndex, NodeIndex), i32>,
 }
 
 impl From<Graph<usize, ()>> for OrderRelation {
@@ -18,7 +19,7 @@ impl From<Graph<usize, ()>> for OrderRelation {
         let distances_table = floyd_warshall(&value, |_| 1).ok().unwrap();
         Self {
             graph: value,
-            distances_table
+            distances_table,
         }
     }
 }
@@ -76,33 +77,43 @@ impl OrderRelation {
         file.read_to_end(&mut content)?;
         let json_obj: Value = serde_json::from_slice(&content)?;
 
-        let orel_edges = Self::parse_json_obj(&json_obj).ok_or(
-            PatternParsingError::FormatError(0, "Json format of order relation file is not right."),
-        )?;
+        let orel_edges = Self::parse_json_obj(&json_obj)?;
 
         Ok(Graph::from_edges(&orel_edges).into())
     }
 
-    fn parse_json_obj(json_obj: &Value) -> Option<Vec<(u32, u32)>> {
+    fn parse_json_obj(json_obj: &Value) -> Result<Vec<(u32, u32)>, PatternParsingError> {
         let mut orel_edges = Vec::new();
 
-        for (key, val) in json_obj.as_object()? {
-            let children = val["children"].as_array()?;
+        let root_obj = json_obj.as_object().ok_or(PatternParsingError::TypeError(
+            "order relation should be a json object",
+        ))?;
+
+        for (key, val) in root_obj {
+            let children = val["children"]
+                .as_array()
+                .ok_or(PatternParsingError::KeyError("children"))?;
 
             let cur_id = if key == "root" {
                 0
             } else {
-                let id = key.parse::<u32>().ok()?;
+                let id = key.parse::<u32>().map_err(|_| {
+                    PatternParsingError::TypeError(
+                        "key should be a string of positive 32-bit integer",
+                    )
+                })?;
                 id + 1 // 0 is reserved for root
             };
 
             for child in children {
-                let child_id = child.as_u64()? + 1;
+                let child_id = child.as_u64().ok_or(PatternParsingError::TypeError(
+                    "child id should be an integer",
+                ))? + 1;
                 orel_edges.push((cur_id, child_id as u32));
             }
         }
 
-        Some(orel_edges)
+        Ok(orel_edges)
     }
 
     /// Return the distance from "eid1" to "eid2" (in DAG).

@@ -9,7 +9,7 @@ use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
 
-use super::{get_sibling_id, get_parent_id};
+use super::{get_parent_id, get_sibling_id};
 
 #[derive(Clone, Debug)]
 enum TimeOrder {
@@ -21,16 +21,16 @@ enum TimeOrder {
 #[derive(Clone, Debug)]
 pub struct Relation {
     /// `shared_entities.len() == num_node`
-    /// 
+    ///
     /// If node `i` is shared, `shared_entities[i] == true`.
-    /// 
+    ///
     /// `i`: pattern node id
-    /// 
+    ///
     /// (The "overall structure" has guaranteed nodes be shared properly, when performing "SubPatternMatch::try_merge_nodes()".)
     shared_entities: Vec<bool>,
 
     /// `event_orders: (pattern_id1, pattern_id2, TimeOrder)`
-    /// 
+    ///
     /// `pattern_id1` (`pattern_id2`, respectively) is the id of some left  (right, respectively) buffer on `JoinLayer::sub_pattern_buffers`, where the two buffers are siblings.
     event_orders: Vec<(usize, usize, TimeOrder)>,
 }
@@ -116,11 +116,11 @@ impl<'p> SubPatternBuffer<'p> {
         sub_pattern_buffer2: &SubPatternBuffer,
         // distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
     ) -> Relation {
-        let mut shared_entities = vec![false; pattern.num_entities];
+        let mut shared_entities = vec![false; pattern.entities.len()];
         let mut event_orders = Vec::new();
 
         // identify shared nodes
-        for i in 0..pattern.num_entities {
+        for i in 0..pattern.entities.len() {
             if sub_pattern_buffer1.node_id_list.contains(&i)
                 && sub_pattern_buffer2.node_id_list.contains(&i)
             {
@@ -286,12 +286,11 @@ impl<'p> SubPatternBuffer<'p> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::input_event::InputEvent;
-    use crate::pattern::Event;
+    use crate::pattern::{PatternEvent, PatternEventType};
     use std::rc::Rc;
     #[test]
     /// shared node not shared between input nodes: Fail
@@ -302,17 +301,17 @@ mod tests {
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
-    
+
         let a = vec![(2, 19), (7, 20), (11, 9)];
-    
+
         let b = vec![(0, 17), (2, 22), (9, 11)];
-    
+
         let ans = None;
-    
+
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_eq!(merged, ans);
     }
-    
+
     #[test]
     /// input node not unique: Fail
     fn test_try_merge_nodes2() {
@@ -322,16 +321,16 @@ mod tests {
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
-    
+
         let a = vec![(2, 19), (7, 20), (11, 9)];
-    
+
         let b = vec![(0, 17), (25, 20)];
         let ans = None;
-    
+
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_eq!(merged, ans);
     }
-    
+
     #[test]
     /// Pass ("a" finished first)
     fn test_try_merge_nodes3() {
@@ -341,17 +340,17 @@ mod tests {
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
-    
+
         let a = vec![(2, 19), (7, 20), (11, 9)];
-    
+
         let b = vec![(0, 17), (25, 27)];
         let ans = vec![(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
-    
+
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_ne!(merged, None);
         assert_eq!(merged.unwrap(), ans);
     }
-    
+
     #[test]
     /// Pass ("a" finished first)
     fn test_try_merge_nodes4() {
@@ -361,37 +360,37 @@ mod tests {
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
-    
+
         let b = vec![(2, 19), (7, 20), (11, 9)];
-    
+
         let a = vec![(0, 17), (25, 27)];
         let ans = vec![(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
-    
+
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_ne!(merged, None);
         assert_eq!(merged.unwrap(), ans);
     }
-    
+
     #[test]
     /// pattern edge not shared: Fail
     fn test_try_merge_edges1() {
         // num_edges1 = 2;
         // num_edges2 = 3;
-    
+
         let num_edges = 20;
         let tmp_sub_pattern = SubPattern {
             id: 0,
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, 0, num_edges);
-    
+
         let pattern_edge_ids1 = vec![1, 3];
         let pattern_edge_ids2 = vec![2, 4, 5];
-    
+
         let input_edge_data1 = vec![(2, 0), (5, 0)];
-    
+
         let input_edge_data2 = vec![(2, 0), (10, 0), (12, 0)];
-    
+
         let mut pattern_edges1 = vec![];
         for id in pattern_edge_ids1 {
             pattern_edges1.push(gen_edge(id));
@@ -400,34 +399,34 @@ mod tests {
         for id in pattern_edge_ids2 {
             pattern_edges2.push(gen_edge(id));
         }
-    
+
         let match_edge1 = gen_match_edges(&pattern_edges1, &input_edge_data1);
         let match_edge2 = gen_match_edges(&pattern_edges2, &input_edge_data2);
         assert!(sub_pattern_buffer
             .try_merge_match_events(&match_edge1, &match_edge2)
             .is_none());
     }
-    
+
     #[test]
     /// Pass
     fn test_try_merge_edges2() {
         // num_edges1 = 2;
         // num_edges2 = 3;
-    
+
         let num_edges = 20;
         let tmp_sub_pattern = SubPattern {
             id: 0,
             events: vec![],
         };
         let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, 0, num_edges);
-    
+
         let pattern_edge_ids1 = vec![1, 3];
         let pattern_edge_ids2 = vec![1, 4, 5];
-    
+
         let input_edge_data1 = vec![(2, 0), (5, 0)];
-    
+
         let input_edge_data2 = vec![(2, 0), (10, 0), (12, 0)];
-    
+
         let mut pattern_edges1 = vec![];
         for id in pattern_edge_ids1 {
             pattern_edges1.push(gen_edge(id));
@@ -436,13 +435,13 @@ mod tests {
         for id in pattern_edge_ids2 {
             pattern_edges2.push(gen_edge(id));
         }
-    
+
         let match_edge1 = gen_match_edges(&pattern_edges1, &input_edge_data1);
         let match_edge2 = gen_match_edges(&pattern_edges2, &input_edge_data2);
-    
+
         let res = sub_pattern_buffer.try_merge_match_events(&match_edge1, &match_edge2);
         assert!(!res.is_none());
-    
+
         let ans_pattern_edge_ids = vec![1, 3, 4, 5];
         let mut ans_pattern_edges = vec![];
         for id in ans_pattern_edge_ids {
@@ -457,18 +456,18 @@ mod tests {
             }
         }
     }
-    
+
     fn gen_match_edges<'p>(
-        pattern_edges: &'p Vec<Event>,
+        pattern_edges: &'p Vec<PatternEvent>,
         input_edge_data: &Vec<(u64, u64)>,
     ) -> Vec<MatchEvent<'p>> {
         let num_edges = input_edge_data.len();
-    
+
         let mut input_edges = vec![];
         for (id, timestamp) in input_edge_data {
             input_edges.push(gen_input_edge(*id, *timestamp));
         }
-    
+
         let mut match_edges = vec![];
         for i in 0..num_edges {
             match_edges.push(MatchEvent {
@@ -476,19 +475,20 @@ mod tests {
                 matched: &pattern_edges[i],
             });
         }
-    
+
         match_edges
     }
-    
-    fn gen_edge(id: usize) -> Event {
-        Event {
+
+    fn gen_edge(id: usize) -> PatternEvent {
+        PatternEvent {
             id,
+            event_type: PatternEventType::Default,
             signature: "".to_string(),
             subject: 0,
             object: 0,
         }
     }
-    
+
     fn gen_input_edge(id: u64, timestamp: u64) -> InputEvent {
         InputEvent {
             timestamp,
@@ -498,7 +498,7 @@ mod tests {
             object: 0,
         }
     }
-    
+
     /// only check ids
     fn cmp_match_edge(edge1: &MatchEvent, edge2: &MatchEvent) -> bool {
         if edge1.matched.id != edge2.matched.id {

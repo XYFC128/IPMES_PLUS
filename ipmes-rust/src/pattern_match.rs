@@ -1,6 +1,6 @@
-use std::cmp::Ordering;
 use crate::input_event::InputEvent;
 use itertools::Itertools;
+use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
@@ -45,7 +45,7 @@ impl Hash for PatternMatch {
 }
 
 /// Helper structure that implements `PartialEq`, `Ord`, `PartialOrd` traits for `PatternMatch`.
-/// 
+///
 /// *Earliest* refers to `PatternMatch.earliest_time`.
 #[derive(Clone)]
 pub struct EarliestFirst(pub PatternMatch);
