@@ -227,7 +227,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::PatternEvent;
+    use crate::pattern::{PatternEvent, PatternEventType};
     use std::rc::Rc;
 
     /// Create match event for testing purpose
@@ -257,12 +257,14 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "edge1".to_string(),
                 subject: 0,
                 object: 1,
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "edge2".to_string(),
                 subject: 1,
                 object: 2,
@@ -292,18 +294,21 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "a".to_string(),
                 subject: 0,
                 object: 1,
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "b".to_string(),
                 subject: 1,
                 object: 2,
             },
             PatternEvent {
                 id: 2,
+                event_type: PatternEventType::Default,
                 signature: "a".to_string(),
                 subject: 3,
                 object: 1,
@@ -331,12 +336,14 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "edge1".to_string(),
                 subject: 0,
                 object: 1,
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "edge2".to_string(),
                 subject: 1,
                 object: 2,

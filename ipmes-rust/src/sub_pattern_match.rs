@@ -153,7 +153,7 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
 mod tests {
     use super::*;
     use crate::input_event::InputEvent;
-    use crate::pattern::PatternEvent;
+    use crate::pattern::{PatternEvent, PatternEventType};
     use std::rc::Rc;
 
     #[test]
@@ -161,6 +161,7 @@ mod tests {
     fn test_check_edge_uniqueness_1() {
         let pattern_edge = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "".to_string(),
             subject: 0,
             object: 0,
@@ -206,6 +207,7 @@ mod tests {
     fn test_check_edge_uniqueness_2() {
         let pattern_edge = PatternEvent {
             id: 0,
+            event_type: PatternEventType::Default,
             signature: "".to_string(),
             subject: 0,
             object: 0,
