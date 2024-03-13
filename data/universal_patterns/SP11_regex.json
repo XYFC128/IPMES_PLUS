@@ -1,85 +1,119 @@
 {
-    "Version": "0.1.0",
-    "UseRegex": true,
-    "Events": [
-        {
-            "ID": 0,
-            "Signature": "load#Artifact::file::.*#Process::.*",
-            "SubjectID": 0,
-            "ObjectID": 1,
-            "Parents": []
-        },
-        {
-            "ID": 1,
-            "Signature": "lseek#Process::.*#Artifact::file::.*",
-            "SubjectID": 1,
-            "ObjectID": 0,
-            "Parents": [
-                0
-            ]
-        },
-        {
-            "ID": 2,
-            "Signature": "fork#Process::.*#Process::.*",
-            "SubjectID": 1,
-            "ObjectID": 2,
-            "Parents": [
-                1
-            ]
-        },
-        {
-            "ID": 3,
-            "Signature": "execve#Process::.*#Process::vim",
-            "SubjectID": 2,
-            "ObjectID": 3,
-            "Parents": [
-                2
-            ]
-        },
-        {
-            "ID": 4,
-            "Signature": "load#Artifact::file::/usr/bin/vim#Process::vim",
-            "SubjectID": 4,
-            "ObjectID": 3,
-            "Parents": [
-                3
-            ]
-        },
-        {
-            "ID": 5,
-            "Signature": "open#Artifact::file::/var/spool/cron/crontabs/root#Process::vim",
-            "SubjectID": 5,
-            "ObjectID": 3,
-            "Parents": [
-                4
-            ]
-        },
-        {
-            "ID": 6,
-            "Signature": "create#Process::vim#Artifact::file::/var/spool/cron/crontabs/root",
-            "SubjectID": 3,
-            "ObjectID": 6,
-            "Parents": [
-                5
-            ]
-        },
-        {
-            "ID": 7,
-            "Signature": "rename \\(write\\)#Process::vim#Artifact::file::/var/spool/cron/crontabs/root~",
-            "SubjectID": 3,
-            "ObjectID": 7,
-            "Parents": [
-                5
-            ]
-        },
-        {
-            "ID": 8,
-            "Signature": "rename#Artifact::file::/var/spool/cron/crontabs/root#Artifact::file::/var/spool/cron/crontabs/root~",
-            "SubjectID": 5,
-            "ObjectID": 7,
-            "Parents": [
-                5
-            ]
-        }
-    ]
+  "Version": "0.2.0",
+  "UseRegex": true,
+  "Entities": [
+    {
+      "ID": 0,
+      "Signature": "Artifact::file::.*"
+    },
+    {
+      "ID": 1,
+      "Signature": "Process::.*"
+    },
+    {
+      "ID": 2,
+      "Signature": "Process::.*"
+    },
+    {
+      "ID": 3,
+      "Signature": "Process::vim"
+    },
+    {
+      "ID": 4,
+      "Signature": "Artifact::file::/usr/bin/vim"
+    },
+    {
+      "ID": 5,
+      "Signature": "Artifact::file::/var/spool/cron/crontabs/root"
+    },
+    {
+      "ID": 6,
+      "Signature": "Artifact::file::/var/spool/cron/crontabs/root"
+    },
+    {
+      "ID": 7,
+      "Signature": "Artifact::file::/var/spool/cron/crontabs/root~"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 0,
+      "Signature": "load",
+      "SubjectID": 0,
+      "ObjectID": 1,
+      "Parents": []
+    },
+    {
+      "ID": 1,
+      "Signature": "lseek",
+      "SubjectID": 1,
+      "ObjectID": 0,
+      "Parents": [
+        0
+      ]
+    },
+    {
+      "ID": 2,
+      "Signature": "fork",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        1
+      ]
+    },
+    {
+      "ID": 3,
+      "Signature": "execve",
+      "SubjectID": 2,
+      "ObjectID": 3,
+      "Parents": [
+        2
+      ]
+    },
+    {
+      "ID": 4,
+      "Signature": "load",
+      "SubjectID": 4,
+      "ObjectID": 3,
+      "Parents": [
+        3
+      ]
+    },
+    {
+      "ID": 5,
+      "Signature": "open",
+      "SubjectID": 5,
+      "ObjectID": 3,
+      "Parents": [
+        4
+      ]
+    },
+    {
+      "ID": 6,
+      "Signature": "create",
+      "SubjectID": 3,
+      "ObjectID": 6,
+      "Parents": [
+        5
+      ]
+    },
+    {
+      "ID": 7,
+      "Signature": "rename \\(write\\)",
+      "SubjectID": 3,
+      "ObjectID": 7,
+      "Parents": [
+        5
+      ]
+    },
+    {
+      "ID": 8,
+      "Signature": "rename",
+      "SubjectID": 5,
+      "ObjectID": 7,
+      "Parents": [
+        5
+      ]
+    }
+  ]
 }

@@ -220,8 +220,22 @@ mod tests {
     #[test]
     fn test_sample_pattern() {
         let json_obj = json!({
-            "Version": "0.1.0",
+            "Version": "0.2.0",
             "UseRegex": false,
+            "Entities": [
+                {
+                    "ID": 0,
+                    "Signature": "",
+                },
+                {
+                    "ID": 1,
+                    "Signature": "",
+                },
+                {
+                    "ID": 2,
+                    "Signature": "",
+                }
+            ],
             "Events": [
                 {
                     "ID": 0,
