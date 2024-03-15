@@ -1,7 +1,7 @@
 use crate::pattern::parser::PatternParsingError;
 use petgraph::algo::floyd_warshall;
-use petgraph::graph::{DefaultIx, Graph};
 use petgraph::graph::NodeIndex;
+use petgraph::graph::{DefaultIx, Graph};
 use petgraph::Direction;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
