@@ -22,7 +22,12 @@ fn construct_regex(pattern: &str, escape_regex: bool) -> Result<Regex, RegexErro
 }
 
 impl Matcher {
-    pub fn new(pattern: &PatternEvent, subject: &PatternEntity, object: &PatternEntity, use_regex: bool) -> Result<Self, RegexError> {
+    pub fn new(
+        pattern: &PatternEvent,
+        subject: &PatternEntity,
+        object: &PatternEntity,
+        use_regex: bool,
+    ) -> Result<Self, RegexError> {
         if pattern.event_type == PatternEventType::Flow {
             Ok(Self {
                 event_signature: Regex::new(".*")?,

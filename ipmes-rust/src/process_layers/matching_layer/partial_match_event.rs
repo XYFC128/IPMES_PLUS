@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use crate::{input_event::InputEvent, pattern::PatternEvent};
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct PartialMatchEvent<'p> {
