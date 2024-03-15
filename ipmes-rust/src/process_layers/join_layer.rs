@@ -258,7 +258,7 @@ fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<Opt
 /// Convert a vector of events into a vector of event ids indexed by match event id.
 fn create_event_id_map(event_id_map: &mut Vec<Option<u64>>, events: &Vec<MatchEvent>) {
     for edge in events {
-        event_id_map[edge.matched.id] = Some(edge.input_event.id);
+        event_id_map[edge.matched.id] = Some(edge.input_event.event_id);
     }
 }
 
@@ -329,7 +329,7 @@ where
                 create_event_id_map(&mut event_id_map, &partial_match.events);
 
                 let mut match_events = partial_match.events;
-                match_events.sort_by(|x, y| x.input_event.id.cmp(&y.input_event.id));
+                match_events.sort_by(|x, y| x.input_event.event_id.cmp(&y.input_event.event_id));
 
                 let sub_pattern_match = SubPatternMatch {
                     id: partial_match.id,

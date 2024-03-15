@@ -78,8 +78,8 @@ impl<'p> SubMatcher<'p> {
         // duplicate the partial match and add the input edge into the new partial match
         let mut entity_id_map = partial_match.entity_id_map.clone();
         let mut events = partial_match.events.clone();
-        entity_id_map[match_event.matched.subject] = Some(match_event.input_event.subject);
-        entity_id_map[match_event.matched.object] = Some(match_event.input_event.object);
+        entity_id_map[match_event.matched.subject] = Some(match_event.input_event.subject_id);
+        entity_id_map[match_event.matched.object] = Some(match_event.input_event.object_id);
 
         let timestamp = min(match_event.input_event.timestamp, partial_match.timestamp);
         events.push(match_event.clone());
@@ -103,13 +103,13 @@ impl<'p> SubMatcher<'p> {
         partial_match: &PartialMatch<'p>,
     ) -> bool {
         if let Some(subject_match) = partial_match.entity_id_map[match_event.matched.subject] {
-            if subject_match != match_event.input_event.subject {
+            if subject_match != match_event.input_event.subject_id {
                 return true;
             }
         }
 
         if let Some(object_match) = partial_match.entity_id_map[match_event.matched.object] {
-            if object_match != match_event.input_event.object {
+            if object_match != match_event.input_event.object_id {
                 return true;
             }
         }
@@ -122,7 +122,7 @@ impl<'p> SubMatcher<'p> {
         partial_match
             .events
             .iter()
-            .find(|edge| edge.input_event.id == input_event.id)
+            .find(|edge| edge.input_event.event_id == input_event.event_id)
             .is_some()
     }
 
@@ -240,10 +240,12 @@ mod tests {
     ) -> MatchEvent<'p> {
         let input_event = Rc::new(InputEvent {
             timestamp: 0,
-            signature: signature.to_string(),
-            id,
-            subject,
-            object,
+            event_id: id,
+            event_signature: signature.to_string(),
+            subject_id: subject,
+            subject_signature: String::new(),
+            object_id: object,
+            object_signature: String::new(),
         });
 
         MatchEvent {

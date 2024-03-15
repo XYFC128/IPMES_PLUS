@@ -20,11 +20,11 @@ impl Debug for MatchEvent<'_> {
         write!(
             f,
             "[({}, {}), {}, {}, {}]",
-            self.input_event.id,
+            self.input_event.event_id,
             self.matched.id,
             self.input_event.timestamp,
-            self.input_event.subject,
-            self.input_event.object,
+            self.input_event.subject_id,
+            self.input_event.object_id,
         )
     }
 }
@@ -44,19 +44,19 @@ impl<'p> EventAttributes for MatchEvent<'p> {
     }
 
     fn get_signature(&self) -> &str {
-        &self.input_event.signature
+        &self.input_event.event_signature
     }
 
     fn get_id(&self) -> u64 {
-        self.input_event.id
+        self.input_event.event_id
     }
 
     fn get_subject(&self) -> u64 {
-        self.input_event.subject
+        self.input_event.subject_id
     }
 
     fn get_object(&self) -> u64 {
-        self.input_event.object
+        self.input_event.object_id
     }
 
     fn get_matched(&self) -> &PatternEvent {

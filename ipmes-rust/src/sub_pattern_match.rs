@@ -51,10 +51,10 @@ fn merge_event_id_map(
 fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
     let mut prev_id = u64::MAX;
     for edge in match_events {
-        if edge.input_event.id == prev_id {
+        if edge.input_event.event_id == prev_id {
             return false;
         }
-        prev_id = edge.input_event.id;
+        prev_id = edge.input_event.event_id;
     }
     true
 }
@@ -156,6 +156,18 @@ mod tests {
     use crate::pattern::{PatternEvent, PatternEventType};
     use std::rc::Rc;
 
+    fn dummy_input_event(event_id: u64) -> Rc<InputEvent> {
+        Rc::new(InputEvent {
+            timestamp: 0,
+            event_id,
+            event_signature: String::new(),
+            subject_id: 0,
+            subject_signature: String::new(),
+            object_id: 0,
+            object_signature: String::new(),
+        })
+    }
+
     #[test]
     /// Fail
     fn test_check_edge_uniqueness_1() {
@@ -168,33 +180,15 @@ mod tests {
         };
         let match_edges = vec![
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 1,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(1),
                 matched: &pattern_edge,
             },
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 2,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(2),
                 matched: &pattern_edge,
             },
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 2,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(2),
                 matched: &pattern_edge,
             },
         ];
@@ -214,33 +208,15 @@ mod tests {
         };
         let match_edges = vec![
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 1,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(1),
                 matched: &pattern_edge,
             },
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 2,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(2),
                 matched: &pattern_edge,
             },
             MatchEvent {
-                input_event: Rc::new(InputEvent {
-                    timestamp: 0,
-                    signature: "".to_string(),
-                    id: 3,
-                    subject: 0,
-                    object: 0,
-                }),
+                input_event: dummy_input_event(3),
                 matched: &pattern_edge,
             },
         ];

@@ -5,13 +5,18 @@ use std::cmp::Ordering;
 pub struct InputEvent {
     /// Records when this event occurs.
     pub timestamp: u64,
-    /// The labeling of this event.
-    pub signature: String,
-    pub id: u64,
+    /// The id of this event
+    pub event_id: u64,
+    /// The signature of this event.
+    pub event_signature: String,
     /// The node (entity) where this arc is from.
-    pub subject: u64,
+    pub subject_id: u64,
+    /// The signature of subject.
+    pub subject_signature: String,
     /// The node (entity) where this arc goes to.
-    pub object: u64,
+    pub object_id: u64,
+    /// The signature of object.
+    pub object_signature: String,
 }
 
 impl Ord for InputEvent {
@@ -28,6 +33,6 @@ impl PartialOrd for InputEvent {
 
 impl PartialEq<Self> for InputEvent {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.event_id == other.event_id
     }
 }

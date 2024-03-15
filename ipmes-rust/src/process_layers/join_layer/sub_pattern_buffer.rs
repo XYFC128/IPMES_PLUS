@@ -193,11 +193,11 @@ impl<'p> SubPatternBuffer<'p> {
         let mut next2 = p2.next();
 
         while let (Some(edge1), Some(edge2)) = (next1, next2) {
-            if edge1.input_event.id < edge2.input_event.id {
+            if edge1.input_event.event_id < edge2.input_event.event_id {
                 merged.push(edge1.clone());
                 timestamps[edge1.matched.id] = edge1.input_event.timestamp;
                 next1 = p1.next();
-            } else if edge1.input_event.id > edge2.input_event.id {
+            } else if edge1.input_event.event_id > edge2.input_event.event_id {
                 merged.push(edge2.clone());
                 timestamps[edge2.matched.id] = edge2.input_event.timestamp;
                 next2 = p2.next();
@@ -492,10 +492,12 @@ mod tests {
     fn gen_input_edge(id: u64, timestamp: u64) -> InputEvent {
         InputEvent {
             timestamp,
-            signature: "".to_string(),
-            id,
-            subject: 0,
-            object: 0,
+            event_id: id,
+            event_signature: "".to_string(),
+            subject_id: 0,
+            subject_signature: "".to_string(),
+            object_id: 0,
+            object_signature: "".to_string(),
         }
     }
 
@@ -503,7 +505,7 @@ mod tests {
     fn cmp_match_edge(edge1: &MatchEvent, edge2: &MatchEvent) -> bool {
         if edge1.matched.id != edge2.matched.id {
             return false;
-        } else if edge1.input_event.id != edge2.input_event.id {
+        } else if edge1.input_event.event_id != edge2.input_event.event_id {
             return false;
         }
         true

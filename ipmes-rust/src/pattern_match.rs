@@ -23,7 +23,7 @@ impl fmt::Display for PatternMatch {
         write!(
             f,
             "[{}]",
-            self.matched_events.iter().map(|e| e.id).join(", ")
+            self.matched_events.iter().map(|e| e.event_id).join(", ")
         )
     }
 }
@@ -32,14 +32,14 @@ impl Eq for PatternMatch {}
 
 impl PartialEq for PatternMatch {
     fn eq(&self, other: &Self) -> bool {
-        zip(&self.matched_events, &other.matched_events).all(|(a, b)| a.id.eq(&b.id))
+        zip(&self.matched_events, &other.matched_events).all(|(a, b)| a.event_id.eq(&b.event_id))
     }
 }
 
 impl Hash for PatternMatch {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for edge in &self.matched_events {
-            edge.id.hash(state);
+            edge.event_id.hash(state);
         }
     }
 }
