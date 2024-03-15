@@ -38,7 +38,7 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn parse(pattern_file: &str) -> Result<Pattern, PatternParsingError> {
+    pub fn parse(pattern_file: &str) -> Result<Self, PatternParsingError> {
         let mut file = File::open(pattern_file)?;
         let mut content = Vec::new();
         file.read_to_end(&mut content)?;
@@ -46,5 +46,43 @@ impl Pattern {
         let json_obj: Value = serde_json::from_slice(&content)?;
 
         parse_json(&json_obj)
+    }
+
+    /// Create pattern from graph (V, E). Each vertex is associated with a signature.
+    /// Edges are given by a pair *(u, v, sig)* where *u* and *v* are indics into the `vertices` slice,
+    /// and *sig* is the signature of this edge.
+    ///
+    /// The dependency is not specified, so there are no dependency requirement in the returned
+    /// pattern.
+    pub fn from_graph(vertices: &[&str], edges: &[(usize, usize, &str)], use_regex: bool) -> Self {
+        let mut entities = vec![];
+        for (id, signature) in vertices.iter().enumerate() {
+            entities.push(PatternEntity {
+                id,
+                signature: signature.to_string(),
+            });
+        }
+
+        let mut events = vec![];
+        let mut roots = vec![];
+        for (id, edge) in edges.iter().enumerate() {
+            roots.push(id as u32); // all edges are root (no dependency)
+            events.push(PatternEvent {
+                id,
+                event_type: PatternEventType::Default,
+                signature: edge.2.to_string(),
+                subject: edge.0,
+                object: edge.1,
+            });
+        }
+
+        let order = OrderRelation::from_order_rules(&[], &roots);
+
+        Self {
+            use_regex,
+            entities,
+            events,
+            order,
+        }
     }
 }
