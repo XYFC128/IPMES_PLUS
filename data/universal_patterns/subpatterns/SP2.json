@@ -1,0 +1,77 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 4,
+                    "signature": "execve#Process::sh#Process::awk",
+                    "subject": 9,
+                    "object": 8
+                },
+                {
+                    "id": 6,
+                    "signature": "load#Artifact::file::/usr/bin/awk#Process::awk",
+                    "subject": 2,
+                    "object": 8
+                },
+                {
+                    "id": 7,
+                    "signature": "open#Artifact::file::/home/admin/text.txt#Process::awk",
+                    "subject": 3,
+                    "object": 8
+                },
+                {
+                    "id": 8,
+                    "signature": "write#Process::awk#Artifact::unnamed pipe::",
+                    "subject": 8,
+                    "object": 7
+                },
+                {
+                    "id": 9,
+                    "signature": "read#Artifact::unnamed pipe::#Process::sudo",
+                    "subject": 7,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "load#Artifact::file::/bin/sh#Process::sh",
+                    "subject": 1,
+                    "object": 0
+                },
+                {
+                    "id": 1,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 4
+                },
+                {
+                    "id": 2,
+                    "signature": "update#Process::sh#Process::sh",
+                    "subject": 4,
+                    "object": 5
+                },
+                {
+                    "id": 3,
+                    "signature": "execve#Process::sh#Process::sudo",
+                    "subject": 5,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 5,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 9
+                }
+            ]
+        }
+    ]

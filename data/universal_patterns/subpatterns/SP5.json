@@ -1,0 +1,89 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 5,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 8
+                },
+                {
+                    "id": 6,
+                    "signature": "execve#Process::hello.sh#Process::ifconfig",
+                    "subject": 8,
+                    "object": 9
+                },
+                {
+                    "id": 7,
+                    "signature": "load#Artifact::file::/sbin/ifconfig#Process::ifconfig",
+                    "subject": 10,
+                    "object": 9
+                },
+                {
+                    "id": 8,
+                    "signature": "execve#Process::hello.sh#Process::grep",
+                    "subject": 1,
+                    "object": 3
+                },
+                {
+                    "id": 9,
+                    "signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+                    "subject": 4,
+                    "object": 3
+                },
+                {
+                    "id": 10,
+                    "signature": "write#Process::grep#Artifact::file::/home/admin/ipcon.txt",
+                    "subject": 3,
+                    "object": 5
+                },
+                {
+                    "id": 11,
+                    "signature": "update#Artifact::file::/home/admin/ipcon.txt#Artifact::file::/home/admin/ipcon.txt",
+                    "subject": 2,
+                    "object": 5
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 2,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 6
+                },
+                {
+                    "id": 3,
+                    "signature": "execve#Process::hello.sh#Process::grep",
+                    "subject": 6,
+                    "object": 7
+                },
+                {
+                    "id": 4,
+                    "signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+                    "subject": 4,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 1,
+                    "signature": "create#Process::hello.sh#Artifact::file::/home/admin/ipcon.txt",
+                    "subject": 1,
+                    "object": 2
+                }
+            ]
+        }
+    ]

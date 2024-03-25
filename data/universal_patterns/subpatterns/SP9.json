@@ -1,0 +1,98 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 10
+                },
+                {
+                    "id": 1,
+                    "signature": "execve#Process::hello.sh#Process::tar",
+                    "subject": 10,
+                    "object": 1
+                },
+                {
+                    "id": 4,
+                    "signature": "fork#Process::tar#Process::tar",
+                    "subject": 1,
+                    "object": 5
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 6,
+                    "signature": "open#Artifact::file::/home/admin/ipcon.txt#Process::tar",
+                    "subject": 2,
+                    "object": 1
+                },
+                {
+                    "id": 7,
+                    "signature": "open#Artifact::directory::/home/admin/doc#Process::tar",
+                    "subject": 3,
+                    "object": 1
+                },
+                {
+                    "id": 9,
+                    "signature": "write#Process::tar#Artifact::unnamed pipe::",
+                    "subject": 1,
+                    "object": 8
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 8,
+                    "signature": "update#Artifact::file::/home/admin/hello.tar.gz#Artifact::file::/home/admin/hello.tar.gz",
+                    "subject": 6,
+                    "object": 7
+                },
+                {
+                    "id": 10,
+                    "signature": "write#Process::gzip#Artifact::file::/home/admin/hello.tar.gz",
+                    "subject": 9,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "events": [
+                {
+                    "id": 2,
+                    "signature": "open#Artifact::file::/home/admin/ttt.txt#Process::tar",
+                    "subject": 4,
+                    "object": 1
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "events": [
+                {
+                    "id": 3,
+                    "signature": "create#Process::tar#Artifact::file::/home/admin/hello.tar.gz",
+                    "subject": 5,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "events": [
+                {
+                    "id": 5,
+                    "signature": "read#Artifact::unnamed pipe::#Process::gzip",
+                    "subject": 8,
+                    "object": 9
+                }
+            ]
+        }
+    ]

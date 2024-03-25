@@ -1,0 +1,31 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 1,
+                    "signature": "execve#Process::hello.sh#Process::journalctl",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 2,
+                    "signature": "load#Artifact::file::/usr/bin/journalctl#Process::journalctl",
+                    "subject": 4,
+                    "object": 2
+                },
+                {
+                    "id": 3,
+                    "signature": "open#Artifact::directory::/var/log/journal#Process::journalctl",
+                    "subject": 3,
+                    "object": 2
+                }
+            ]
+        }
+    ]

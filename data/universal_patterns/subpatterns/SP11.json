@@ -1,0 +1,71 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "load#Artifact::file::/home/admin/.mozilla/firefox/hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 1,
+                    "signature": "lseek#Process::hello.sh#Artifact::file::/home/admin/.mozilla/firefox/hello.sh",
+                    "subject": 1,
+                    "object": 0
+                },
+                {
+                    "id": 2,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 3,
+                    "signature": "execve#Process::hello.sh#Process::vim",
+                    "subject": 2,
+                    "object": 3
+                },
+                {
+                    "id": 4,
+                    "signature": "load#Artifact::file::/usr/bin/vim#Process::vim",
+                    "subject": 4,
+                    "object": 3
+                },
+                {
+                    "id": 5,
+                    "signature": "open#Artifact::file::/var/spool/cron/crontabs/root#Process::vim",
+                    "subject": 5,
+                    "object": 3
+                },
+                {
+                    "id": 8,
+                    "signature": "rename#Artifact::file::/var/spool/cron/crontabs/root#Artifact::file::/var/spool/cron/crontabs/root~",
+                    "subject": 5,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 6,
+                    "signature": "create#Process::vim#Artifact::file::/var/spool/cron/crontabs/root",
+                    "subject": 3,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 7,
+                    "signature": "rename (write)#Process::vim#Artifact::file::/var/spool/cron/crontabs/root~",
+                    "subject": 3,
+                    "object": 7
+                }
+            ]
+        }
+    ]
