@@ -1,0 +1,107 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 1,
+                    "signature": "execve#Process::sh#Process::sshpass",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 2,
+                    "signature": "load#Artifact::file::/usr/bin/sshpass#Process::sshpass",
+                    "subject": 3,
+                    "object": 2
+                },
+                {
+                    "id": 3,
+                    "signature": "fork#Process::sshpass#Process::sshpass",
+                    "subject": 2,
+                    "object": 4
+                },
+                {
+                    "id": 4,
+                    "signature": "execve#Process::sshpass#Process::scp",
+                    "subject": 4,
+                    "object": 5
+                },
+                {
+                    "id": 5,
+                    "signature": "load#Artifact::file::/usr/bin/scp#Process::scp",
+                    "subject": 6,
+                    "object": 5
+                },
+                {
+                    "id": 6,
+                    "signature": "fork#Process::scp#Process::scp",
+                    "subject": 5,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 7,
+                    "signature": "lseek#Process::ssh#Artifact::file::/etc/passwd",
+                    "subject": 12,
+                    "object": 11
+                },
+                {
+                    "id": 8,
+                    "signature": "connect#Process::ssh#Artifact::network socket::.*:.*",
+                    "subject": 12,
+                    "object": 13
+                },
+                {
+                    "id": 9,
+                    "signature": "write#Process::ssh#Artifact::network socket::.*:.*",
+                    "subject": 12,
+                    "object": 13
+                },
+                {
+                    "id": 10,
+                    "signature": "read#Artifact::network socket::.*:.*#Process::ssh",
+                    "subject": 13,
+                    "object": 12
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 11,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 8
+                },
+                {
+                    "id": 12,
+                    "signature": "update#Process::sh#Process::sh",
+                    "subject": 8,
+                    "object": 9
+                },
+                {
+                    "id": 13,
+                    "signature": "execve#Process::sh#Process::sudo",
+                    "subject": 9,
+                    "object": 10
+                },
+                {
+                    "id": 14,
+                    "signature": "open#Artifact::file::/etc/passwd#Process::sudo",
+                    "subject": 11,
+                    "object": 10
+                }
+            ]
+        }
+    ]

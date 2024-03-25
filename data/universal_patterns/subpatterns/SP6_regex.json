@@ -1,0 +1,140 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 6,
+                    "signature": "fork#Process::.*#Process::.*",
+                    "subject": 2,
+                    "object": 9
+                },
+                {
+                    "id": 7,
+                    "signature": "execve#Process::.*#Process::ifconfig",
+                    "subject": 9,
+                    "object": 10
+                },
+                {
+                    "id": 8,
+                    "signature": "load#Artifact::file::/sbin/ifconfig#Process::ifconfig",
+                    "subject": 4,
+                    "object": 10
+                },
+                {
+                    "id": 9,
+                    "signature": "fork#Process::.*#Process::.*",
+                    "subject": 2,
+                    "object": 12
+                },
+                {
+                    "id": 10,
+                    "signature": "write#Process::ifconfig#Artifact::unnamed pipe::",
+                    "subject": 10,
+                    "object": 11
+                },
+                {
+                    "id": 12,
+                    "signature": "read#Artifact::unnamed pipe::#Process::grep",
+                    "subject": 11,
+                    "object": 8
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 14,
+                    "signature": "fork#Process::awk#Process::awk",
+                    "subject": 13,
+                    "object": 14
+                },
+                {
+                    "id": 15,
+                    "signature": "execve#Process::awk#Process::sh",
+                    "subject": 14,
+                    "object": 15
+                },
+                {
+                    "id": 16,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 15,
+                    "object": 16
+                },
+                {
+                    "id": 17,
+                    "signature": "execve#Process::sh#Process::nmap",
+                    "subject": 16,
+                    "object": 0
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::.*#Process::.*",
+                    "subject": 2,
+                    "object": 5
+                },
+                {
+                    "id": 1,
+                    "signature": "execve#Process::.*#Process::grep",
+                    "subject": 5,
+                    "object": 6
+                },
+                {
+                    "id": 2,
+                    "signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+                    "subject": 3,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "events": [
+                {
+                    "id": 3,
+                    "signature": "fork#Process::.*#Process::.*",
+                    "subject": 2,
+                    "object": 7
+                },
+                {
+                    "id": 4,
+                    "signature": "execve#Process::.*#Process::grep",
+                    "subject": 7,
+                    "object": 8
+                },
+                {
+                    "id": 5,
+                    "signature": "load#Artifact::file::/usr/bin/grep#Process::grep",
+                    "subject": 3,
+                    "object": 8
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "events": [
+                {
+                    "id": 11,
+                    "signature": "execve#Process::.*#Process::awk",
+                    "subject": 12,
+                    "object": 13
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "events": [
+                {
+                    "id": 13,
+                    "signature": "load#Artifact::file::/usr/bin/nmap#Process::nmap",
+                    "subject": 1,
+                    "object": 0
+                }
+            ]
+        }
+    ]

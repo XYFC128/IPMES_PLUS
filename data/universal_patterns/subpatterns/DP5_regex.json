@@ -1,0 +1,144 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 4,
+                    "signature": "EVENT_UPDATE#FILE_OBJECT_FILE::.*#FILE_OBJECT_FILE::.*",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 5,
+                    "signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::.*#SUBJECT_PROCESS::.*",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 6,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+                    "subject": 3,
+                    "object": 0
+                },
+                {
+                    "id": 7,
+                    "signature": "EVENT_FORK#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+                    "subject": 3,
+                    "object": 6
+                },
+                {
+                    "id": 8,
+                    "signature": "EVENT_EXECUTE#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+                    "subject": 6,
+                    "object": 2
+                },
+                {
+                    "id": 9,
+                    "signature": "EVENT_CONNECT#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+                    "subject": 2,
+                    "object": 7
+                },
+                {
+                    "id": 10,
+                    "signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::.*#FILE_OBJECT_FILE::.*",
+                    "subject": 3,
+                    "object": 1
+                },
+                {
+                    "id": 11,
+                    "signature": "EVENT_FORK#SUBJECT_PROCESS::.*#SUBJECT_PROCESS::.*",
+                    "subject": 2,
+                    "object": 8
+                },
+                {
+                    "id": 12,
+                    "signature": "EVENT_READ#OBJECT_UNNAMEPIPE::#SUBJECT_PROCESS::.*",
+                    "subject": 10,
+                    "object": 2
+                },
+                {
+                    "id": 13,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::.*#OBJECT_UNNAMEPIPE::",
+                    "subject": 8,
+                    "object": 10
+                },
+                {
+                    "id": 14,
+                    "signature": "EVENT_WRITE#SUBJECT_PROCESS::uname#OBJECT_UNNAMEPIPE::",
+                    "subject": 13,
+                    "object": 10
+                },
+                {
+                    "id": 15,
+                    "signature": "EVENT_LOADLIBRARY#FILE_OBJECT_FILE::/bin/uname#SUBJECT_PROCESS::uname",
+                    "subject": 14,
+                    "object": 13
+                },
+                {
+                    "id": 16,
+                    "signature": "EVENT_SENDMSG#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+                    "subject": 2,
+                    "object": 7
+                },
+                {
+                    "id": 17,
+                    "signature": "EVENT_RECVMSG#OBJECT_SOCKET::.*:.*#SUBJECT_PROCESS::.*",
+                    "subject": 7,
+                    "object": 2
+                },
+                {
+                    "id": 18,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::.*#FILE_OBJECT_DIR::.*",
+                    "subject": 2,
+                    "object": 15
+                },
+                {
+                    "id": 19,
+                    "signature": "EVENT_CONNECT#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+                    "subject": 2,
+                    "object": 9
+                },
+                {
+                    "id": 20,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+                    "subject": 2,
+                    "object": 9
+                },
+                {
+                    "id": 21,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::.*#OBJECT_SOCKET::.*:.*",
+                    "subject": 2,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "EVENT_EXECUTE#SUBJECT_PROCESS::bash#SUBJECT_PROCESS::.*",
+                    "subject": 11,
+                    "object": 3
+                },
+                {
+                    "id": 1,
+                    "signature": "EVENT_FORK#SUBJECT_PROCESS::bash#SUBJECT_PROCESS::bash",
+                    "subject": 12,
+                    "object": 11
+                },
+                {
+                    "id": 2,
+                    "signature": "EVENT_READ#FILE_OBJECT_FILE::.*#SUBJECT_PROCESS::.*",
+                    "subject": 4,
+                    "object": 3
+                },
+                {
+                    "id": 3,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::.*#FILE_OBJECT_DIR::/home/admin/",
+                    "subject": 3,
+                    "object": 5
+                }
+            ]
+        }
+    ]

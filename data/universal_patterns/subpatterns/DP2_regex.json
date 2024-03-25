@@ -1,0 +1,127 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/passwd#SUBJECT_PROCESS::cache",
+                    "subject": 1,
+                    "object": 3
+                },
+                {
+                    "id": 1,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory",
+                    "subject": 3,
+                    "object": 4
+                },
+                {
+                    "id": 2,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+                    "subject": 3,
+                    "object": 1
+                },
+                {
+                    "id": 3,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+                    "subject": 3,
+                    "object": 1
+                },
+                {
+                    "id": 4,
+                    "signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::.*:.*",
+                    "subject": 3,
+                    "object": 0
+                },
+                {
+                    "id": 5,
+                    "signature": "EVENT_READ#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory#SUBJECT_PROCESS::cache",
+                    "subject": 4,
+                    "object": 3
+                },
+                {
+                    "id": 6,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/proc/sys/vm/overcommit_memory",
+                    "subject": 3,
+                    "object": 4
+                },
+                {
+                    "id": 7,
+                    "signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::.*:.*",
+                    "subject": 8,
+                    "object": 0
+                },
+                {
+                    "id": 8,
+                    "signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/passwd#SUBJECT_PROCESS::cache",
+                    "subject": 1,
+                    "object": 8
+                },
+                {
+                    "id": 9,
+                    "signature": "EVENT_READ#FILE_OBJECT_FILE::/etc/group#SUBJECT_PROCESS::cache",
+                    "subject": 2,
+                    "object": 8
+                },
+                {
+                    "id": 10,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/group",
+                    "subject": 8,
+                    "object": 2
+                },
+                {
+                    "id": 11,
+                    "signature": "EVENT_OPEN#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+                    "subject": 8,
+                    "object": 1
+                },
+                {
+                    "id": 12,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/group",
+                    "subject": 8,
+                    "object": 2
+                },
+                {
+                    "id": 13,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::/etc/passwd",
+                    "subject": 8,
+                    "object": 1
+                },
+                {
+                    "id": 14,
+                    "signature": "EVENT_SENDMSG#SUBJECT_PROCESS::cache#OBJECT_SOCKET::.*:.*",
+                    "subject": 5,
+                    "object": 0
+                },
+                {
+                    "id": 15,
+                    "signature": "EVENT_WRITE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::.*",
+                    "subject": 5,
+                    "object": 6
+                },
+                {
+                    "id": 16,
+                    "signature": "EVENT_MODIFY_FILE_ATTRIBUTES#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::.*",
+                    "subject": 5,
+                    "object": 7
+                },
+                {
+                    "id": 17,
+                    "signature": "EVENT_CREATE_OBJECT#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::.*",
+                    "subject": 5,
+                    "object": 6
+                },
+                {
+                    "id": 18,
+                    "signature": "EVENT_CLOSE#SUBJECT_PROCESS::cache#FILE_OBJECT_FILE::.*",
+                    "subject": 5,
+                    "object": 7
+                },
+                {
+                    "id": 19,
+                    "signature": "EVENT_UPDATE#FILE_OBJECT_FILE::.*#FILE_OBJECT_FILE::.*",
+                    "subject": 6,
+                    "object": 7
+                }
+            ]
+        }
+    ]
