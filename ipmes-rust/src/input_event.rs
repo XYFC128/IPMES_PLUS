@@ -1,5 +1,8 @@
 use std::cmp::Ordering;
 
+mod id_sensitive_input_event;
+pub use id_sensitive_input_event::IdSensitiveInputEvent;
+
 /// Input event, which is an arc of the provenance graph.
 #[derive(Eq, Debug, Clone)]
 pub struct InputEvent {
