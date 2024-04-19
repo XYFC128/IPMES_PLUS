@@ -1,8 +1,6 @@
-use std::rc::Rc;
-
+use super::StateData;
 use crate::process_layers::matching_layer::PartialMatchEvent;
-
-use super::{StateData, UniversalMatchEvent};
+use crate::universal_match_event::UniversalMatchEvent;
 
 #[derive(Clone)]
 pub struct MatchInstance<'p> {
@@ -39,7 +37,7 @@ impl<'p> MatchInstance<'p> {
                 frequency,
                 current_set,
             } => {
-                current_set.insert(Rc::clone(&match_event.input_event).into());
+                current_set.insert(match_event.input_event.event_id);
                 if current_set.len() >= *frequency as usize {
                     InstanceAction::NewInstance {
                         new_state_id: *next_state,
@@ -56,8 +54,8 @@ impl<'p> MatchInstance<'p> {
     fn contains_event(&self, match_event: &PartialMatchEvent) -> bool {
         // FIXME: This is an extremely slow operation due to high cache miss!
         for event in &self.match_events {
-            for input_event in event.input_events.iter() {
-                if input_event.event_id == match_event.input_event.event_id {
+            for event_id in event.event_ids.iter() {
+                if *event_id == match_event.input_event.event_id {
                     return true;
                 }
             }

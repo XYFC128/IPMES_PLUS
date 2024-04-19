@@ -1,8 +1,4 @@
-use std::rc::Rc;
-
-use crate::input_event::InputEvent;
-use crate::pattern::PatternEvent;
-use crate::sub_pattern::SubPattern;
+use crate::{sub_pattern::SubPattern, universal_match_event::UniversalMatchEvent};
 
 use super::matching_layer::PartialMatchEvent;
 
@@ -16,31 +12,6 @@ use instance_runner::InstanceRunner;
 use instance_storage::InstanceStorage;
 use match_instance::MatchInstance;
 use state::*;
-
-#[derive(Clone)]
-pub struct UniversalMatchEvent<'p> {
-    pub matched: &'p PatternEvent,
-    pub start_time: u64,
-    pub end_time: u64,
-    pub subject_id: u64,
-    pub object_id: u64,
-    pub input_events: Box<[Rc<InputEvent>]>,
-}
-
-impl<'p> From<&PartialMatchEvent<'p>> for UniversalMatchEvent<'p> {
-    fn from(value: &PartialMatchEvent<'p>) -> Self {
-        let input_events = vec![Rc::clone(&value.input_event)].into_boxed_slice();
-
-        Self {
-            matched: value.matched,
-            start_time: value.input_event.timestamp,
-            end_time: value.input_event.timestamp,
-            subject_id: value.input_event.subject_id,
-            object_id: value.input_event.object_id,
-            input_events,
-        }
-    }
-}
 
 pub struct CompoLayer<'p, P> {
     prev_layer: P,

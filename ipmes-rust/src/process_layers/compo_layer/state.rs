@@ -34,7 +34,7 @@ pub enum StateData {
     AggFreq {
         next_state: u32,
         frequency: u32,
-        current_set: HashSet<IdSensitiveInputEvent>,
+        current_set: HashSet<u64>,
     },
 }
 

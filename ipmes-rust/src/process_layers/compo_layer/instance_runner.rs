@@ -4,11 +4,12 @@ use std::rc::Rc;
 use crate::pattern::PatternEventType;
 use crate::process_layers::matching_layer::PartialMatchEvent;
 use crate::sub_pattern::SubPattern;
+use crate::universal_match_event::UniversalMatchEvent;
 
 use super::entity_encode::EntityEncode;
 use super::filter::{Filter, FilterInfo};
 use super::match_instance::InstanceAction;
-use super::{InstanceStorage, MatchInstance, StateData, StateInfo, UniversalMatchEvent};
+use super::{InstanceStorage, MatchInstance, StateData, StateInfo};
 
 pub struct InstanceRunner<'p> {
     pub state_table: Vec<(StateInfo, FilterInfo)>,
@@ -162,8 +163,8 @@ impl<'p> InstanceRunner<'p> {
                 frequency,
             } => {
                 let mut current_set = HashSet::new();
-                for input in new_event.input_events.iter() {
-                    current_set.insert(Rc::clone(input).into());
+                for event_id in new_event.event_ids.iter() {
+                    current_set.insert(*event_id);
                 }
 
                 MatchInstance {
