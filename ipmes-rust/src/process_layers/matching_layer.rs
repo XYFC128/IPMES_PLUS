@@ -1,8 +1,7 @@
 mod matcher;
 mod partial_match_event;
 
-use crate::pattern::{Pattern, PatternEvent, PatternEventType};
-use crate::universal_match_event::UniversalMatchEvent;
+use crate::pattern::{Pattern, PatternEventType};
 use crate::{input_event::InputEvent, sub_pattern::SubPattern};
 use matcher::DefaultMatcher;
 pub use partial_match_event::PartialMatchEvent;
@@ -68,7 +67,7 @@ impl<'p, P> MatchingLayer<'p, P> {
         })
     }
 
-    fn get_match(&mut self) -> Option<UniversalMatchEvent<'p>> {
+    fn get_match(&mut self) -> Option<PartialMatchEvent<'p>> {
         let matcher = &mut self.matchers[self.matcher_state];
         let input = &self.cur_time_batch[self.time_batch_state];
         matcher.get_match(input)
@@ -79,7 +78,7 @@ impl<'p, P> Iterator for MatchingLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEvent>>>,
 {
-    type Item = UniversalMatchEvent<'p>;
+    type Item = PartialMatchEvent<'p>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -139,7 +138,7 @@ mod tests {
             MatchingLayer::new([time_batch].into_iter(), &pattern, &decomposition, u64::MAX)
                 .unwrap();
 
-        assert_eq!(*layer.next().unwrap().event_ids, [1]);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 1);
         assert!(layer.next().is_none());
     }
 
@@ -164,8 +163,8 @@ mod tests {
             MatchingLayer::new([time_batch].into_iter(), &pattern, &decomposition, u64::MAX)
                 .unwrap();
 
-        assert_eq!(*layer.next().unwrap().event_ids, [2]);
-        assert_eq!(*layer.next().unwrap().event_ids, [3]);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 2);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 3);
         assert!(layer.next().is_none());
     }
 
@@ -189,9 +188,9 @@ mod tests {
         let mut layer =
             MatchingLayer::new([time_batch].into_iter(), &pattern, &decomposition, u64::MAX)
                 .unwrap();
-        assert_eq!(*layer.next().unwrap().event_ids, [3]);
-        assert_eq!(*layer.next().unwrap().event_ids, [2]);
-        assert_eq!(*layer.next().unwrap().event_ids, [4]);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 3);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 2);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 4);
         assert!(layer.next().is_none());
     }
 
@@ -226,11 +225,11 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(*layer.next().unwrap().event_ids, [3]);
-        assert_eq!(*layer.next().unwrap().event_ids, [2]);
-        assert_eq!(*layer.next().unwrap().event_ids, [4]);
-        assert_eq!(*layer.next().unwrap().event_ids, [7]);
-        assert_eq!(*layer.next().unwrap().event_ids, [5]);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 3);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 2);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 4);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 7);
+        assert_eq!(layer.next().unwrap().input_event.event_id, 5);
         assert!(layer.next().is_none());
     }
 }

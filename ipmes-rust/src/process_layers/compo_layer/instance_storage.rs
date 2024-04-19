@@ -44,7 +44,7 @@ impl<'p> InstanceStorage<'p> {
         F: FnMut(&mut MatchInstance<'p>),
     {
         let match_ord = match_event.match_ord;
-        let subject_id = match_event.input_event.subject_id;
+        let subject_id = match_event.subject_id;
         let object_id = match_event.input_event.object_id;
 
         Self::apply_filter(

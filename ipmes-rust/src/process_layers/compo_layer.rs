@@ -37,10 +37,7 @@ impl<'p, P> CompoLayer<'p, P> {
             self.runner.run(instance, &match_event);
         };
 
-        let window_bound = match_event
-            .input_event
-            .timestamp
-            .saturating_sub(self.window_size);
+        let window_bound = match_event.start_time.saturating_sub(self.window_size);
 
         self.storage.query(&match_event, window_bound, callback);
 

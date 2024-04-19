@@ -16,9 +16,9 @@ impl<'p> From<&PartialMatchEvent<'p>> for UniversalMatchEvent<'p> {
 
         Self {
             matched: value.matched,
-            start_time: value.input_event.timestamp,
+            start_time: value.start_time,
             end_time: value.input_event.timestamp,
-            subject_id: value.input_event.subject_id,
+            subject_id: value.subject_id,
             object_id: value.input_event.object_id,
             event_ids: input_events,
         }

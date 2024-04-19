@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
 
 use crate::pattern::PatternEventType;
 use crate::process_layers::matching_layer::PartialMatchEvent;

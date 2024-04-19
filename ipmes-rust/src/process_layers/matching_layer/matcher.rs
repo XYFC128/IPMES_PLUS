@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use regex::Error as RegexError;
 use regex::Regex;
@@ -7,16 +8,17 @@ use regex::Regex;
 use crate::input_event::InputEvent;
 use crate::pattern::PatternEntity;
 use crate::pattern::PatternEvent;
-use crate::universal_match_event::UniversalMatchEvent;
+
+use super::PartialMatchEvent;
 
 pub trait Matcher<'p> {
-    /// If the input event match the matchers requirement, returns an [UniversalMatchEvent]. Otherwise, return [None].
-    /// The matcher could return multiple [UniversalMatchEvent]s. To get all the match events, the caller should
+    /// If the input event match the matchers requirement, returns an [PartialMatchEvent]. Otherwise, return [None].
+    /// The matcher could return multiple [PartialMatchEvent]s. To get all the match events, the caller should
     /// keep calling this function with the same [InputEvent] until it returns [None].
     ///
     /// **Important**: If previous call to this function returns Some, the next call is assumed to have the same argument as the previous one.
     /// Otherwise, the behavior is undefined.
-    fn get_match(&mut self, input: &InputEvent) -> Option<UniversalMatchEvent<'p>>;
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>>;
 }
 
 /// Helper function to construct regex object matching the whole input.
@@ -64,7 +66,7 @@ impl<'p> DefaultMatcher<'p> {
 }
 
 impl<'p> Matcher<'p> for DefaultMatcher<'p> {
-    fn get_match(&mut self, input: &InputEvent) -> Option<UniversalMatchEvent<'p>> {
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>> {
         if self.prev_match {
             self.prev_match = false;
             return None;
@@ -72,13 +74,12 @@ impl<'p> Matcher<'p> for DefaultMatcher<'p> {
 
         if self.is_match(input) {
             self.prev_match = true;
-            Some(UniversalMatchEvent {
+            Some(PartialMatchEvent {
                 matched: self.matched,
-                start_time: input.timestamp,
-                end_time: input.timestamp,
+                match_ord: 0,
                 subject_id: input.subject_id,
-                object_id: input.object_id,
-                event_ids: vec![input.event_id].into_boxed_slice(),
+                start_time: input.timestamp,
+                input_event: Rc::clone(input),
             })
         } else {
             None
@@ -151,7 +152,7 @@ impl<'p> FlowMatcher<'p> {
 }
 
 impl<'p> Matcher<'p> for FlowMatcher<'p> {
-    fn get_match(&mut self, input: &InputEvent) -> Option<UniversalMatchEvent<'p>> {
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>> {
         if self.next_state == 0 {
             // last time not found, this is an new input event
             self.subject_match = self.subject_signature.is_match(&input.subject_signature);
@@ -168,13 +169,12 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
             if head_in_set {
                 reach.reachable_set.insert(input.object_id);
                 if self.object_match {
-                    return Some(UniversalMatchEvent {
+                    return Some(PartialMatchEvent {
                         matched: self.matched,
+                        match_ord: 0,
                         start_time: reach.start_time,
-                        end_time: input.timestamp,
                         subject_id: reach.start_id,
-                        object_id: input.object_id,
-                        event_ids: vec![input.event_id].into_boxed_slice(),
+                        input_event: Rc::clone(input),
                     });
                 }
             }
@@ -193,13 +193,12 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
             self.subject_match = false;
             self.object_match = false;
 
-            Some(UniversalMatchEvent {
+            Some(PartialMatchEvent {
                 matched: self.matched,
+                match_ord: 0,
                 start_time: input.timestamp,
-                end_time: input.timestamp,
                 subject_id: input.subject_id,
-                object_id: input.object_id,
-                event_ids: vec![input.event_id].into_boxed_slice(),
+                input_event: Rc::clone(input),
             })
         } else {
             self.next_state = 0;
@@ -238,7 +237,7 @@ mod tests {
             object: 1,
         };
 
-        let input1 = InputEvent {
+        let input1 = Rc::new(InputEvent {
             timestamp: 1,
             event_id: 0,
             event_signature: String::new(),
@@ -246,8 +245,8 @@ mod tests {
             object_id: 1,
             subject_signature: "u".to_string(),
             object_signature: "x".to_string(),
-        };
-        let input2 = InputEvent {
+        });
+        let input2 = Rc::new(InputEvent {
             timestamp: 1,
             event_id: 0,
             event_signature: String::new(),
@@ -255,8 +254,8 @@ mod tests {
             object_id: 2,
             subject_signature: "x".to_string(),
             object_signature: "x".to_string(),
-        };
-        let input3 = InputEvent {
+        });
+        let input3 = Rc::new(InputEvent {
             timestamp: 3,
             event_id: 0,
             event_signature: String::new(),
@@ -264,7 +263,7 @@ mod tests {
             object_id: 3,
             subject_signature: "x".to_string(),
             object_signature: "v".to_string(),
-        };
+        });
 
         let mut matcher = setup_flow_matcher(&pattern);
         assert!(matcher.get_match(&input1).is_none());
@@ -283,7 +282,7 @@ mod tests {
             object: 1,
         };
 
-        let input1 = InputEvent {
+        let input1 = Rc::new(InputEvent {
             timestamp: 1,
             event_id: 0,
             event_signature: String::new(),
@@ -291,7 +290,7 @@ mod tests {
             object_id: 1,
             subject_signature: "u".to_string(),
             object_signature: "v".to_string(),
-        };
+        });
 
         let mut matcher = setup_flow_matcher(&pattern);
         assert!(matcher.get_match(&input1).is_some());

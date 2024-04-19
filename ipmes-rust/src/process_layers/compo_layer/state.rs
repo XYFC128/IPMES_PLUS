@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use crate::input_event::IdSensitiveInputEvent;
 use thiserror::Error;
 
 #[derive(Clone, Copy)]

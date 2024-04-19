@@ -11,7 +11,7 @@ pub struct MatchInstance<'p> {
 
 impl<'p> MatchInstance<'p> {
     pub fn accept(&mut self, match_event: &PartialMatchEvent<'p>) -> InstanceAction<'p> {
-        if self.contains_event(match_event) {
+        if self.contains_event(match_event.input_event.event_id) {
             return InstanceAction::Remain;
         }
 
@@ -51,11 +51,11 @@ impl<'p> MatchInstance<'p> {
     }
 
     /// Return true if the match_event is already in this [MatchInstance]
-    fn contains_event(&self, match_event: &PartialMatchEvent) -> bool {
+    fn contains_event(&self, input_event_id: u64) -> bool {
         // FIXME: This is an extremely slow operation due to high cache miss!
         for event in &self.match_events {
             for event_id in event.event_ids.iter() {
-                if *event_id == match_event.input_event.event_id {
+                if *event_id == input_event_id {
                     return true;
                 }
             }
