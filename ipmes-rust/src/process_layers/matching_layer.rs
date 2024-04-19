@@ -92,9 +92,9 @@ where
                 self.time_batch_state = 0;
             }
 
-            let result = self.get_match();
-            if result.is_some() {
-                return result;
+            if let Some(mut result) = self.get_match() {
+                result.match_ord = self.matcher_state;
+                return Some(result);
             }
             self.time_batch_state += 1;
         }
