@@ -1,5 +1,5 @@
 use crate::process_layers::matching_layer::PartialMatchEvent;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
 use super::{filter::FilterInfo, MatchInstance, StateInfo};
@@ -23,6 +23,7 @@ impl<'p> InstanceStorage<'p> {
                         start_time: u64::MAX,
                         match_events: Vec::new(),
                         state_data: (*state_info).try_into().unwrap(),
+                        event_ids: HashSet::new(),
                     });
             }
         }

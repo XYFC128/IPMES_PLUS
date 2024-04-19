@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::StateData;
 use crate::process_layers::matching_layer::PartialMatchEvent;
 use crate::universal_match_event::UniversalMatchEvent;
@@ -6,6 +8,7 @@ use crate::universal_match_event::UniversalMatchEvent;
 pub struct MatchInstance<'p> {
     pub start_time: u64,
     pub match_events: Vec<UniversalMatchEvent<'p>>,
+    pub event_ids: HashSet<u64>,
     pub state_data: StateData,
 }
 
@@ -16,18 +19,10 @@ impl<'p> MatchInstance<'p> {
         }
 
         match &mut self.state_data {
-            StateData::Normal { next_state } => InstanceAction::NewInstance {
+            StateData::Default { next_state } => InstanceAction::NewInstance {
                 new_state_id: *next_state,
                 new_event: match_event.into(),
             },
-            StateData::InitFlow {
-                next_state,
-                agg_state,
-            } => todo!(),
-            StateData::AggFlow {
-                next_state,
-                reachable,
-            } => todo!(),
             StateData::InitFreq { next_state } => InstanceAction::NewInstance {
                 new_state_id: *next_state,
                 new_event: match_event.into(),
@@ -52,15 +47,11 @@ impl<'p> MatchInstance<'p> {
 
     /// Return true if the match_event is already in this [MatchInstance]
     fn contains_event(&self, input_event_id: u64) -> bool {
-        // FIXME: This is an extremely slow operation due to high cache miss!
-        for event in &self.match_events {
-            for event_id in event.event_ids.iter() {
-                if *event_id == input_event_id {
-                    return true;
-                }
-            }
-        }
-        false
+        self.event_ids.contains(&input_event_id)
+    }
+
+    pub fn check_entity_uniqueness(&self) -> bool {
+        todo!()
     }
 }
 
