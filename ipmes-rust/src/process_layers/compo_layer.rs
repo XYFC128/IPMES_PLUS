@@ -21,7 +21,7 @@ pub struct CompoLayer<'p, P> {
 }
 
 impl<'p, P> CompoLayer<'p, P> {
-    pub fn new(prev_layer: P, window_size: u64, decomposition: &[SubPattern<'p>]) -> Self {
+    pub fn new(prev_layer: P, decomposition: &[SubPattern<'p>], window_size: u64) -> Self {
         let runner = InstanceRunner::new(decomposition);
         let storage = InstanceStorage::init_from_state_table(&runner.state_table);
         Self {

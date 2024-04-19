@@ -34,12 +34,7 @@ impl EntityEncode {
         if index > events.len() {
             None
         } else {
-            let (subject, object) = endpoints_extractor(&events[index]);
-            if self.encode & 1 == 1 {
-                Some(object)
-            } else {
-                Some(subject)
-            }
+            Some(self.get_entity_unchecked(events, endpoints_extractor))
         }
     }
 

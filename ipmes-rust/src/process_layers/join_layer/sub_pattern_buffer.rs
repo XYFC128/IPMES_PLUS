@@ -92,8 +92,8 @@ impl<'p> SubPatternBuffer<'p> {
         let mut node_id_list = HashSet::new();
         let mut edge_id_list = HashSet::new();
         for &edge in &sub_pattern.events {
-            node_id_list.insert(edge.subject);
-            node_id_list.insert(edge.object);
+            node_id_list.insert(edge.subject.id);
+            node_id_list.insert(edge.object.id);
             edge_id_list.insert(edge.id);
         }
         Self {
@@ -290,7 +290,7 @@ impl<'p> SubPatternBuffer<'p> {
 mod tests {
     use super::*;
     use crate::input_event::InputEvent;
-    use crate::pattern::{PatternEvent, PatternEventType};
+    use crate::pattern::{PatternEntity, PatternEvent, PatternEventType};
     use std::rc::Rc;
     #[test]
     /// shared node not shared between input nodes: Fail
@@ -484,8 +484,14 @@ mod tests {
             id,
             event_type: PatternEventType::Default,
             signature: "".to_string(),
-            subject: 0,
-            object: 0,
+            subject: PatternEntity {
+                id: 0,
+                signature: String::new(),
+            },
+            object: PatternEntity {
+                id: 0,
+                signature: String::new(),
+            },
         }
     }
 

@@ -24,8 +24,8 @@ impl<'p> InstanceRunner<'p> {
             let mut entity_table = HashMap::new();
 
             for (event_idx, pattern) in sub_pattern.events.iter().enumerate() {
-                let shared_subject = entity_table.get(&pattern.subject).cloned();
-                let shared_object = entity_table.get(&pattern.object).cloned();
+                let shared_subject = entity_table.get(&pattern.subject.id).cloned();
+                let shared_object = entity_table.get(&pattern.object.id).cloned();
                 let filter_info = match (shared_subject, shared_object) {
                     (None, None) => FilterInfo::MatchOrdOnly { match_ord },
                     (None, Some(object)) => FilterInfo::Object { match_ord, object },
@@ -39,8 +39,8 @@ impl<'p> InstanceRunner<'p> {
 
                 let next_state = (state_table.len() + 1) as u32;
                 match pattern.event_type {
-                    PatternEventType::Default => {
-                        state_table.push((StateInfo::Normal { next_state }, filter_info));
+                    PatternEventType::Default | PatternEventType::Flow => {
+                        state_table.push((StateInfo::Default { next_state }, filter_info));
                     }
                     PatternEventType::Frequency(frequency) => {
                         state_table.push((StateInfo::InitFreq { next_state }, filter_info));
@@ -53,22 +53,10 @@ impl<'p> InstanceRunner<'p> {
                             filter_info,
                         ))
                     }
-                    PatternEventType::Flow => {
-                        let agg_state = next_state;
-                        let next_state = next_state + 1;
-                        state_table.push((
-                            StateInfo::InitFlow {
-                                next_state,
-                                agg_state,
-                            },
-                            filter_info,
-                        ));
-                        state_table.push((StateInfo::AggFlow { next_state }, filter_info))
-                    }
                 }
 
-                entity_table.insert(pattern.subject, EntityEncode::subject_of(event_idx));
-                entity_table.insert(pattern.object, EntityEncode::object_of(event_idx));
+                entity_table.insert(pattern.subject.id, EntityEncode::subject_of(event_idx));
+                entity_table.insert(pattern.object.id, EntityEncode::object_of(event_idx));
                 match_ord += 1;
             }
 
@@ -94,8 +82,10 @@ impl<'p> InstanceRunner<'p> {
         } = instance.accept(match_event)
         {
             if let StateInfo::Output { subpattern_id } = self.state_table[new_state_id as usize].0 {
-                self.output_buffer
-                    .push(self.new_output_from(instance, new_event, subpattern_id));
+                if instance.check_entity_uniqueness() {
+                    self.output_buffer
+                        .push(self.new_output_from(instance, new_event, subpattern_id));
+                }
             } else {
                 self.new_instance
                     .push(self.new_instance_from(&instance, new_state_id, new_event));
@@ -105,7 +95,7 @@ impl<'p> InstanceRunner<'p> {
 
     pub fn new_output_from(
         &self,
-        instance: &mut MatchInstance<'p>,
+        instance: &MatchInstance<'p>,
         new_event: UniversalMatchEvent<'p>,
         subpattern_id: u32,
     ) -> (u32, Box<[UniversalMatchEvent<'p>]>) {
@@ -128,12 +118,11 @@ impl<'p> InstanceRunner<'p> {
         let (state_info, filter_info) = self.state_table[new_state_id as usize];
 
         let new_instance = match state_info {
-            StateInfo::Normal { next_state: _ }
-            | StateInfo::InitFlow {
-                next_state: _,
-                agg_state: _,
-            }
+            StateInfo::Default { next_state: _ }
             | StateInfo::InitFreq { next_state: _ } => {
+                let mut event_ids = old_instance.event_ids.clone();
+                event_ids.extend(new_event.event_ids.iter());
+
                 let mut new_match_events = Vec::with_capacity(events.len() + 1);
                 new_match_events.clone_from(events);
                 new_match_events.push(new_event);
@@ -142,19 +131,7 @@ impl<'p> InstanceRunner<'p> {
                     start_time: old_instance.start_time,
                     match_events: new_match_events,
                     state_data: state_info.try_into().unwrap(),
-                }
-            }
-            StateInfo::AggFlow { next_state } => {
-                let mut reachable = HashSet::new();
-                reachable.insert(new_event.subject_id);
-                reachable.insert(new_event.object_id);
-
-                MatchInstance {
-                    state_data: StateData::AggFlow {
-                        next_state,
-                        reachable,
-                    },
-                    ..old_instance.clone()
+                    event_ids,
                 }
             }
             StateInfo::AggFreq {

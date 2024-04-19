@@ -74,7 +74,10 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
     let events_json = json_obj["Events"]
         .as_array()
         .ok_or(PatternParsingError::KeyError("Events"))?;
-    let events = parse_events(events_json, &entity_id2index)?;
+    let events = parse_events(
+        events_json,
+        &entity_id2index,
+        &entities)?;
 
     let order = parse_order_relation(&events_json)?;
     if !order.is_valid() {
@@ -116,6 +119,7 @@ fn get_entity_id2index(entities: &[PatternEntity]) -> HashMap<usize, usize> {
 fn parse_events(
     events_json: &[Value],
     entity_id2idx: &HashMap<usize, usize>,
+    entities: &[PatternEntity],
 ) -> Result<Vec<PatternEvent>, PatternParsingError> {
     if events_json.is_empty() {
         return Err(PatternParsingError::NoEventInPattern);
@@ -173,8 +177,8 @@ fn parse_events(
             id,
             event_type,
             signature,
-            subject: *subject_idx,
-            object: *object_idx,
+            subject: entities[*subject_idx].clone(),
+            object: entities[*object_idx].clone(),
         });
     }
 
@@ -286,15 +290,27 @@ mod tests {
                 id: 0,
                 event_type: PatternEventType::Default,
                 signature: "aaa".to_string(),
-                subject: 0,
-                object: 1,
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
                 event_type: PatternEventType::Default,
                 signature: "bbb".to_string(),
-                subject: 1,
-                object: 2,
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
         ];
         assert_eq!(pattern.events, correct_events);

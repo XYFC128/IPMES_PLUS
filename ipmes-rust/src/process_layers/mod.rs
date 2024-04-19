@@ -6,6 +6,7 @@ pub mod parse_layer;
 pub mod uniqueness_layer;
 
 pub use composition_layer::CompositionLayer;
+pub use compo_layer::CompoLayer;
 pub use join_layer::JoinLayer;
 pub use matching_layer::MatchingLayer;
 pub use parse_layer::ParseLayer;

@@ -7,7 +7,7 @@ use order_relation::OrderRelation;
 use serde_json::Value;
 use std::{fs::File, io::Read};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct PatternEntity {
     pub id: usize,
     pub signature: String,
@@ -25,8 +25,8 @@ pub struct PatternEvent {
     pub id: usize,
     pub event_type: PatternEventType,
     pub signature: String,
-    pub subject: usize,
-    pub object: usize,
+    pub subject: PatternEntity,
+    pub object: PatternEntity,
 }
 
 #[derive(Debug)]
@@ -71,8 +71,8 @@ impl Pattern {
                 id,
                 event_type: PatternEventType::Default,
                 signature: edge.2.to_string(),
-                subject: edge.0,
-                object: edge.1,
+                subject: entities[edge.0].clone(),
+                object: entities[edge.1].clone(),
             });
         }
 

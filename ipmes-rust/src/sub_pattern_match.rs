@@ -153,7 +153,7 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
 mod tests {
     use super::*;
     use crate::input_event::InputEvent;
-    use crate::pattern::{PatternEvent, PatternEventType};
+    use crate::pattern::{PatternEntity, PatternEvent, PatternEventType};
     use std::rc::Rc;
 
     fn dummy_input_event(event_id: u64) -> Rc<InputEvent> {
@@ -175,8 +175,8 @@ mod tests {
             id: 0,
             event_type: PatternEventType::Default,
             signature: "".to_string(),
-            subject: 0,
-            object: 0,
+            subject: PatternEntity { id: 0, signature: "".to_string() },
+            object: PatternEntity { id: 0, signature: "".to_string() },
         };
         let match_edges = vec![
             MatchEvent {
@@ -203,8 +203,8 @@ mod tests {
             id: 0,
             event_type: PatternEventType::Default,
             signature: "".to_string(),
-            subject: 0,
-            object: 0,
+            subject: PatternEntity { id: 0, signature: "".to_string() },
+            object: PatternEntity { id: 0, signature: "".to_string() },
         };
         let match_edges = vec![
             MatchEvent {

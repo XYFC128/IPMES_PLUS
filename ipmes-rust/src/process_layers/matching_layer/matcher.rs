@@ -6,7 +6,6 @@ use regex::Error as RegexError;
 use regex::Regex;
 
 use crate::input_event::InputEvent;
-use crate::pattern::PatternEntity;
 use crate::pattern::PatternEvent;
 
 use super::PartialMatchEvent;
@@ -42,14 +41,12 @@ pub struct DefaultMatcher<'p> {
 impl<'p> DefaultMatcher<'p> {
     pub fn new(
         pattern: &'p PatternEvent,
-        subject: &'p PatternEntity,
-        object: &'p PatternEntity,
         use_regex: bool,
     ) -> Result<Self, RegexError> {
         Ok(Self {
             event_signature: construct_regex(&pattern.signature, !use_regex)?,
-            subject_signature: construct_regex(&subject.signature, !use_regex)?,
-            object_signature: construct_regex(&object.signature, !use_regex)?,
+            subject_signature: construct_regex(&pattern.subject.signature, !use_regex)?,
+            object_signature: construct_regex(&pattern.object.signature, !use_regex)?,
             matched: pattern,
             prev_match: false,
         })
@@ -109,16 +106,14 @@ pub struct FlowMatcher<'p> {
 impl<'p> FlowMatcher<'p> {
     pub fn new(
         matched: &'p PatternEvent,
-        subject: &PatternEntity,
-        object: &PatternEntity,
         use_regex: bool,
         window_size: u64,
     ) -> Result<Self, RegexError> {
         Ok(Self {
             matched,
             window_size,
-            subject_signature: construct_regex(&subject.signature, !use_regex)?,
-            object_signature: construct_regex(&object.signature, !use_regex)?,
+            subject_signature: construct_regex(&matched.subject.signature, !use_regex)?,
+            object_signature: construct_regex(&matched.object.signature, !use_regex)?,
             reachable_sets: VecDeque::new(),
             is_root: HashSet::new(),
             next_state: 0,
@@ -209,7 +204,7 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
 
 #[cfg(test)]
 mod tests {
-    use crate::pattern::PatternEventType;
+    use crate::pattern::{PatternEntity, PatternEventType};
 
     use super::*;
 
@@ -233,8 +228,14 @@ mod tests {
             id: 0,
             event_type: PatternEventType::Flow,
             signature: "".to_string(),
-            subject: 0,
-            object: 1,
+            subject: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
+            object: PatternEntity {
+                id: 1,
+                signature: "".to_string(),
+            },
         };
 
         let input1 = Rc::new(InputEvent {
@@ -278,8 +279,14 @@ mod tests {
             id: 0,
             event_type: PatternEventType::Flow,
             signature: "".to_string(),
-            subject: 0,
-            object: 1,
+            subject: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
+            object: PatternEntity {
+                id: 1,
+                signature: "".to_string(),
+            },
         };
 
         let input1 = Rc::new(InputEvent {

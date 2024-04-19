@@ -34,20 +34,14 @@ impl<'p, P> MatchingLayer<'p, P> {
         let mut matchers = vec![];
         for sub_pattern in decomposition {
             for pattern_event in &sub_pattern.events {
-                let subject = &pattern.entities[pattern_event.subject];
-                let object = &pattern.entities[pattern_event.object];
                 let matcher: Box<dyn Matcher<'p> + 'p> = match pattern_event.event_type {
                     PatternEventType::Flow => Box::new(FlowMatcher::new(
                         pattern_event,
-                        subject,
-                        object,
                         pattern.use_regex,
                         window_size,
                     )?),
                     _ => Box::new(DefaultMatcher::new(
                         pattern_event,
-                        subject,
-                        object,
                         pattern.use_regex,
                     )?),
                 };

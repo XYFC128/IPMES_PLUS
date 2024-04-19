@@ -103,7 +103,7 @@ fn contains_selected_edge(sub_pattern: &SubPattern, is_edge_selected: &[bool]) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::{Pattern, PatternEventType};
+    use crate::pattern::{Pattern, PatternEntity, PatternEventType};
 
     #[test]
     fn test_gsp() {
@@ -122,8 +122,14 @@ mod tests {
             id: 0,
             signature: signature.to_string(),
             event_type: PatternEventType::Default,
-            subject,
-            object,
+            subject: PatternEntity {
+                id: subject,
+                signature: "".to_string(),
+            },
+            object: PatternEntity {
+                id: object,
+                signature: "".to_string(),
+            },
         }
     }
 
