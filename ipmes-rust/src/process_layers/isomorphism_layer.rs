@@ -1,23 +1,15 @@
 use petgraph::algo;
-use petgraph::data::Build;
 use petgraph::graph::NodeIndex;
 /// prevent NodeIndex from varying after deletions
 // use petgraph::stable_graph::StableGraph;
-use petgraph::visit::NodeRef;
-use petgraph::Directed;
 use petgraph::Graph;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::pattern::order_relation::OrderRelation;
 use crate::pattern::Pattern;
-use crate::{
-    input_event::InputEvent, match_event::MatchEvent, pattern::Event as PatternEvent,
-    sub_pattern::SubPattern,
-};
-use regex::Error as RegexError;
+use crate::input_event::InputEvent;
 use regex::Regex;
 
 #[derive(Clone)]
@@ -151,7 +143,6 @@ where
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut new_nodes = vec![];
         while self.all_matched_subgrphs.is_empty() {
             let event_batch = self.prev_layer.next()?;
             // All events in a batch has the same timestamp,
@@ -184,20 +175,19 @@ where
                 } else {
                     let mut a = NodeIndex::new(0);
                     let mut b = NodeIndex::new(0);
-                    if n0.is_none() {
+
+                    if let Some(node) = n0 {
+                        a = *node;
+                    }
+                    else {
                         a = self.data_graph.add_node(event.subject);
-                        // self.entity_node_map.insert(event.subject, a);
-                        new_nodes.push((event.subject, a));
-                    } else {
-                        a = *n0.unwrap();
                     }
 
-                    if n1.is_none() {
+                    if let Some(node) = n1 {
+                        b = *node;
+                    }
+                    else {
                         b = self.data_graph.add_node(event.object);
-                        // self.entity_node_map.insert(event.object, b);
-                        new_nodes.push((event.object, b));
-                    } else {
-                        b = *n1.unwrap();
                     }
 
                     self.data_graph.add_edge(
@@ -209,10 +199,9 @@ where
                             timestamp: event.timestamp,
                         },
                     );
-                }
 
-                for new_node in &new_nodes {
-                    self.entity_node_map.insert(new_node.0, new_node.1);
+                    self.entity_node_map.insert(event.subject, a);
+                    self.entity_node_map.insert(event.object, b);
                 }
             }
         }
