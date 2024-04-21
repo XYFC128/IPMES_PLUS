@@ -1,11 +1,11 @@
+use petgraph::algo;
 use petgraph::data::Build;
 use petgraph::graph::NodeIndex;
-use petgraph::Directed;
-use petgraph::Graph;
-use petgraph::algo;
 /// prevent NodeIndex from varying after deletions
 // use petgraph::stable_graph::StableGraph;
 use petgraph::visit::NodeRef;
+use petgraph::Directed;
+use petgraph::Graph;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -41,7 +41,7 @@ pub struct IsoLayer<'p, P> {
     data_graph: Graph<u64, EdgeWeight>,
     // these are for data graph
     node_entity_map: HashMap<NodeIndex, u64>,
-    entity_node_map: HashMap<u64, NodeIndex>
+    entity_node_map: HashMap<u64, NodeIndex>,
 }
 
 impl<'p, P> IsoLayer<'p, P> {
@@ -83,7 +83,7 @@ impl<'p, P> IsoLayer<'p, P> {
             window_size,
             data_graph: Graph::<u64, EdgeWeight>::new(),
             node_entity_map: HashMap::new(),
-            entity_node_map: HashMap::new()
+            entity_node_map: HashMap::new(),
         }
     }
 
@@ -100,11 +100,16 @@ impl<'p, P> IsoLayer<'p, P> {
             let re = Regex::new(&all_signatures).unwrap();
             re.is_match(&e2.signatures[0])
         };
-        
+
         let ref_pattern_graph = &self.pattern_graph;
         let ref_data_graph = &self.data_graph;
-        let match_result = algo::subgraph_isomorphisms_iter(&ref_pattern_graph, &ref_data_graph, &mut node_match, &mut edge_match);
-        
+        let match_result = algo::subgraph_isomorphisms_iter(
+            &ref_pattern_graph,
+            &ref_data_graph,
+            &mut node_match,
+            &mut edge_match,
+        );
+
         if let Some(iter_matches) = match_result {
             for subgraph in iter_matches {
                 self.all_matched_subgrphs.push(subgraph);
@@ -114,6 +119,9 @@ impl<'p, P> IsoLayer<'p, P> {
 
     fn check_expiration(&mut self, latest_timestamp: u64) {
         let mut expired_edges = Vec::new();
+        // Maybe this loop can be optimized
+        // Note that in general Graph (not StableGraph), edge order varies after deletion
+        // Thus timestamps are not monotone
         for eid in self.data_graph.edge_indices() {
             if latest_timestamp.saturating_sub(self.window_size)
                 > self.data_graph.edge_weight(eid).unwrap().timestamp
@@ -134,12 +142,6 @@ impl<'p, P> IsoLayer<'p, P> {
     fn get_match(&mut self) -> Option<Vec<usize>> {
         self.all_matched_subgrphs.pop()
     }
-
-    // fn get_mapped_node(entity_node_map: &HashMap<u64, NodeIndex<u32>>, event: &Rc<InputEvent>) -> (Option<NodeIndex>, Option<NodeIndex>) {
-    //     let (n0, n1) =  (entity_node_map.get(&event.subject), entity_node_map.get(&event.object));
-        
-    //     !todo!()
-    // }
 }
 
 impl<'p, P> Iterator for IsoLayer<'p, P>
@@ -148,18 +150,16 @@ where
 {
     type Item = Vec<usize>;
 
-    // immutable / mutable problem (拆小塊處理)
     fn next(&mut self) -> Option<Self::Item> {
         let mut new_nodes = vec![];
         while self.all_matched_subgrphs.is_empty() {
             let event_batch = self.prev_layer.next()?;
+            // All events in a batch has the same timestamp,
+            // and thus expiration check only needs to be performed once 
+            self.check_expiration(event_batch.last().unwrap().timestamp);
             for event in event_batch {
-                self.check_expiration(event.timestamp);
-
                 let n0 = self.entity_node_map.get(&event.subject);
                 let n1 = self.entity_node_map.get(&event.object);
-
-                // let (n0, n1) = Self::get_mapped_node(&self.entity_node_map, &event);
 
                 if let (Some(a), Some(b)) = (n0, n1) {
                     // compress events (compress multiedges)
@@ -170,24 +170,25 @@ where
                         weight.signatures.push(event.signature.clone());
                         // weight.signatures.push(Rc::new(event.signature));
                         self.data_graph.update_edge(*a, *b, weight);
+                    } else {
+                        self.data_graph.add_edge(
+                            *a,
+                            *b,
+                            EdgeWeight {
+                                signatures: vec![event.signature.clone()],
+                                // signatures: vec![Rc::new(event.signature)],
+                                timestamp: event.timestamp,
+                            },
+                        );
                     }
-                    else {
-                        self.data_graph.add_edge(*a, *b, EdgeWeight {
-                            signatures: vec![event.signature.clone()],
-                            // signatures: vec![Rc::new(event.signature)],
-                            timestamp: event.timestamp
-                        });
-                    }
-                }
-                else {
+                } else {
                     let mut a = NodeIndex::new(0);
                     let mut b = NodeIndex::new(0);
                     if n0.is_none() {
                         a = self.data_graph.add_node(event.subject);
                         // self.entity_node_map.insert(event.subject, a);
                         new_nodes.push((event.subject, a));
-                    }
-                    else {
+                    } else {
                         a = *n0.unwrap();
                     }
 
@@ -195,16 +196,19 @@ where
                         b = self.data_graph.add_node(event.object);
                         // self.entity_node_map.insert(event.object, b);
                         new_nodes.push((event.object, b));
-                    }
-                    else {
+                    } else {
                         b = *n1.unwrap();
                     }
 
-                    self.data_graph.add_edge(a, b, EdgeWeight {
-                        signatures: vec![event.signature.clone()],
-                        // signatures: vec![Rc::new(event.signature)],
-                        timestamp: event.timestamp
-                    });
+                    self.data_graph.add_edge(
+                        a,
+                        b,
+                        EdgeWeight {
+                            signatures: vec![event.signature.clone()],
+                            // signatures: vec![Rc::new(event.signature)],
+                            timestamp: event.timestamp,
+                        },
+                    );
                 }
 
                 for new_node in &new_nodes {
