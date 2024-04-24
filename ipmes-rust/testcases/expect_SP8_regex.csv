@@ -1,0 +1,10 @@
+1637233339.318,1637233339.318,fork#Process::hello.sh#Process::hello.sh,7110216,429527,499737
+1637233339.322,1637233339.322,execve#Process::hello.sh#Process::cp,7106593,499737,499739
+1637233339.322,1637233339.322,open#Artifact::file::/etc/ld.so.cache#Process::cp,5040384,1120,499739
+1637233339.322,1637233339.322,load#Artifact::file::/usr/bin/cp#Process::cp,7117387,38540,499739
+1637233339.326,1637233339.326,create#Process::cp#Artifact::file::/home/admin/doc/_7s_Lucene84_0.doc,6545764,499739,499908
+1637233341.239,1637233341.239,fork#Process::hello.sh#Process::hello.sh,7110179,429527,501607
+1637233341.239,1637233341.239,execve#Process::hello.sh#Process::cp,7106595,501607,501609
+1637233341.239,1637233341.239,load#Artifact::file::/usr/bin/cp#Process::cp,7117392,38540,501609
+1637233341.243,1637233341.243,create#Process::cp#Artifact::file::/home/admin/doc/text.doc,6545766,501609,501757
+1637233341.243,1637233341.243,open#Artifact::file::/lib/x86_64-linux-gnu/libpthread.so.0#Process::cp,5046496,16391,501609
