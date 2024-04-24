@@ -1,23 +1,11 @@
-use core::time;
-use std::num;
 use itertools::enumerate;
-use itertools::zip;
 use itertools::Itertools;
 use log::debug;
-use nix::libc::times;
 use petgraph::algo;
-use petgraph::data::DataMapMut;
 use petgraph::dot::Dot;
-use petgraph::graph::Edge;
 use petgraph::graph::EdgeIndex;
-use petgraph::graph::Node;
 use petgraph::graph::NodeIndex;
-use petgraph::visit::IntoEdges;
-/// prevent NodeIndex from varying after deletions
-// use petgraph::stable_graph::StableGraph;
 use petgraph::Graph;
-use std::any::Any;
-use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -26,7 +14,6 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 
 use crate::input_event::InputEvent;
-use crate::pattern::order_relation::OrderRelation;
 use crate::pattern::Pattern;
 use regex::Regex;
 
@@ -208,22 +195,17 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             // let (eid, i) = expired_edge;
             let mut is_empty = false;
             if let Some(weight) = self.data_graph.edge_weight_mut(eid) {
-                // weight.signatures.pop_front();
-                // let timestamp = weight.timestamps.pop_front();
-                // if timestamp == None {
-                // is_empty = true;
-                // }
                 weight.expiration_counter += 1;
+                // "is_empty" is triggered only when the equation holds exactly (not >=)
+                // preventing multiple entries of the same edge in "edges_to_remove"
                 if weight.expiration_counter == weight.edge_id.len() {
                     is_empty = true;
                 }
             }
             if is_empty {
-                // self.data_graph.remove_edge(eid);
                 self.edges_to_remove.push(eid);
             }
         }
-        // !todo("remove isolated nodes");
     }
 
     // maybe we can use "Graph::edges(EdgeIndex)" to simplfy this function
@@ -235,16 +217,13 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         }
 
         let mut zipped_subgraph_edges: Vec<ZippedEdge> = Vec::new();
-        for (i, n0) in enumerate(subgraph) {
+        for n0 in subgraph {
             for n1 in subgraph {
                 let a = NodeIndex::from(*n0 as u32);
                 let b = NodeIndex::from(*n1 as u32);
 
                 if self.data_graph.contains_edge(a, b) {
                     debug!("There are edges between: ({}, {})", n0, n1);
-                    // for edge in self.data_graph.edges(a) {
-                    //     debug!("Original edge: {:?}", edge);
-                    // }
 
                     // there should be "exactly one" edge
                     let edge = self.data_graph.edges_connecting(a, b).last().unwrap();
@@ -255,10 +234,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
                         from_node: *n0,
                         to_node: *n1,
                     });
-
-                    for e in self.data_graph.edges_connecting(a, b) {
-                        debug!("edge: {:?}", e);
-                    }
                 }
             }
         }
@@ -284,6 +259,14 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         let n1 = zipped_subgraph_edges[current_pos].to_node;
         // let subject = zipped_subgraph_edges[current_pos].subject;
         // let object = zipped_subgraph_edges[current_pos].object;
+
+        debug!(
+            "lengths: {}, {}, {}",
+            zipped_edge.weight().signatures.len(),
+            zipped_edge.weight().timestamps.len(),
+            zipped_edge.weight().edge_id.len()
+        );
+
         for (i, signature) in enumerate(&zipped_edge.weight().signatures) {
             let id = zipped_edge.weight().edge_id[i];
             let timestamp = zipped_edge.weight().timestamps[i];
@@ -351,21 +334,43 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         None
     }
 
-    fn check_order_relation(
-        &self,
-        root: usize,
-        subgraph: &Vec<usize>,
-        subgraph_edges: &HashMap<usize, Vec<InputEvent>>,
-    ) -> bool {
-        let root_data_event = self
-            .get_mapped_edge(root, subgraph, subgraph_edges)
-            .unwrap();
+    // fn check_order_relation(
+    //     &self,
+    //     root: usize,
+    //     subgraph: &Vec<usize>,
+    //     subgraph_edges: &HashMap<usize, Vec<InputEvent>>,
+    // ) -> bool {
+    //     let root_data_event = self
+    //         .get_mapped_edge(root, subgraph, subgraph_edges)
+    //         .unwrap();
+    //     for eid in self.pattern.order.get_next(root) {
+    //         let data_event = self.get_mapped_edge(eid, subgraph, subgraph_edges).unwrap();
+    //         if data_event.timestamp < root_data_event.timestamp {
+    //             return false;
+    //         }
+    //         if !self.check_order_relation(eid, subgraph, subgraph_edges) {
+    //             return false;
+    //         }
+    //     }
+    //     true
+    // }
+
+    fn check_order_relation(&self, root: usize, matched_events: &Vec<&InputEvent>) -> bool {
         for eid in self.pattern.order.get_next(root) {
-            let data_event = self.get_mapped_edge(eid, subgraph, subgraph_edges).unwrap();
-            if data_event.timestamp < root_data_event.timestamp {
+            if matched_events[eid].timestamp < matched_events[root].timestamp {
                 return false;
             }
-            if !self.check_order_relation(eid, subgraph, subgraph_edges) {
+            if !self.check_order_relation(eid, matched_events) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn check_signatures(&self, matched_events: &Vec<&InputEvent>) -> bool {
+        for (i, event) in enumerate(&self.pattern.events) {
+            let re = Regex::new(&event.signature).unwrap();
+            if !re.is_match(&matched_events[i].signature) {
                 return false;
             }
         }
@@ -398,20 +403,34 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             let mut answers = Vec::new();
             for subgraph_edges in all_expanded_subgraph_edges {
                 let mut valid = true;
+                let matched_events = self.to_event_representation(&subgraph, &subgraph_edges);
                 for root in self.pattern.order.get_roots() {
                     // signature need to be checked as well! (todo)
-                    if !self.check_order_relation(root, &subgraph, &subgraph_edges) {
+                    if !self.check_order_relation(root, &matched_events)
+                        || !self.check_signatures(&matched_events)
+                    {
                         valid = false;
                         break;
                     }
                 }
                 if valid {
                     answers.push(subgraph_edges);
+                    // answers.push(matched_events);
                 }
             }
             if !answers.is_empty() {
                 // return Some(answers);
-                return Some(self.to_event_representation(&answers, &subgraph))
+                // return Some(self.to_event_representation(&answers, &subgraph));
+                let answers_id = answers
+                    .iter()
+                    .map(|answer| {
+                        self.to_event_representation(&subgraph, answer)
+                            .iter()
+                            .map(|e| e.id)
+                            .collect_vec()
+                    })
+                    .collect_vec();
+                return Some(answers_id);
             }
 
             debug!("------------------------");
@@ -421,20 +440,16 @@ impl<'p, P> IsomorphismLayer<'p, P> {
 
     fn to_event_representation(
         &self,
-        old_answers: &Vec<HashMap<usize, Vec<InputEvent>>>,
         subgraph: &Vec<usize>,
-    ) -> Vec<Vec<u64>> {
+        subgraph_edges: &'p HashMap<usize, Vec<InputEvent>>,
+    ) -> Vec<&InputEvent> {
         let num_events = self.pattern.events.len();
-        let mut answers = Vec::with_capacity(old_answers.len());
-        for subgraph_edges in old_answers {
-            let mut answer = Vec::with_capacity(num_events);
-            for i in 0..num_events {
-                let data_edge = self.get_mapped_edge(i, subgraph, subgraph_edges).unwrap();
-                answer.push(data_edge.id);
-            }
-            answers.push(answer);
+        let mut events = Vec::with_capacity(num_events);
+        for i in 0..num_events {
+            let data_edge = self.get_mapped_edge(i, subgraph, subgraph_edges).unwrap();
+            events.push(data_edge);
         }
-        answers
+        events
     }
 }
 
@@ -468,6 +483,9 @@ where
                             let edge = self.data_graph.edges_connecting(*a, *b).last().unwrap();
                             let mut weight = edge.weight().clone();
                             weight.signatures.push_back(event.signature.clone());
+                            weight.timestamps.push_back(event.timestamp);
+                            weight.edge_id.push_back(event.id as usize);
+
                             // weight.signatures.push(Rc::new(event.signature));
                             self.data_graph.update_edge(*a, *b, weight);
                         } else {
