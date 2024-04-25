@@ -15,6 +15,7 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::fmt;
 use std::fmt::Formatter;
+use std::num;
 use std::rc::Rc;
 
 use crate::input_event::InputEvent;
@@ -49,7 +50,7 @@ struct ZippedEdge<'p> {
     to_node: usize,
 }
 
-/// Perform subgraph isomorphism with ORed signatures first, 
+/// Perform subgraph isomorphism with ORed signatures first,
 /// and then check temporal relations and respective signatures.
 pub struct IsomorphismLayer<'p, P> {
     prev_layer: P,
@@ -181,36 +182,45 @@ impl<'p, P> IsomorphismLayer<'p, P> {
     /// Time Complexity:
     ///     - If some edge expires: Depends on VF2
     ///     - Else: `O(|E|)`
-    /// Note: 
+    /// Note:
     ///     Removal of edges (nodes) are necessary in order to reduce the running time of VF2.
     ///     However, dur to the nature of our graph structure, we cannot efficiently spot which
     ///     edges (nodes) should be removed, and thus a traversal of all edges is mandatory.
     fn check_expiration(&mut self, latest_timestamp: u64) {
-        let mut nodes_to_remove = Vec::new();
         // Remove edges that expire at "previous" call of `check_expiration()`.
         // If we remove them right away, things will go wrong when we check signatures for those answer candidates.
         // That's because all edges are "references"!
-        // In particular, edges are removed after `get_match()` is called.        
+        // In particular, edges are removed after `get_match()` is called.
 
         // Edges are removed in sequence, ordered by their index decreasingly.
-        // This prevents the situation that, after some edge is removed, the indices 
+        // This prevents the situation that, after some edge is removed, the indices
         // of the remaining edges to be removed are rearranged; if edge index is adjjusted,
         // it is hard to identify the edge without knowing its new index.
         // The same arguement holds for the removal of nodes as well.
 
         // Note that `self.edges_to_remove()` is ordered increasingly by the indices, by nature.
         // Thus we only need to reverse it.
+        let mut num_removed_edge: HashMap<NodeIndex, usize> = HashMap::new();
         for edge in self.edges_to_remove.drain(..).rev() {
             debug!("edge (to be removed): {:?}", edge);
-            let (n0, n1) = self.data_graph.edge_endpoints(edge).unwrap();
-            // This `edge` is the only one that connects `n0` and `n1`.
-            if self.data_graph.edges_connecting(n0, n1).count() == 1 {
-                nodes_to_remove.push(n0);
-                nodes_to_remove.push(n1);
+            let (node, _) = self.data_graph.edge_endpoints(edge).unwrap();
+
+            // Only the source of the edge needs to be considered.
+            if let Some(count) = num_removed_edge.get_mut(&node) {
+                *count += 1;
+            } else {
+                num_removed_edge.insert(node, 1);
             }
+
+            // This `edge` is the only one that connects `n0` and `n1`.
             self.data_graph.remove_edge(edge);
         }
 
+        let mut nodes_to_remove = num_removed_edge
+            .drain()
+            .filter(|(node, count)| *count == self.data_graph.edges(*node).count())
+            .map(|(node, _)| node)
+            .collect_vec();
         // Sort by node index in decreasing order.
         nodes_to_remove.sort_by(|u, v| v.index().cmp(&u.index()));
         for node in nodes_to_remove {
@@ -387,7 +397,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             debug!("Now expanding {:?}", node_mapping);
             let zipped_subgraph_edges = self.get_subgraph_from_mapping(&node_mapping);
             debug!("zipped subgraph edges: {:?}", zipped_subgraph_edges);
-            
+
             let mut expanded_subgraph_edges = HashMap::new();
             let mut all_expanded_subgraph_edges = Vec::new();
             self.expand_subgraphs(
@@ -435,7 +445,9 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         let num_events = self.pattern.events.len();
         let mut events = Vec::with_capacity(num_events);
         for i in 0..num_events {
-            let data_edge = self.get_mapped_edge(i, node_mapping, subgraph_edges).unwrap();
+            let data_edge = self
+                .get_mapped_edge(i, node_mapping, subgraph_edges)
+                .unwrap();
             events.push(data_edge);
         }
         events
@@ -462,8 +474,11 @@ where
                     let n1 = self.data_entity_node_map.get(&(event.object as usize));
 
                     if let (Some(a), Some(b)) = (n0, n1) {
-                        warn!("(a, b): ({:?}, {:?})", a, b);
-                        assert!(self.data_graph.node_references().any(|node| node.0 == *a || node.0 == *b));
+                        debug!("(a, b): ({:?}, {:?})", a, b);
+                        debug_assert!(
+                            self.data_graph.node_references().any(|node| node.0 == *a)
+                                && self.data_graph.node_references().any(|node| node.0 == *b)
+                        );
 
                         // Compress events (compress multiedges).
                         if self.data_graph.contains_edge(*a, *b) {
