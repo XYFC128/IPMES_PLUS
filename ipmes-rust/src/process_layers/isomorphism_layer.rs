@@ -34,35 +34,32 @@ impl fmt::Display for EdgeWeight {
 
 #[derive(Debug)]
 struct ZippedEdge<'p> {
+    /// Reference to an edge that collects all signatures
+    /// (of the edges that start and end with the same nodes) together.
     zipped_edge: petgraph::graph::EdgeReference<'p, EdgeWeight>,
+    /// Corresponds to `subject`.
     from_node: usize,
+    /// Corresponds to `object`.
     to_node: usize,
 }
 
-// 把 signature 疊起來 (OR)
 // 先做 isomorphism 再檢查 temporal relation
-// Maybe we need to store "node_entity_map" for both pattern graph and data graph
 pub struct IsomorphismLayer<'p, P> {
     prev_layer: P,
-    // node weight: node id; edge weight: list of signatures (multiedges are overlapped)
     pattern: &'p Pattern,
     pattern_graph: Graph<usize, EdgeWeight>,
-    // post-processing: check temporal order after subgraphs are matched
-    // order_relation: &'p OrderRelation,
     /// Let `matched_subgraph` = `self.all_matched_subgrphs.pop()`.
-    /// `matched_subgraph[i]` is the input node that matches pattern node `i`. (NodeIndex)
+    /// Then `matched_subgraph[i]` is the input event that matches pattern event `i`.
     all_matched_subgrphs: Vec<Vec<usize>>,
 
-    pattern_node_entity_map: HashMap<NodeIndex, usize>,
     pattern_entity_node_map: HashMap<usize, NodeIndex>,
     window_size: u64,
 
     data_graph: Graph<u64, EdgeWeight>,
-    // Below are for data graph
-    // !todo("Key can be NodeIndex's index, not NodeIndex itself")
     data_node_entity_map: HashMap<NodeIndex, usize>,
     data_entity_node_map: HashMap<usize, NodeIndex>,
 
+    /// See `check_expiration()`.
     edges_to_remove: Vec<EdgeIndex>,
 }
 
@@ -79,7 +76,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
 
         debug!("entity_list: {:?}", entity_list);
 
-        // this is for pattern graph, which `self.entity_node_map` is for data graph
         let mut pattern_entity_node_map = HashMap::new();
         for entity in entity_list {
             let index = pattern_graph.add_node(entity);
@@ -97,7 +93,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
                 n1,
                 EdgeWeight {
                     signatures: VecDeque::from([event.signature.clone()]),
-                    // signatures: vec![Rc::new(event.signature.clone())],
                     timestamps: VecDeque::from([0]),
                     edge_id: VecDeque::from([event.id]),
                     expiration_counter: 0,
@@ -111,9 +106,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             prev_layer,
             pattern,
             pattern_graph,
-            // order_relation: &pattern.order,
             all_matched_subgrphs: Vec::new(),
-            pattern_node_entity_map,
             pattern_entity_node_map,
             window_size,
             data_graph: Graph::<u64, EdgeWeight>::new(),
@@ -123,6 +116,8 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         }
     }
 
+    /// Perform subgraph isomorphism, on the current graph with zipped edges.
+    /// Add newly matched subgraphs to `self.all_matched_subgrphs`.
     fn try_match(&mut self) {
         let mut node_match = |_: &usize, _: &u64| true;
         // note that `e1` is `pattern`, and `e2` is `data`
@@ -132,11 +127,13 @@ impl<'p, P> IsomorphismLayer<'p, P> {
 
             // See document: https://doc.rust-lang.org/std/collections/struct.VecDeque.html#method.as_slices
             // signatures.make_contiguous();
-            // "signatures" is only updated by "push_back"
+            // It is guaranteed that "signatures" is only updated by "push_back()".
+            // Thus, we can safely get all signatures.
             for signature in &signatures.as_slices().0[e1.expiration_counter..] {
                 all_signatures.push_str(signature);
                 all_signatures.push_str("|");
             }
+            // Remove trailing `|`, which is excessive.
             if all_signatures.ends_with("|") {
                 all_signatures.pop();
             }
@@ -161,29 +158,33 @@ impl<'p, P> IsomorphismLayer<'p, P> {
     }
 
     fn check_expiration(&mut self, latest_timestamp: u64) {
-        // remove edges that expire at "previous" call of "check_expiration"
-        // edges are removed after "get_match" is called
+        // Remove edges that expire at "previous" call of `check_expiration()`.
+        // If we remove them right away, things will go wrong when we check signatures for those answer candidates.
+        // That's because all edges are "references"!
+        // In particular, edges are removed after "get_match" is called.
         for edge in self.edges_to_remove.drain(..) {
             self.data_graph.remove_edge(edge);
         }
-        assert!(self.edges_to_remove.is_empty());
+
+        debug_assert!(self.edges_to_remove.is_empty());
 
         let mut expired_edges = Vec::new();
-        // Maybe this loop can be optimized
-        // Note that in general Graph (not StableGraph), edge order varies after deletion
-        // Thus timestamps are not monotone
+        // Maybe this loop can be optimized.
+        // Note that in a general `Graph` (not `StableGraph`), edge order varies after deletion.
+        // Thus timestamps (across edges) are not monotone.
         for eid in self.data_graph.edge_indices() {
-            // for (i, timestamp) in enumerate(self.data_graph.edge_weight(eid).unwrap().timestamps) {
             for timestamp in &self.data_graph.edge_weight(eid).unwrap().timestamps {
                 if latest_timestamp.saturating_sub(self.window_size) > *timestamp {
                     expired_edges.push(eid);
                 } else {
-                    // timestamps are (non-strictly) increasing
+                    // However, timestamps within a zipped edge are (non-strictly) increasing.
                     break;
                 }
             }
         }
 
+        // Try to match only if some edges expires.
+        // This prevents repeated matches and saves time.
         if !expired_edges.is_empty() {
             self.try_match();
         }
@@ -196,8 +197,8 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             let mut is_empty = false;
             if let Some(weight) = self.data_graph.edge_weight_mut(eid) {
                 weight.expiration_counter += 1;
-                // "is_empty" is triggered only when the equation holds exactly (not >=)
-                // preventing multiple entries of the same edge in "edges_to_remove"
+                // The flag `is_empty` is set to true only when the equation holds exactly (not `>=`).
+                // This prevents multiple entries of the same edge are stored in `edges_to_remove`.
                 if weight.expiration_counter == weight.edge_id.len() {
                     is_empty = true;
                 }
@@ -246,7 +247,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         current_pos: usize,
         zipped_subgraph_edges: &Vec<ZippedEdge>,
         expanded_subgraph_edges: &mut HashMap<usize, Vec<InputEvent>>,
-        // expanded_subgraph_edges: &mut Vec<InputEvent>,
         all_expanded_subgraph_edges: &mut Vec<HashMap<usize, Vec<InputEvent>>>,
     ) {
         if current_pos == zipped_subgraph_edges.len() {
@@ -257,8 +257,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         let zipped_edge = zipped_subgraph_edges[current_pos].zipped_edge;
         let n0 = zipped_subgraph_edges[current_pos].from_node;
         let n1 = zipped_subgraph_edges[current_pos].to_node;
-        // let subject = zipped_subgraph_edges[current_pos].subject;
-        // let object = zipped_subgraph_edges[current_pos].object;
 
         debug!(
             "lengths: {}, {}, {}",
@@ -270,14 +268,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         for (i, signature) in enumerate(&zipped_edge.weight().signatures) {
             let id = zipped_edge.weight().edge_id[i];
             let timestamp = zipped_edge.weight().timestamps[i];
-
-            // expanded_subgraph_edges.push(InputEvent {
-            //     timestamp,
-            //     signature: signature.clone(),
-            //     id: id as u64,
-            //     subject,
-            //     object,
-            // });
 
             if let Some(edges) = expanded_subgraph_edges.get_mut(&n0) {
                 edges.push(InputEvent {
@@ -334,27 +324,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         None
     }
 
-    // fn check_order_relation(
-    //     &self,
-    //     root: usize,
-    //     subgraph: &Vec<usize>,
-    //     subgraph_edges: &HashMap<usize, Vec<InputEvent>>,
-    // ) -> bool {
-    //     let root_data_event = self
-    //         .get_mapped_edge(root, subgraph, subgraph_edges)
-    //         .unwrap();
-    //     for eid in self.pattern.order.get_next(root) {
-    //         let data_event = self.get_mapped_edge(eid, subgraph, subgraph_edges).unwrap();
-    //         if data_event.timestamp < root_data_event.timestamp {
-    //             return false;
-    //         }
-    //         if !self.check_order_relation(eid, subgraph, subgraph_edges) {
-    //             return false;
-    //         }
-    //     }
-    //     true
-    // }
-
     fn check_order_relation(&self, root: usize, matched_events: &Vec<&InputEvent>) -> bool {
         for eid in self.pattern.order.get_next(root) {
             if matched_events[eid].timestamp < matched_events[root].timestamp {
@@ -377,12 +346,14 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         true
     }
 
-    // fn get_match(&mut self) -> Option<Vec<HashMap<usize, Vec<InputEvent>>>> {
+    /// If we flush all matches in `self.all_matched_subgrphs` all together, then isolated nodes can be removed.
+    /// CURRENT implementation indeed flush "all" matches. Thus nodes can be deleted.
     fn get_match(&mut self) -> Option<Vec<Vec<u64>>> {
         debug!("matched size: {}", self.all_matched_subgrphs.len());
+
+        let mut event_id_answers = Vec::new();
         while let Some(subgraph) = self.all_matched_subgrphs.pop() {
             debug!("Now expanding {:?}", subgraph);
-
             let zipped_subgraph_edges = self.node_indices_to_edges(&subgraph);
             debug!("zipped subgraph edges: {:?}", zipped_subgraph_edges);
 
@@ -400,42 +371,50 @@ impl<'p, P> IsomorphismLayer<'p, P> {
                 all_expanded_subgraph_edges
             );
 
-            let mut answers = Vec::new();
+            // let mut answers = Vec::new();
             for subgraph_edges in all_expanded_subgraph_edges {
-                let mut valid = true;
                 let matched_events = self.to_event_representation(&subgraph, &subgraph_edges);
+                if !self.check_signatures(&matched_events) {
+                    continue;
+                }
+
+                let mut valid = true;
                 for root in self.pattern.order.get_roots() {
-                    // signature need to be checked as well! (todo)
-                    if !self.check_order_relation(root, &matched_events)
-                        || !self.check_signatures(&matched_events)
-                    {
+                    if !self.check_order_relation(root, &matched_events) {
                         valid = false;
                         break;
                     }
                 }
                 if valid {
-                    answers.push(subgraph_edges);
-                    // answers.push(matched_events);
-                }
-            }
-            if !answers.is_empty() {
-                // return Some(answers);
-                // return Some(self.to_event_representation(&answers, &subgraph));
-                let answers_id = answers
-                    .iter()
-                    .map(|answer| {
-                        self.to_event_representation(&subgraph, answer)
+                    // answers.push(subgraph_edges);
+                    event_id_answers.push(
+                        self.to_event_representation(&subgraph, &subgraph_edges)
                             .iter()
                             .map(|e| e.id)
-                            .collect_vec()
-                    })
-                    .collect_vec();
-                return Some(answers_id);
+                            .collect_vec(),
+                    );
+                }
             }
-
+            // if !answers.is_empty() {
+            //     let answers_id = answers
+            //         .iter()
+            //         .map(|answer| {
+            //             self.to_event_representation(&subgraph, answer)
+            //                 .iter()
+            //                 .map(|e| e.id)
+            //                 .collect_vec()
+            //         })
+            //         .collect_vec();
+            //     return Some(answers_id);
+            // }
             debug!("------------------------");
         }
-        None
+
+        if event_id_answers.is_empty() {
+            None
+        } else {
+            Some(event_id_answers)
+        }
     }
 
     fn to_event_representation(
@@ -457,7 +436,6 @@ impl<'p, P> Iterator for IsomorphismLayer<'p, P>
 where
     P: Iterator<Item = Vec<Rc<InputEvent>>>,
 {
-    // type Item = Vec<HashMap<usize, Vec<InputEvent>>>;
     type Item = Vec<Vec<u64>>;
 
     fn next(&mut self) -> Option<Self::Item> {
