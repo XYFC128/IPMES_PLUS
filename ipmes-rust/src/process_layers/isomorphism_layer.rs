@@ -22,7 +22,7 @@ use regex::Regex;
 struct EdgeWeight {
     signatures: VecDeque<String>,
     timestamps: VecDeque<u64>,
-    /// Edge id is used for answer checking
+    /// Edge id is used for answer checking.
     edge_id: VecDeque<usize>,
     /// This counts how many edges (in this compressed "large" edge) are expired,
     /// which counts from the "front" of the deques.
@@ -46,7 +46,8 @@ struct ZippedEdge<'p> {
     to_node: usize,
 }
 
-// 先做 isomorphism 再檢查 temporal relation
+/// Perform subgraph isomorphism with ORed signatures first, 
+/// and then check temporal relations and respective signatures.
 pub struct IsomorphismLayer<'p, P> {
     prev_layer: P,
     pattern: &'p Pattern,
