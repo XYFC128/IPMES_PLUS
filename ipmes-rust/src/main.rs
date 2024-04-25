@@ -58,11 +58,9 @@ fn main() {
     //     info!("Pattern Match: {}", pattern_match);
     //     num_result += 1;
     // }
-    for matched_subgraphs in isomorphism_layer {
-        for matched_subgraph in matched_subgraphs {
-            info!("Pattern Match: {:?}", matched_subgraph);
-            num_result += 1;
-        }
+    for matched_subgraph in isomorphism_layer {
+        info!("Pattern Match: {:?}", matched_subgraph);
+        num_result += 1;
     }
     println!("Total number of matches: {num_result}");
 
