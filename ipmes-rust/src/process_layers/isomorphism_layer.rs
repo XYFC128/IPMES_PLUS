@@ -1,11 +1,14 @@
 use itertools::enumerate;
 use itertools::Itertools;
 use log::debug;
+use log::warn;
 use petgraph::algo;
 use petgraph::dot::Dot;
 use petgraph::graph::EdgeIndex;
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
+use petgraph::visit::IntoNodeReferences;
+use petgraph::visit::NodeRef;
 use petgraph::Graph;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -459,7 +462,8 @@ where
                     let n1 = self.data_entity_node_map.get(&(event.object as usize));
 
                     if let (Some(a), Some(b)) = (n0, n1) {
-                        debug!("(a, b): ({:?}, {:?})", a, b);
+                        warn!("(a, b): ({:?}, {:?})", a, b);
+                        assert!(self.data_graph.node_references().any(|node| node.0 == *a || node.0 == *b));
 
                         // Compress events (compress multiedges).
                         if self.data_graph.contains_edge(*a, *b) {
