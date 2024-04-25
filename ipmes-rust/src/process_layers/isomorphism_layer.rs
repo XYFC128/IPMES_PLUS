@@ -169,23 +169,17 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         }
     }
 
-    fn remove_node_from_graph(&mut self, node: NodeIndex) {
-        if let Some(entity) = self.data_node_entity_map.get(&node) {
-            self.data_entity_node_map.remove(&entity);
-            self.data_node_entity_map.remove(&node);
-            self.data_graph.remove_node(node);
-        } else {
-            debug!("node {:?} has already been removed!", node);
-        }
-    }
-
-    /// Time Complexity:
+    /// # Time Complexity:
     ///     - If some edge expires: Depends on VF2
     ///     - Else: `O(|E|)`
-    /// Note:
-    ///     Removal of edges (nodes) are necessary in order to reduce the running time of VF2.
-    ///     However, dur to the nature of our graph structure, we cannot efficiently spot which
-    ///     edges (nodes) should be removed, and thus a traversal of all edges is mandatory.
+    /// # Note:
+    /// Removal of edges (nodes) are necessary in order to reduce the running time of VF2.
+    /// However, dur to the nature of our graph structure, we cannot efficiently spot which
+    /// edges (nodes) should be removed, and thus a traversal of all edges is mandatory.
+    /// 
+    /// # Update:
+    /// We do **not** remove nodes, since we can only know whether the out-degree of a node is
+    /// 0 or not. However, we have no clue of its in-degree.
     fn check_expiration(&mut self, latest_timestamp: u64) {
         // Remove edges that expire at "previous" call of `check_expiration()`.
         // If we remove them right away, things will go wrong when we check signatures for those answer candidates.
@@ -200,34 +194,10 @@ impl<'p, P> IsomorphismLayer<'p, P> {
 
         // Note that `self.edges_to_remove()` is ordered increasingly by the indices, by nature.
         // Thus we only need to reverse it.
-        let mut num_removed_edge: HashMap<NodeIndex, usize> = HashMap::new();
         for edge in self.edges_to_remove.drain(..).rev() {
             debug!("edge (to be removed): {:?}", edge);
-            let (node, _) = self.data_graph.edge_endpoints(edge).unwrap();
-
-            // Only the source of the edge needs to be considered.
-            if let Some(count) = num_removed_edge.get_mut(&node) {
-                *count += 1;
-            } else {
-                num_removed_edge.insert(node, 1);
-            }
-
-            // This `edge` is the only one that connects `n0` and `n1`.
             self.data_graph.remove_edge(edge);
         }
-
-        let mut nodes_to_remove = num_removed_edge
-            .drain()
-            .filter(|(node, count)| *count == self.data_graph.edges(*node).count())
-            .map(|(node, _)| node)
-            .collect_vec();
-        // Sort by node index in decreasing order.
-        nodes_to_remove.sort_by(|u, v| v.index().cmp(&u.index()));
-        for node in nodes_to_remove {
-            debug!("node to remove: {:?}", node);
-            self.remove_node_from_graph(node);
-        }
-
         debug_assert!(self.edges_to_remove.is_empty());
 
         let mut expired_edges = Vec::new();
