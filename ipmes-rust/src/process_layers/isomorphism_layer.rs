@@ -5,6 +5,7 @@ use petgraph::algo;
 use petgraph::dot::Dot;
 use petgraph::graph::EdgeIndex;
 use petgraph::graph::NodeIndex;
+use petgraph::visit::EdgeRef;
 use petgraph::Graph;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -52,7 +53,7 @@ pub struct IsomorphismLayer<'p, P> {
     pattern_graph: Graph<usize, EdgeWeight>,
     /// Let `matched_subgraph` = `self.all_matched_subgrphs.pop()`.
     /// Then `NodeIndex(matched_subgraph[i])` is the input node that matches the pattern node `NodeIndex(i)` .
-    all_matched_subgrphs: Vec<Vec<usize>>,
+    all_node_mappings: Vec<Vec<usize>>,
 
     pattern_entity_node_map: HashMap<usize, NodeIndex>,
     window_size: u64,
@@ -111,7 +112,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             prev_layer,
             pattern,
             pattern_graph,
-            all_matched_subgrphs: Vec::new(),
+            all_node_mappings: Vec::new(),
             pattern_entity_node_map,
             window_size,
             data_graph: Graph::<u64, EdgeWeight>::new(),
@@ -159,7 +160,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         );
 
         if let Some(iter_mappings) = match_result {
-            self.all_matched_subgrphs.extend(iter_mappings);
+            self.all_node_mappings.extend(iter_mappings);
         }
     }
 
@@ -237,7 +238,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             self.try_match();
             // Once there are new matches, check whether they are valid.
             // If valid, put them into `self.event_id_answers`.
-            if !self.all_matched_subgrphs.is_empty() {
+            if !self.all_node_mappings.is_empty() {
                 self.verify_matches();
             }
         }
@@ -260,37 +261,22 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         }
     }
 
-    // @todo: maybe we can use "Graph::edges(EdgeIndex)" to simplfy this function?
-    fn node_indices_to_edges(&self, subgraph: &Vec<usize>) -> Vec<ZippedEdge> {
-        debug!("In node_indices_to_edges()!");
-
-        for edge in self.data_graph.edge_references() {
-            debug!("Original edge: {:?}", edge);
-        }
-
+    fn get_subgraph_from_mapping(&self, node_mapping: &Vec<usize>) -> Vec<ZippedEdge> {
         let mut zipped_subgraph_edges: Vec<ZippedEdge> = Vec::new();
-        for n0 in subgraph {
-            for n1 in subgraph {
-                let a = NodeIndex::from(*n0 as u32);
-                let b = NodeIndex::from(*n1 as u32);
-
-                if self.data_graph.contains_edge(a, b) {
-                    debug!("There are edges between: ({}, {})", n0, n1);
-
-                    // There should be "exactly one" edge.
-                    let edge = self.data_graph.edges_connecting(a, b).last().unwrap();
-                    zipped_subgraph_edges.push(ZippedEdge {
-                        zipped_edge: edge,
-                        from_node: *n0,
-                        to_node: *n1,
-                    });
-                }
+        for node in node_mapping {
+            for edge in self.data_graph.edges(NodeIndex::from(*node as u32)) {
+                zipped_subgraph_edges.push(ZippedEdge {
+                    zipped_edge: edge,
+                    from_node: *node,
+                    to_node: edge.target().index(),
+                });
+                debug_assert_eq!(*node, edge.source().index());
             }
         }
         zipped_subgraph_edges
     }
 
-    // maybe this "HashMap" stuff can be converted to "Graph"
+    /// Since we do not know the maximum node index, we use `HashMap` for adjacency list here.
     fn expand_subgraphs(
         &self,
         current_pos: usize,
@@ -306,13 +292,6 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         let zipped_edge = zipped_subgraph_edges[current_pos].zipped_edge;
         let n0 = zipped_subgraph_edges[current_pos].from_node;
         let n1 = zipped_subgraph_edges[current_pos].to_node;
-
-        debug!(
-            "lengths: {}, {}, {}",
-            zipped_edge.weight().signatures.len(),
-            zipped_edge.weight().timestamps.len(),
-            zipped_edge.weight().edge_id.len()
-        );
 
         for (i, signature) in enumerate(&zipped_edge.weight().signatures) {
             let id = zipped_edge.weight().edge_id[i];
@@ -353,7 +332,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
     fn get_mapped_edge(
         &self,
         pattern_eid: usize,
-        subgraph: &Vec<usize>,
+        node_mapping: &Vec<usize>,
         subgraph_edges: &'p HashMap<usize, Vec<InputEvent>>,
     ) -> Option<&InputEvent> {
         // Assume that pattern events are ordered by ther "id" (from 0, 1, ...).
@@ -361,8 +340,8 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         let pattern_n0 = self.pattern_entity_node_map[&event.subject].index();
         let pattern_n1 = self.pattern_entity_node_map[&event.object].index();
 
-        let data_n0 = subgraph[pattern_n0];
-        let data_n1 = subgraph[pattern_n1];
+        let data_n0 = node_mapping[pattern_n0];
+        let data_n1 = node_mapping[pattern_n1];
 
         let edges = subgraph_edges.get(&data_n0)?;
         for edge in edges {
@@ -395,16 +374,16 @@ impl<'p, P> IsomorphismLayer<'p, P> {
         true
     }
 
-    /// If we flush all matches in `self.all_matched_subgrphs` all together, then isolated nodes can be removed.
+    /// If we flush all matches in `self.all_node_mappings` all together, then isolated nodes can be removed.
     /// CURRENT implementation indeed flush "all" matches. Thus nodes can be deleted.
     fn verify_matches(&mut self) {
-        debug!("matched size: {}", self.all_matched_subgrphs.len());
+        debug!("matched size: {}", self.all_node_mappings.len());
 
-        while let Some(subgraph) = self.all_matched_subgrphs.pop() {
-            debug!("Now expanding {:?}", subgraph);
-            let zipped_subgraph_edges = self.node_indices_to_edges(&subgraph);
+        while let Some(node_mapping) = self.all_node_mappings.pop() {
+            debug!("Now expanding {:?}", node_mapping);
+            let zipped_subgraph_edges = self.get_subgraph_from_mapping(&node_mapping);
             debug!("zipped subgraph edges: {:?}", zipped_subgraph_edges);
-
+            
             let mut expanded_subgraph_edges = HashMap::new();
             let mut all_expanded_subgraph_edges = Vec::new();
             self.expand_subgraphs(
@@ -420,7 +399,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
             );
 
             for subgraph_edges in all_expanded_subgraph_edges {
-                let matched_events = self.to_event_representation(&subgraph, &subgraph_edges);
+                let matched_events = self.to_event_representation(&node_mapping, &subgraph_edges);
                 if !self.check_signatures(&matched_events) {
                     continue;
                 }
@@ -434,7 +413,7 @@ impl<'p, P> IsomorphismLayer<'p, P> {
                 }
                 if valid {
                     self.event_id_answers.push(
-                        self.to_event_representation(&subgraph, &subgraph_edges)
+                        self.to_event_representation(&node_mapping, &subgraph_edges)
                             .iter()
                             .map(|e| e.id)
                             .collect_vec(),
@@ -446,13 +425,13 @@ impl<'p, P> IsomorphismLayer<'p, P> {
 
     fn to_event_representation(
         &self,
-        subgraph: &Vec<usize>,
+        node_mapping: &Vec<usize>,
         subgraph_edges: &'p HashMap<usize, Vec<InputEvent>>,
     ) -> Vec<&InputEvent> {
         let num_events = self.pattern.events.len();
         let mut events = Vec::with_capacity(num_events);
         for i in 0..num_events {
-            let data_edge = self.get_mapped_edge(i, subgraph, subgraph_edges).unwrap();
+            let data_edge = self.get_mapped_edge(i, node_mapping, subgraph_edges).unwrap();
             events.push(data_edge);
         }
         events
