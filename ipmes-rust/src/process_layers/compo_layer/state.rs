@@ -10,7 +10,7 @@ pub enum StateInfo {
     AggFreq { next_state: u32, frequency: u32 },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StateData {
     Default {
         next_state: u32,
@@ -23,6 +23,13 @@ pub enum StateData {
         frequency: u32,
         current_set: HashSet<u64>,
     },
+}
+
+#[cfg(test)]
+impl Default for StateData {
+    fn default() -> Self {
+        Self::Default { next_state: 0 }
+    }
 }
 
 #[derive(Error, Debug)]
