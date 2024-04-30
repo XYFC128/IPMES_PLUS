@@ -82,10 +82,10 @@ impl<'p> InstanceRunner<'p> {
         } = instance.accept(match_event)
         {
             if let StateInfo::Output { subpattern_id } = self.state_table[new_state_id as usize].0 {
-                if let Some(output) = self.new_output_from(&instance, new_event, subpattern_id) {
+                if let Some(output) = self.new_output_from(instance, new_event, subpattern_id) {
                     self.output_buffer.push(output);
                 }
-            } else if let Some(data) = self.new_instance_from(&instance, new_state_id, new_event) {
+            } else if let Some(data) = self.new_instance_from(instance, new_state_id, new_event) {
                 self.new_instance.push(data);
             }
         }
@@ -319,7 +319,7 @@ mod tests {
                     match_ord: 3,
                     // the shared subject could be object_of(1), but 2 is better
                     // since it is closer
-                    subject: EntityEncode::object_of(2), 
+                    subject: EntityEncode::object_of(2),
                     object: EntityEncode::subject_of(2),
                 },
             ),
