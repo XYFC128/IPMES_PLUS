@@ -241,11 +241,11 @@ impl<'p> InstanceRunner<'p> {
         let new_instance = std::mem::take(&mut self.new_instance);
         for (filter, instance) in new_instance.into_iter() {
             match filter {
-                Filter::MatchOrdOnly { match_ord } => storage
-                    .simple_instances
-                    .entry(match_ord)
-                    .or_default()
-                    .push(instance),
+                Filter::MatchOrdOnly { match_ord } => {
+                    if let Some(instance) = storage.simple_instances.insert(match_ord, instance) {
+                        log::warn!("Duplicated simple instance. Old instance: {:#?}", instance);
+                    }
+                }
                 Filter::Subject { match_ord, subject } => storage
                     .subject_instances
                     .entry((match_ord, subject))
