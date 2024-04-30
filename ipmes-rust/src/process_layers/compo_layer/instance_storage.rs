@@ -111,7 +111,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_init() {
         let state_table = [
             (
                 StateInfo::Default { next_state: 1 },
