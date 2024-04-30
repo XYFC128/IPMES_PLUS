@@ -1,4 +1,4 @@
-mod compo_layer;
+pub mod compo_layer;
 pub mod composition_layer;
 pub mod join_layer;
 pub mod matching_layer;

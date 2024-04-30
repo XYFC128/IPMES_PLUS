@@ -1,4 +1,4 @@
-use crate::{sub_pattern::SubPattern, universal_match_event::UniversalMatchEvent};
+use crate::sub_pattern::SubPattern;
 
 use super::matching_layer::PartialMatchEvent;
 
@@ -10,7 +10,7 @@ mod match_instance;
 mod state;
 use instance_runner::InstanceRunner;
 use instance_storage::InstanceStorage;
-use match_instance::MatchInstance;
+pub use match_instance::MatchInstance;
 use state::*;
 
 pub struct CompoLayer<'p, P> {
@@ -49,7 +49,7 @@ impl<'p, P> Iterator for CompoLayer<'p, P>
 where
     P: Iterator<Item = PartialMatchEvent<'p>>,
 {
-    type Item = (u32, Box<[UniversalMatchEvent<'p>]>);
+    type Item = (u32, MatchInstance<'p>);
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.runner.output_buffer.is_empty() {
