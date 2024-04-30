@@ -1,6 +1,6 @@
 use super::entity_encode::EntityEncode;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Filter {
     MatchOrdOnly {
         match_ord: usize,
@@ -20,7 +20,7 @@ pub enum Filter {
     },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FilterInfo {
     None,
     MatchOrdOnly {

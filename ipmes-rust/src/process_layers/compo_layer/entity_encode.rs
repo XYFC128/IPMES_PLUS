@@ -70,9 +70,9 @@ impl Debug for EntityEncode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let index = (self.encode >> 1) as usize;
         if self.is_object() {
-            write!(f, "[{}].object", index)
+            write!(f, "object_of({})", index)
         } else {
-            write!(f, "[{}].subject", index)
+            write!(f, "subject_of({})", index)
         }
     }
 }
