@@ -74,10 +74,7 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
     let events_json = json_obj["Events"]
         .as_array()
         .ok_or(PatternParsingError::KeyError("Events"))?;
-    let events = parse_events(
-        events_json,
-        &entity_id2index,
-        &entities)?;
+    let events = parse_events(events_json, &entity_id2index, &entities)?;
 
     let order = parse_order_relation(&events_json)?;
     if !order.is_valid() {

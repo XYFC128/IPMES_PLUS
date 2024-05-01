@@ -310,22 +310,40 @@ mod tests {
                 id: 0,
                 event_type: PatternEventType::Default,
                 signature: "a".to_string(),
-                subject: PatternEntity { id: 0, signature: "".to_string() },
-                object: PatternEntity { id: 1, signature: "".to_string() },
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
                 event_type: PatternEventType::Default,
                 signature: "b".to_string(),
-                subject: PatternEntity { id: 1, signature: "".to_string() },
-                object: PatternEntity { id: 2, signature: "".to_string() },
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 2,
                 event_type: PatternEventType::Default,
                 signature: "a".to_string(),
-                subject: PatternEntity { id: 3, signature: "".to_string() },
-                object: PatternEntity { id: 1, signature: "".to_string() },
+                subject: PatternEntity {
+                    id: 3,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
         ];
 
@@ -352,15 +370,27 @@ mod tests {
                 id: 0,
                 event_type: PatternEventType::Default,
                 signature: "edge1".to_string(),
-                subject: PatternEntity { id: 0, signature: "".to_string() },
-                object: PatternEntity { id: 1, signature: "".to_string() },
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
                 event_type: PatternEventType::Default,
                 signature: "edge2".to_string(),
-                subject: PatternEntity { id: 1, signature: "".to_string() },
-                object: PatternEntity { id: 2, signature: "".to_string() },
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
         ];
 

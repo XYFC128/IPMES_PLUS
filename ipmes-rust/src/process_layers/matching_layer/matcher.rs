@@ -39,10 +39,7 @@ pub struct DefaultMatcher<'p> {
 }
 
 impl<'p> DefaultMatcher<'p> {
-    pub fn new(
-        pattern: &'p PatternEvent,
-        use_regex: bool,
-    ) -> Result<Self, RegexError> {
+    pub fn new(pattern: &'p PatternEvent, use_regex: bool) -> Result<Self, RegexError> {
         Ok(Self {
             event_signature: construct_regex(&pattern.signature, !use_regex)?,
             subject_signature: construct_regex(&pattern.subject.signature, !use_regex)?,

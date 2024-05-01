@@ -76,7 +76,7 @@ impl<'p> MatchInstance<'p> {
     }
 
     /// Clone and add (`entity_id`, `pattern_id`) to the `match_entities`.
-    /// 
+    ///
     /// Returns [None] when the `entity_id` is already in it.
     pub fn dup_extend_entities_list(
         match_entities: &[(u64, u64)],
@@ -150,7 +150,13 @@ mod tests {
             *MatchInstance::dup_extend_entities_list(&match_entities, 102, 3).unwrap(),
             [(100, 1), (101, 0), (102, 3), (103, 2)],
         );
-        assert_eq!(MatchInstance::dup_extend_entities_list(&match_entities, 100, 1), None);
-        assert_eq!(MatchInstance::dup_extend_entities_list(&match_entities, 100, 3), None);
+        assert_eq!(
+            MatchInstance::dup_extend_entities_list(&match_entities, 100, 1),
+            None
+        );
+        assert_eq!(
+            MatchInstance::dup_extend_entities_list(&match_entities, 100, 3),
+            None
+        );
     }
 }

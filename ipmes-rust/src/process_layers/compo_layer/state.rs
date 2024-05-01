@@ -44,7 +44,9 @@ impl TryFrom<StateInfo> for StateData {
     fn try_from(value: StateInfo) -> Result<Self, Self::Error> {
         match value {
             StateInfo::Default { next_state } => Ok(StateData::Default { next_state }),
-            StateInfo::Output { subpattern_id: _ } => Err(StateDataConstructionError::FromOutputState),
+            StateInfo::Output { subpattern_id: _ } => {
+                Err(StateDataConstructionError::FromOutputState)
+            }
             StateInfo::InitFreq { next_state } => Ok(StateData::InitFreq { next_state }),
             StateInfo::AggFreq {
                 next_state,

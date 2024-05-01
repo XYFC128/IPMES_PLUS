@@ -1,6 +1,7 @@
-use crate::{pattern::PatternEvent, process_layers::matching_layer::PartialMatchEvent};
+use crate::pattern::PatternEvent;
+use crate::process_layers::matching_layer::PartialMatchEvent;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UniversalMatchEvent<'p> {
     pub matched: &'p PatternEvent,
     pub start_time: u64,

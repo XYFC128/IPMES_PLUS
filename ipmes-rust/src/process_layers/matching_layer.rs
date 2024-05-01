@@ -40,10 +40,7 @@ impl<'p, P> MatchingLayer<'p, P> {
                         pattern.use_regex,
                         window_size,
                     )?),
-                    _ => Box::new(DefaultMatcher::new(
-                        pattern_event,
-                        pattern.use_regex,
-                    )?),
+                    _ => Box::new(DefaultMatcher::new(pattern_event, pattern.use_regex)?),
                 };
                 matchers.push(matcher);
             }
