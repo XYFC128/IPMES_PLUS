@@ -1,5 +1,7 @@
 use crate::match_event::MatchEvent;
+use crate::process_layers::compo_layer;
 use crate::process_layers::join_layer::SubPatternBuffer;
+use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
@@ -14,41 +16,76 @@ pub struct SubPatternMatch<'p> {
     /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
 
-    /// `(input entity id, pattern entity id)`.
+    /// Sorted array of `(input entity id, pattern entity id)`.
     ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
-    pub match_entities: Vec<(u64, u64)>,
+    pub match_entities: Box<[(u64, u64)]>,
 
-    /// `event_id_map[matched_id] = input_id`
+    /// Sorted input event ids for event uniqueness determination.
+    pub event_ids: Box<[u64]>,
+
+    /// `event_id_map[matched_id] = input_event`
     ///
     /// `event_id_map.len()` == number of event in the "whole pattern".
     ///
     /// > Note: The terms **matched event** and pattern event are used interchangeably.
-    pub event_id_map: Vec<Option<u64>>,
-
-    /// This is sorted by `input_event.id` for event uniqueness determination.
-    pub match_events: Vec<MatchEvent<'p>>,
+    pub match_event_map: Box<[Option<UniversalMatchEvent<'p>>]>,
 }
 
 /// > Note: Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
-fn merge_event_id_map(
-    event_id_map1: &Vec<Option<u64>>,
-    event_id_map2: &Vec<Option<u64>>,
-) -> Vec<Option<u64>> {
-    let mut event_id_map = vec![None; event_id_map1.len()];
-    for i in 0..event_id_map1.len() {
-        match event_id_map1[i] {
-            Some(t) => event_id_map[i] = Some(t),
-            None => match event_id_map2[i] {
-                Some(t) => event_id_map[i] = Some(t),
-                None => (),
-            },
+fn merge_match_event_map<T>(event_map1: &[Option<T>], event_map2: &[Option<T>]) -> Box<[Option<T>]>
+where
+    T: Clone,
+{
+    assert_eq!(event_map1.len(), event_map2.len());
+    let mut merged = Vec::with_capacity(event_map1.len() + event_map2.len());
+    for (a, b) in event_map1.iter().zip(event_map2.iter()) {
+        if a.is_some() {
+            merged.push(a.clone());
+        } else if b.is_some() {
+            merged.push(b.clone());
+        } else {
+            merged.push(None);
         }
     }
-    event_id_map
+    merged.into_boxed_slice()
 }
 
-fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
+fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
+    let mut merged = Vec::with_capacity(id_list1.len() + id_list2.len());
+    let mut p1 = id_list1.iter();
+    let mut p2 = id_list2.iter();
+    let mut next1 = p1.next();
+    let mut next2 = p2.next();
+
+    while let (Some(id1), Some(id2)) = (next1, next2) {
+        match id1.cmp(id2) {
+            Ordering::Less => {
+                merged.push(*id1);
+                next1 = p1.next();
+            }
+            Ordering::Equal => return None,
+            Ordering::Greater => {
+                merged.push(*id2);
+                next2 = p2.next();
+            }
+        }
+    }
+
+    if next1.is_none() {
+        p1 = p2;
+        next1 = next2;
+    }
+
+    while let Some(id) = next1 {
+        merged.push(*id);
+        next1 = p1.next();
+    }
+
+    Some(merged.into_boxed_slice())
+}
+
+fn check_edge_uniqueness(match_events: &[MatchEvent]) -> bool {
     let mut prev_id = u64::MAX;
     for edge in match_events {
         if edge.input_event.event_id == prev_id {
@@ -60,6 +97,39 @@ fn check_edge_uniqueness(match_events: &Vec<MatchEvent>) -> bool {
 }
 
 impl<'p> SubPatternMatch<'p> {
+    pub fn build(
+        sub_pattern_id: u32,
+        match_instance: compo_layer::MatchInstance<'p>,
+    ) -> Option<Self> {
+        let latest_time = match_instance.match_events.last()?.end_time;
+        let earliest_time = match_instance.start_time;
+
+        let match_events = match_instance.match_events.into_vec();
+        let match_entities = match_instance.match_entities.clone();
+
+        let mut event_ids: Vec<u64> = match_events
+            .iter()
+            .flat_map(|e| e.event_ids.iter().cloned())
+            .collect();
+        event_ids.sort_unstable();
+
+        let max_pat_id = match_events.iter().map(|e| e.matched.id).max().unwrap();
+        let mut match_event_map = vec![None; max_pat_id + 1];
+        for event in match_events.into_iter() {
+            let pat_id = event.matched.id;
+            match_event_map[pat_id] = Some(event);
+        }
+
+        Some(Self {
+            id: sub_pattern_id as usize,
+            latest_time,
+            earliest_time,
+            event_ids: event_ids.into_boxed_slice(),
+            match_entities,
+            match_event_map: match_event_map.into_boxed_slice(),
+        })
+    }
+
     // todo: check correctness
     pub fn merge_matches(
         sub_pattern_buffer: &SubPatternBuffer<'p>,
@@ -68,25 +138,19 @@ impl<'p> SubPatternMatch<'p> {
     ) -> Option<Self> {
         debug!("try merge_match_events...");
 
-        // merge "match_events" (WITHOUT checking "edge uniqueness")
-        let (match_events, timestamps) = sub_pattern_buffer.try_merge_match_events(
-            &sub_pattern_match1.match_events,
-            &sub_pattern_match2.match_events,
-        )?;
-
-        debug!("edge uniqueness checking...");
-
-        // handle "edge uniqueness"
-        if !check_edge_uniqueness(&match_events) {
-            return None;
-        }
+        let event_ids =
+            try_merge_event_ids(&sub_pattern_match1.event_ids, &sub_pattern_match2.event_ids)?;
+        let match_event_map = merge_match_event_map(
+            &sub_pattern_match1.match_event_map,
+            &sub_pattern_match2.match_event_map,
+        );
 
         debug!("order relation checking...");
 
         // check "order relation"
         if !sub_pattern_buffer
             .relation
-            .check_order_relation(&timestamps)
+            .check_order_relation(&match_event_map)
         {
             return None;
         }
@@ -98,12 +162,6 @@ impl<'p> SubPatternMatch<'p> {
             &sub_pattern_match1.match_entities,
             &sub_pattern_match2.match_entities,
         )?;
-
-        // merge "event_id_map"
-        let event_id_map = merge_event_id_map(
-            &sub_pattern_match1.event_id_map,
-            &sub_pattern_match2.event_id_map,
-        );
 
         Some(SubPatternMatch {
             // 'id' is meaningless here
@@ -117,8 +175,8 @@ impl<'p> SubPatternMatch<'p> {
                 sub_pattern_match2.earliest_time,
             ),
             match_entities,
-            event_id_map,
-            match_events,
+            event_ids,
+            match_event_map,
         })
     }
 }
@@ -169,14 +227,19 @@ mod tests {
     }
 
     #[test]
-    /// Fail
     fn test_check_edge_uniqueness_1() {
         let pattern_edge = PatternEvent {
             id: 0,
             event_type: PatternEventType::Default,
             signature: "".to_string(),
-            subject: PatternEntity { id: 0, signature: "".to_string() },
-            object: PatternEntity { id: 0, signature: "".to_string() },
+            subject: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
+            object: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
         };
         let match_edges = vec![
             MatchEvent {
@@ -193,18 +256,23 @@ mod tests {
             },
         ];
 
-        assert_eq!(check_edge_uniqueness(&match_edges), false);
+        assert!(!check_edge_uniqueness(&match_edges));
     }
 
     #[test]
-    /// Pass
     fn test_check_edge_uniqueness_2() {
         let pattern_edge = PatternEvent {
             id: 0,
             event_type: PatternEventType::Default,
             signature: "".to_string(),
-            subject: PatternEntity { id: 0, signature: "".to_string() },
-            object: PatternEntity { id: 0, signature: "".to_string() },
+            subject: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
+            object: PatternEntity {
+                id: 0,
+                signature: "".to_string(),
+            },
         };
         let match_edges = vec![
             MatchEvent {
@@ -221,28 +289,53 @@ mod tests {
             },
         ];
 
-        assert_eq!(check_edge_uniqueness(&match_edges), true);
+        assert!(check_edge_uniqueness(&match_edges));
     }
 
     #[test]
     fn test_merge_edge_id_map_1() {
         let edge_id_map1 = vec![None, Some(3), Some(2), None, None];
-
         let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
 
-        let ans = vec![Some(1), Some(3), Some(2), None, Some(7)];
-
-        assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
+        assert_eq!(
+            [Some(1), Some(3), Some(2), None, Some(7)],
+            *merge_match_event_map(&edge_id_map1, &edge_id_map2)
+        );
     }
 
     #[test]
     fn test_merge_edge_id_map_2() {
         let edge_id_map1 = vec![None, Some(3), None, None, None];
-
         let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
 
-        let ans = vec![Some(1), Some(3), None, None, Some(7)];
+        assert_eq!(
+            [Some(1), Some(3), None, None, Some(7)],
+            *merge_match_event_map(&edge_id_map1, &edge_id_map2)
+        );
+    }
 
-        assert_eq!(ans, merge_event_id_map(&edge_id_map1, &edge_id_map2));
+    #[test]
+    fn test_merge_event_id_basecase() {
+        let id_list1 = [1, 3, 5];
+        let id_list2 = [2, 4];
+        assert_eq!(
+            *try_merge_event_ids(&id_list1, &id_list2).unwrap(),
+            [1, 2, 3, 4, 5]
+        );
+    }
+
+    #[test]
+    fn test_merge_event_id_dup_id() {
+        let id_list1 = [1, 3, 5];
+        let id_list2 = [3, 4];
+        assert_eq!(try_merge_event_ids(&id_list1, &id_list2), None);
+    }
+
+    #[test]
+    fn test_merge_event_id_edgecases() {
+        assert_eq!(*try_merge_event_ids(&[1], &[2]).unwrap(), [1, 2]);
+        assert_eq!(*try_merge_event_ids(&[2], &[1]).unwrap(), [1, 2]);
+        assert_eq!(*try_merge_event_ids(&[1], &[]).unwrap(), [1]);
+        assert!(try_merge_event_ids(&[], &[]).unwrap().is_empty(),);
     }
 }
