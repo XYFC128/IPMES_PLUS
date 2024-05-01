@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::{HashMap, HashSet};
 
 use crate::pattern::PatternEventType;
@@ -120,7 +121,7 @@ impl<'p> InstanceRunner<'p> {
 
         let events = &instance.match_events;
         let mut new_match_events = Vec::with_capacity(events.len() + 1);
-        new_match_events.clone_from_slice(events);
+        new_match_events.extend_from_slice(events);
         new_match_events.push(new_event);
 
         Some((
@@ -157,27 +158,42 @@ impl<'p> InstanceRunner<'p> {
                         subject: _,
                     } => MatchInstance::dup_extend_entities_list(
                         &old_instance.match_entities,
-                        new_event.subject_id,
-                        new_event.matched.subject.id as u64,
+                        new_event.object_id,
+                        new_event.matched.object.id as u64,
                     )?,
                     FilterInfo::Object {
                         match_ord: _,
                         object: _,
                     } => MatchInstance::dup_extend_entities_list(
                         &old_instance.match_entities,
-                        new_event.object_id,
-                        new_event.matched.object.id as u64,
+                        new_event.subject_id,
+                        new_event.matched.subject.id as u64,
                     )?,
+                    FilterInfo::MatchOrdOnly { match_ord: _ } => {
+                        if new_event.subject_id > new_event.object_id {
+                            Box::new([
+                                (new_event.subject_id, new_event.matched.subject.id as u64),
+                                (new_event.object_id, new_event.matched.object.id as u64),
+                            ])
+                        } else {
+                            Box::new([
+                                (new_event.object_id, new_event.matched.object.id as u64),
+                                (new_event.subject_id, new_event.matched.subject.id as u64),
+                            ])
+                        }
+                    }
                     _ => old_instance.match_entities.clone(),
                 };
 
+                let start_time = min(old_instance.start_time, new_event.start_time);
+
                 let mut new_match_events = Vec::with_capacity(events.len() + 1);
-                new_match_events.clone_from_slice(events);
+                new_match_events.extend_from_slice(events);
                 new_match_events.push(new_event);
                 let new_match_events = new_match_events.into_boxed_slice();
 
                 MatchInstance {
-                    start_time: old_instance.start_time,
+                    start_time,
                     match_events: new_match_events,
                     match_entities,
                     state_data: state_info.try_into().unwrap(),
