@@ -6,12 +6,13 @@ use crate::pattern::Pattern;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
     FirstToSecond, SecondToFirst,
 };
+use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
 
 use super::{get_parent_id, get_sibling_id};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum TimeOrder {
     FirstToSecond,
     SecondToFirst,
@@ -44,13 +45,33 @@ impl Relation {
     }
 
     /// Check whether order relations are violated between two pattern matches.
-    pub fn check_order_relation(&self, timestamps: &Vec<u64>) -> bool {
-        self.event_orders
-            .iter()
-            .all(|(pattern_id1, pattern_id2, time_order)| match time_order {
-                FirstToSecond => timestamps[*pattern_id1] <= timestamps[*pattern_id2],
-                SecondToFirst => timestamps[*pattern_id1] >= timestamps[*pattern_id2],
-            })
+    pub fn check_order_relation(&self, match_event_map: &[Option<UniversalMatchEvent>]) -> bool {
+        for (idx1, idx2, time_order) in &self.event_orders {
+            if let (Some(event1), Some(event2)) = (&match_event_map[*idx1], &match_event_map[*idx2])
+            {
+                if !Self::satisfy_order(event1, event2, time_order) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn satisfy_order(
+        event1: &UniversalMatchEvent,
+        event2: &UniversalMatchEvent,
+        time_order: &TimeOrder,
+    ) -> bool {
+        if event1.end_time < event2.start_time {
+            *time_order == FirstToSecond
+        } else if event1.start_time > event2.start_time {
+            *time_order == SecondToFirst
+        } else {
+            true // since event1 and event2 overlaps, they can satisfy any order
+        }
     }
 
     pub fn is_entity_shared(&self, id: usize) -> bool {
@@ -161,9 +182,6 @@ impl<'p> SubPatternBuffer<'p> {
 
         let id = get_parent_id(sub_pattern_buffer1.id);
 
-        // dummy code (no use)
-        sub_pattern_buffer1.sibling_id;
-
         Self {
             id,
             sibling_id: get_sibling_id(id),
@@ -234,7 +252,7 @@ impl<'p> SubPatternBuffer<'p> {
         &self,
         a: &[(u64, u64)],
         b: &[(u64, u64)],
-    ) -> Option<Vec<(u64, u64)>> {
+    ) -> Option<Box<[(u64, u64)]>> {
         let mut used_nodes = vec![false; self.max_num_entities];
         let mut merged = Vec::with_capacity(a.len() + b.len());
 
@@ -282,7 +300,7 @@ impl<'p> SubPatternBuffer<'p> {
             next1 = p1.next();
         }
 
-        Some(merged)
+        Some(merged.into_boxed_slice())
     }
 }
 
@@ -344,11 +362,11 @@ mod tests {
         let a = vec![(2, 19), (7, 20), (11, 9)];
 
         let b = vec![(0, 17), (25, 27)];
-        let ans = vec![(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
+        let ans = [(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
 
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_ne!(merged, None);
-        assert_eq!(merged.unwrap(), ans);
+        assert!(merged.unwrap().iter().eq(&ans));
     }
 
     #[test]
@@ -364,11 +382,11 @@ mod tests {
         let b = vec![(2, 19), (7, 20), (11, 9)];
 
         let a = vec![(0, 17), (25, 27)];
-        let ans = vec![(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
+        let ans = [(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
 
         let merged = sub_pattern_buffer.try_merge_entities(&a, &b);
         assert_ne!(merged, None);
-        assert_eq!(merged.unwrap(), ans);
+        assert!(merged.unwrap().iter().eq(&ans));
     }
 
     #[test]
@@ -440,7 +458,7 @@ mod tests {
         let match_edge2 = gen_match_edges(&pattern_edges2, &input_edge_data2);
 
         let res = sub_pattern_buffer.try_merge_match_events(&match_edge1, &match_edge2);
-        assert!(!res.is_none());
+        assert!(res.is_some());
 
         let ans_pattern_edge_ids = vec![1, 3, 4, 5];
         let mut ans_pattern_edges = vec![];
@@ -452,13 +470,13 @@ mod tests {
         let match_edge = res.unwrap().0;
         for i in 0..match_edge.len() {
             if !cmp_match_edge(&match_edge[i], &ans_match_edge[i]) {
-                assert!(false);
+                unreachable!()
             }
         }
     }
 
     fn gen_match_edges<'p>(
-        pattern_edges: &'p Vec<PatternEvent>,
+        pattern_edges: &'p [PatternEvent],
         input_edge_data: &Vec<(u64, u64)>,
     ) -> Vec<MatchEvent<'p>> {
         let num_edges = input_edge_data.len();
@@ -509,11 +527,7 @@ mod tests {
 
     /// only check ids
     fn cmp_match_edge(edge1: &MatchEvent, edge2: &MatchEvent) -> bool {
-        if edge1.matched.id != edge2.matched.id {
-            return false;
-        } else if edge1.input_event.event_id != edge2.input_event.event_id {
-            return false;
-        }
-        true
+        edge1.matched.id == edge2.matched.id
+            && edge1.input_event.event_id == edge2.input_event.event_id
     }
 }

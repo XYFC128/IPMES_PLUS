@@ -100,6 +100,7 @@ impl<'p> SubPatternMatch<'p> {
     pub fn build(
         sub_pattern_id: u32,
         match_instance: compo_layer::MatchInstance<'p>,
+        num_pattern_event: usize,
     ) -> Option<Self> {
         let latest_time = match_instance.match_events.last()?.end_time;
         let earliest_time = match_instance.start_time;
@@ -113,8 +114,7 @@ impl<'p> SubPatternMatch<'p> {
             .collect();
         event_ids.sort_unstable();
 
-        let max_pat_id = match_events.iter().map(|e| e.matched.id).max().unwrap();
-        let mut match_event_map = vec![None; max_pat_id + 1];
+        let mut match_event_map = vec![None; num_pattern_event];
         for event in match_events.into_iter() {
             let pat_id = event.matched.id;
             match_event_map[pat_id] = Some(event);
