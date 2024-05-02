@@ -82,56 +82,16 @@ impl<'p> InstanceRunner<'p> {
             new_event,
         } = instance.accept(match_event)
         {
-            if let StateInfo::Output { subpattern_id } = self.state_table[new_state_id as usize].0 {
-                if let Some(output) = self.new_output_from(instance, new_event, subpattern_id) {
-                    self.output_buffer.push(output);
+            let (state_info, filter_info) = self.state_table[new_state_id as usize];
+            if let Some(new_instance) = self.new_instance_from(instance, new_state_id, new_event) {
+                if let StateInfo::Output { subpattern_id } = state_info {
+                    self.output_buffer.push((subpattern_id, new_instance));
+                } else {
+                    let filter = Self::extract_filter(&new_instance, filter_info);
+                    self.new_instance.push((filter, new_instance));
                 }
-            } else if let Some(data) = self.new_instance_from(instance, new_state_id, new_event) {
-                self.new_instance.push(data);
             }
         }
-    }
-
-    pub fn new_output_from(
-        &self,
-        instance: &MatchInstance<'p>,
-        new_event: UniversalMatchEvent<'p>,
-        subpattern_id: u32,
-    ) -> Option<(u32, MatchInstance<'p>)> {
-        let old_filter = self.state_table[instance.state_id as usize].1;
-        let match_entities = match old_filter {
-            FilterInfo::Subject {
-                match_ord: _,
-                subject: _,
-            } => MatchInstance::dup_extend_entities_list(
-                &instance.match_entities,
-                new_event.subject_id,
-                new_event.matched.subject.id as u64,
-            )?,
-            FilterInfo::Object {
-                match_ord: _,
-                object: _,
-            } => MatchInstance::dup_extend_entities_list(
-                &instance.match_entities,
-                new_event.object_id,
-                new_event.matched.object.id as u64,
-            )?,
-            _ => instance.match_entities.clone(),
-        };
-
-        let events = &instance.match_events;
-        let mut new_match_events = Vec::with_capacity(events.len() + 1);
-        new_match_events.extend_from_slice(events);
-        new_match_events.push(new_event);
-
-        Some((
-            subpattern_id,
-            MatchInstance {
-                match_events: new_match_events.into_boxed_slice(),
-                match_entities,
-                ..instance.clone()
-            },
-        ))
     }
 
     pub fn new_instance_from(
@@ -139,68 +99,10 @@ impl<'p> InstanceRunner<'p> {
         old_instance: &MatchInstance<'p>,
         new_state_id: u32,
         new_event: UniversalMatchEvent<'p>,
-    ) -> Option<(Filter, MatchInstance<'p>)> {
-        let events = &old_instance.match_events;
+    ) -> Option<MatchInstance<'p>> {
+        let (state_info, _) = self.state_table[new_state_id as usize];
 
-        let (state_info, filter_info) = self.state_table[new_state_id as usize];
-
-        let new_instance = match state_info {
-            StateInfo::Default { next_state: _ } | StateInfo::InitFreq { next_state: _ } => {
-                let mut event_ids = old_instance.event_ids.clone().into_vec();
-                event_ids.extend(new_event.event_ids.iter());
-                event_ids.sort();
-                let event_ids = event_ids.into_boxed_slice();
-
-                let old_filter = self.state_table[old_instance.state_id as usize].1;
-                let match_entities = match old_filter {
-                    FilterInfo::Subject {
-                        match_ord: _,
-                        subject: _,
-                    } => MatchInstance::dup_extend_entities_list(
-                        &old_instance.match_entities,
-                        new_event.object_id,
-                        new_event.matched.object.id as u64,
-                    )?,
-                    FilterInfo::Object {
-                        match_ord: _,
-                        object: _,
-                    } => MatchInstance::dup_extend_entities_list(
-                        &old_instance.match_entities,
-                        new_event.subject_id,
-                        new_event.matched.subject.id as u64,
-                    )?,
-                    FilterInfo::MatchOrdOnly { match_ord: _ } => {
-                        if new_event.subject_id > new_event.object_id {
-                            Box::new([
-                                (new_event.subject_id, new_event.matched.subject.id as u64),
-                                (new_event.object_id, new_event.matched.object.id as u64),
-                            ])
-                        } else {
-                            Box::new([
-                                (new_event.object_id, new_event.matched.object.id as u64),
-                                (new_event.subject_id, new_event.matched.subject.id as u64),
-                            ])
-                        }
-                    }
-                    _ => old_instance.match_entities.clone(),
-                };
-
-                let start_time = min(old_instance.start_time, new_event.start_time);
-
-                let mut new_match_events = Vec::with_capacity(events.len() + 1);
-                new_match_events.extend_from_slice(events);
-                new_match_events.push(new_event);
-                let new_match_events = new_match_events.into_boxed_slice();
-
-                MatchInstance {
-                    start_time,
-                    match_events: new_match_events,
-                    match_entities,
-                    state_data: state_info.try_into().unwrap(),
-                    state_id: new_state_id,
-                    event_ids,
-                }
-            }
+        match state_info {
             StateInfo::AggFreq {
                 next_state,
                 frequency,
@@ -210,7 +112,7 @@ impl<'p> InstanceRunner<'p> {
                     current_set.insert(*event_id);
                 }
 
-                MatchInstance {
+                Some(MatchInstance {
                     state_data: StateData::AggFreq {
                         next_state,
                         frequency,
@@ -218,24 +120,32 @@ impl<'p> InstanceRunner<'p> {
                     },
                     state_id: next_state,
                     ..old_instance.clone()
-                }
+                })
             }
-            _ => panic!("should not reach here"),
-        };
+            _ => {
+                let old_filter = self.state_table[old_instance.state_id as usize].1;
+                let mut new_instance = old_instance.clone_extend(new_event, &old_filter)?;
+                new_instance.state_id = new_state_id;
+                new_instance.state_data = state_info
+                    .try_into()
+                    .unwrap_or(StateData::Default { next_state: 0 });
+                Some(new_instance)
+            }
+        }
+    }
 
+    fn extract_filter(instance: &MatchInstance, filter_info: FilterInfo) -> Filter {
         let endpoints_extractor = |e: &UniversalMatchEvent| (e.subject_id, e.object_id);
-        let filter = match filter_info {
-            FilterInfo::None => panic!("Should not reach here"),
+        match filter_info {
+            FilterInfo::None => unreachable!(),
             FilterInfo::MatchOrdOnly { match_ord } => Filter::MatchOrdOnly { match_ord },
             FilterInfo::Subject { match_ord, subject } => Filter::Subject {
                 match_ord,
-                subject: subject
-                    .get_entity_unchecked(&new_instance.match_events, endpoints_extractor),
+                subject: subject.get_entity_unchecked(&instance.match_events, endpoints_extractor),
             },
             FilterInfo::Object { match_ord, object } => Filter::Object {
                 match_ord,
-                object: object
-                    .get_entity_unchecked(&new_instance.match_events, endpoints_extractor),
+                object: object.get_entity_unchecked(&instance.match_events, endpoints_extractor),
             },
             FilterInfo::Endpoints {
                 match_ord,
@@ -243,14 +153,10 @@ impl<'p> InstanceRunner<'p> {
                 object,
             } => Filter::Endpoints {
                 match_ord,
-                subject: subject
-                    .get_entity_unchecked(&new_instance.match_events, endpoints_extractor),
-                object: object
-                    .get_entity_unchecked(&new_instance.match_events, endpoints_extractor),
+                subject: subject.get_entity_unchecked(&instance.match_events, endpoints_extractor),
+                object: object.get_entity_unchecked(&instance.match_events, endpoints_extractor),
             },
-        };
-
-        Some((filter, new_instance))
+        }
     }
 
     pub fn store_new_instances(&mut self, storage: &mut InstanceStorage<'p>) {

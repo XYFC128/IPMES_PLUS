@@ -1,5 +1,8 @@
+use std::cmp::min;
+
 use itertools::Itertools;
 
+use super::filter::FilterInfo;
 use super::StateData;
 use crate::process_layers::matching_layer::PartialMatchEvent;
 use crate::universal_match_event::UniversalMatchEvent;
@@ -55,6 +58,29 @@ impl<'p> MatchInstance<'p> {
         }
     }
 
+    pub fn clone_extend(
+        &self,
+        new_event: UniversalMatchEvent<'p>,
+        filter_info: &FilterInfo,
+    ) -> Option<Self> {
+        let event_ids = Self::dup_extend_event_ids(&self.event_ids, &new_event.event_ids)?;
+        let match_entities =
+            Self::dup_extend_entities_by_event(&self.match_entities, &new_event, filter_info)?;
+        let start_time = min(self.start_time, new_event.start_time);
+
+        let mut new_match_events = Vec::with_capacity(self.match_events.len() + 1);
+        new_match_events.extend_from_slice(&self.match_events);
+        new_match_events.push(new_event);
+
+        Some(Self {
+            start_time,
+            match_events: new_match_events.into_boxed_slice(),
+            match_entities,
+            event_ids,
+            ..self.clone()
+        })
+    }
+
     /// Return true if the match_event is already in this [MatchInstance]
     pub fn contains_event(&self, input_event_id: u64) -> bool {
         self.event_ids.binary_search(&input_event_id).is_ok()
@@ -75,11 +101,64 @@ impl<'p> MatchInstance<'p> {
         false
     }
 
+    fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>> {
+        let mut new_event_ids = Vec::with_capacity(event_ids.len() + new_ids.len());
+        new_event_ids.extend_from_slice(event_ids);
+        new_event_ids.extend_from_slice(new_ids);
+        new_event_ids.sort_unstable();
+        for (a, b) in new_event_ids.iter().tuple_windows() {
+            if *a == *b {
+                return None;
+            }
+        }
+
+        Some(new_event_ids.into_boxed_slice())
+    }
+
+    fn dup_extend_entities_by_event(
+        match_entities: &[(InputEntityId, PatternEntityId)],
+        event: &UniversalMatchEvent,
+        filter_info: &FilterInfo,
+    ) -> Option<Box<[(InputEntityId, PatternEntityId)]>> {
+        match filter_info {
+            FilterInfo::Subject {
+                match_ord: _,
+                subject: _,
+            } => Self::dup_extend_entities_list(
+                match_entities,
+                event.object_id,
+                event.matched.object.id as u64,
+            ),
+            FilterInfo::Object {
+                match_ord: _,
+                object: _,
+            } => Self::dup_extend_entities_list(
+                match_entities,
+                event.subject_id,
+                event.matched.subject.id as u64,
+            ),
+            FilterInfo::MatchOrdOnly { match_ord: _ } => {
+                if event.subject_id > event.object_id {
+                    Some(Box::new([
+                        (event.subject_id, event.matched.subject.id as u64),
+                        (event.object_id, event.matched.object.id as u64),
+                    ]))
+                } else {
+                    Some(Box::new([
+                        (event.object_id, event.matched.object.id as u64),
+                        (event.subject_id, event.matched.subject.id as u64),
+                    ]))
+                }
+            }
+            _ => Some(Box::from(match_entities)),
+        }
+    }
+
     /// Clone and add (`entity_id`, `pattern_id`) to the `match_entities`.
     ///
     /// Returns [None] when the `entity_id` is already in it.
-    pub fn dup_extend_entities_list(
-        match_entities: &[(u64, u64)],
+    fn dup_extend_entities_list(
+        match_entities: &[(InputEntityId, PatternEntityId)],
         new_entity: u64,
         match_id: u64,
     ) -> Option<Box<[(InputEntityId, PatternEntityId)]>> {
