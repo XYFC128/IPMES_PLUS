@@ -57,11 +57,11 @@ impl EntityEncode {
         (self.encode >> 1) as usize
     }
 
-    fn is_subject(&self) -> bool {
+    pub fn is_subject(&self) -> bool {
         self.encode & 1 == 0
     }
 
-    fn is_object(&self) -> bool {
+    pub fn is_object(&self) -> bool {
         self.encode & 1 == 1
     }
 }

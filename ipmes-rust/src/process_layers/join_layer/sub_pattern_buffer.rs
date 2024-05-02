@@ -79,6 +79,12 @@ impl Relation {
     }
 }
 
+impl Default for Relation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// A Buffer that holds sub-pattern matches that correspond to a certain sub-pattern.
 #[derive(Clone, Debug)]
 pub struct SubPatternBuffer<'p> {

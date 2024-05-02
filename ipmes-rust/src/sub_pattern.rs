@@ -16,7 +16,7 @@ pub fn decompose(pattern: &Pattern) -> Vec<SubPattern> {
     let mut sub_patterns: Vec<SubPattern> = Vec::new();
     let mut parents: Vec<&PatternEvent> = Vec::new();
     for edge in &pattern.events {
-        generate_sub_patterns(pattern, &edge, &mut parents, &mut sub_patterns);
+        generate_sub_patterns(pattern, edge, &mut parents, &mut sub_patterns);
     }
 
     let mut selected: Vec<SubPattern> = select_sub_patterns(pattern.events.len(), sub_patterns);
@@ -55,13 +55,10 @@ fn has_shared_node(edge: &PatternEvent, parents: &Vec<&PatternEvent>) -> bool {
         return true;
     }
     for parent in parents {
-        let node_shared = if edge.subject == parent.subject || edge.subject == parent.object {
-            true
-        } else if edge.object == parent.subject || edge.object == parent.object {
-            true
-        } else {
-            false
-        };
+        let node_shared = edge.subject == parent.subject
+            || edge.subject == parent.object
+            || edge.object == parent.subject
+            || edge.object == parent.object;
         if node_shared {
             return true;
         }
@@ -183,19 +180,19 @@ mod tests {
 
         let sub_pattern = &results[0];
         let is_selected = vec![false, false, true, true];
-        assert!(!contains_selected_edge(&sub_pattern, &is_selected));
+        assert!(!contains_selected_edge(sub_pattern, &is_selected));
 
         let sub_pattern = &results[1];
         let is_selected = vec![false, false, true, true];
-        assert!(!contains_selected_edge(&sub_pattern, &is_selected));
+        assert!(!contains_selected_edge(sub_pattern, &is_selected));
 
         let sub_pattern = &results[2];
         let is_selected = vec![false, false, true, true];
-        assert!(contains_selected_edge(&sub_pattern, &is_selected));
+        assert!(contains_selected_edge(sub_pattern, &is_selected));
 
         let sub_pattern = &results[3];
         let is_selected = vec![false, false, false, true];
-        assert!(contains_selected_edge(&sub_pattern, &is_selected));
+        assert!(contains_selected_edge(sub_pattern, &is_selected));
     }
 
     #[test]

@@ -27,13 +27,11 @@ impl<'p> PartialMatch<'p> {
     /// Return `true` if the input entities in the partial match is unique.
     fn check_entity_uniqueness(&self) -> bool {
         let mut used = HashSet::new();
-        for entity_match in &self.entity_id_map {
-            if let Some(entity_id) = entity_match {
-                if used.contains(entity_id) {
-                    return false;
-                } else {
-                    used.insert(entity_id);
-                }
+        for entity_id in self.entity_id_map.iter().flatten() {
+            if used.contains(entity_id) {
+                return false;
+            } else {
+                used.insert(entity_id);
             }
         }
 
@@ -122,8 +120,7 @@ impl<'p> SubMatcher<'p> {
         partial_match
             .events
             .iter()
-            .find(|edge| edge.input_event.event_id == input_event.event_id)
-            .is_some()
+            .any(|edge| edge.input_event.event_id == input_event.event_id)
     }
 
     /// Clear the entries in the buffer which timestamp < time_bound
@@ -218,7 +215,7 @@ where
                 return Some(result);
             } else {
                 let next_matcher = &mut self.sub_matchers[match_order + 1];
-                next_matcher.buffer.extend(result.into_iter());
+                next_matcher.buffer.extend(result);
             }
         }
     }

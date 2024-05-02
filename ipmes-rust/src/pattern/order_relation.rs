@@ -79,7 +79,7 @@ impl OrderRelation {
 
         let orel_edges = Self::parse_json_obj(&json_obj)?;
 
-        Ok(Graph::from_edges(&orel_edges).into())
+        Ok(Graph::from_edges(orel_edges).into())
     }
 
     fn parse_json_obj(json_obj: &Value) -> Result<Vec<(u32, u32)>, PatternParsingError> {

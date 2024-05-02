@@ -76,7 +76,7 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
         .ok_or(PatternParsingError::KeyError("Events"))?;
     let events = parse_events(events_json, &entity_id2index, &entities)?;
 
-    let order = parse_order_relation(&events_json)?;
+    let order = parse_order_relation(events_json)?;
     if !order.is_valid() {
         return Err(PatternParsingError::DependencyCycle);
     }
@@ -279,7 +279,7 @@ mod tests {
 
         let pattern = parse_json(&json_obj).unwrap();
 
-        assert_eq!(pattern.use_regex, false);
+        assert!(!pattern.use_regex);
         assert_eq!(pattern.entities.len(), 3);
 
         let correct_events = [

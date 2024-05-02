@@ -26,7 +26,7 @@ impl<'p> InstanceStorage<'p> {
                         start_time: u64::MAX,
                         match_events: Box::new([]),
                         match_entities: Box::new([]),
-                        state_data: (*state_info).try_into().unwrap(),
+                        state_data: (*state_info).into(),
                         state_id: state_id as u32,
                         event_ids: Box::new([]),
                     },

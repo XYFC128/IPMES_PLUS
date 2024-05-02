@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use thiserror::Error;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StateInfo {
     Default { next_state: u32 },

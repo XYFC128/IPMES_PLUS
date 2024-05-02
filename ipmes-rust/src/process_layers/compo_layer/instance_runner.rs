@@ -166,7 +166,7 @@ impl<'p> InstanceRunner<'p> {
             match filter {
                 Filter::MatchOrdOnly { match_ord } => {
                     if let Some(instance) = storage.simple_instances.insert(match_ord, instance) {
-                        log::warn!("Duplicated simple instance. Old instance: {:#?}", instance);
+                        log::warn!("Duplicated simple instance. Old instance: {:?}", instance);
                     }
                 }
                 Filter::Subject { match_ord, subject } => storage

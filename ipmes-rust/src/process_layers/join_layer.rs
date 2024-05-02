@@ -39,7 +39,7 @@ impl<'p, P> JoinLayer<'p, P> {
         init_buffers: &mut HashMap<usize, SubPatternBuffer>,
     ) {
         let relations = SubPatternBuffer::generate_relations(
-            &pattern,
+            pattern,
             &init_buffers[&buffer_id],
             &init_buffers[&(buffer_id + 1)],
         );

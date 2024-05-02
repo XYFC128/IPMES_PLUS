@@ -30,7 +30,7 @@ impl Ord for InputEvent {
 
 impl PartialOrd for InputEvent {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.timestamp.partial_cmp(&other.timestamp)
+        Some(self.timestamp.cmp(&other.timestamp))
     }
 }
 

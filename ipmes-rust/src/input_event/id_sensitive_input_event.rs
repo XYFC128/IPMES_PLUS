@@ -36,8 +36,8 @@ impl From<Rc<InputEvent>> for IdSensitiveInputEvent {
     }
 }
 
-impl Into<Rc<InputEvent>> for IdSensitiveInputEvent {
-    fn into(self) -> Rc<InputEvent> {
-        self.0
+impl From<IdSensitiveInputEvent> for Rc<InputEvent> {
+    fn from(val: IdSensitiveInputEvent) -> Self {
+        val.0
     }
 }

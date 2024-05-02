@@ -205,7 +205,7 @@ mod tests {
 
     use super::*;
 
-    fn setup_flow_matcher<'p>(pattern: &'p PatternEvent) -> FlowMatcher<'p> {
+    fn setup_flow_matcher(pattern: &PatternEvent) -> FlowMatcher<'_> {
         FlowMatcher {
             matched: pattern,
             window_size: 10,
