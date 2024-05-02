@@ -15,14 +15,14 @@ pub enum StateData {
     Default {
         next_state: u32,
     },
-    InitFreq {
-        next_state: u32,
-    },
     AggFreq {
         next_state: u32,
         frequency: u32,
         current_set: HashSet<u64>,
     },
+    Output {
+        subpattern_id: u32,
+    }
 }
 
 #[cfg(test)]
@@ -32,30 +32,23 @@ impl Default for StateData {
     }
 }
 
-#[derive(Error, Debug)]
-pub enum StateDataConstructionError {
-    #[error("output state should not be constructed into an instance")]
-    FromOutputState,
-}
-
-impl TryFrom<StateInfo> for StateData {
-    type Error = StateDataConstructionError;
-
-    fn try_from(value: StateInfo) -> Result<Self, Self::Error> {
+impl From<StateInfo> for StateData {
+    fn from(value: StateInfo) -> Self {
         match value {
-            StateInfo::Default { next_state } => Ok(StateData::Default { next_state }),
-            StateInfo::Output { subpattern_id: _ } => {
-                Err(StateDataConstructionError::FromOutputState)
+            StateInfo::Default { next_state } => StateData::Default { next_state },
+            StateInfo::Output { subpattern_id } => {
+                StateData::Output { subpattern_id }
             }
-            StateInfo::InitFreq { next_state } => Ok(StateData::InitFreq { next_state }),
+            StateInfo::InitFreq { next_state } => StateData::Default { next_state },
             StateInfo::AggFreq {
                 next_state,
                 frequency,
-            } => Ok(StateData::AggFreq {
+            } => StateData::AggFreq {
                 next_state,
                 frequency,
                 current_set: HashSet::new(),
-            }),
+            },
         }
     }
 }
+

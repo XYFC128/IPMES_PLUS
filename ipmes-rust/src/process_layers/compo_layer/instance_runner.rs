@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::collections::{HashMap, HashSet};
 
 use crate::pattern::PatternEventType;
@@ -51,7 +50,11 @@ impl<'p> InstanceRunner<'p> {
                                 next_state,
                                 frequency,
                             },
-                            filter_info,
+                            FilterInfo::Endpoints {
+                                match_ord,
+                                subject: EntityEncode::subject_of(event_idx),
+                                object: EntityEncode::object_of(event_idx),
+                            },
                         ))
                     }
                 }
@@ -126,9 +129,7 @@ impl<'p> InstanceRunner<'p> {
                 let old_filter = self.state_table[old_instance.state_id as usize].1;
                 let mut new_instance = old_instance.clone_extend(new_event, &old_filter)?;
                 new_instance.state_id = new_state_id;
-                new_instance.state_data = state_info
-                    .try_into()
-                    .unwrap_or(StateData::Default { next_state: 0 });
+                new_instance.state_data = state_info.into();
                 Some(new_instance)
             }
         }
@@ -243,6 +244,52 @@ mod tests {
                     // since it is closer
                     subject: EntityEncode::object_of(2),
                     object: EntityEncode::subject_of(2),
+                },
+            ),
+            (StateInfo::Output { subpattern_id: 0 }, FilterInfo::None),
+        ];
+        let runner = InstanceRunner::new(&decomposition);
+        assert_eq!(runner.state_table, &ans)
+    }
+
+    #[test]
+    fn test_frequency_state_generation() {
+        let mut pattern = Pattern::from_graph(
+            &["v1", "v2", "v3"],
+            &[
+                (0, 1, "e1"), // share none
+                (1, 2, "e2"), // share subject
+            ],
+            false,
+        );
+        pattern.events[1].event_type = PatternEventType::Frequency(7);
+
+        let decomposition = [SubPattern {
+            id: 0,
+            events: pattern.events.iter().collect(),
+        }];
+
+        let ans = [
+            (
+                StateInfo::Default { next_state: 1 },
+                FilterInfo::MatchOrdOnly { match_ord: 0 },
+            ),
+            (
+                StateInfo::InitFreq { next_state: 2 },
+                FilterInfo::Subject {
+                    match_ord: 1,
+                    subject: EntityEncode::object_of(0),
+                },
+            ),
+            (
+                StateInfo::AggFreq {
+                    next_state: 3,
+                    frequency: 7,
+                },
+                FilterInfo::Endpoints {
+                    match_ord: 1,
+                    subject: EntityEncode::subject_of(1),
+                    object: EntityEncode::object_of(1),
                 },
             ),
             (StateInfo::Output { subpattern_id: 0 }, FilterInfo::None),

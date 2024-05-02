@@ -36,10 +36,6 @@ impl<'p> MatchInstance<'p> {
                 new_state_id: *next_state,
                 new_event: match_event.into(),
             },
-            StateData::InitFreq { next_state } => InstanceAction::NewInstance {
-                new_state_id: *next_state,
-                new_event: match_event.into(),
-            },
             StateData::AggFreq {
                 next_state,
                 frequency,
@@ -55,6 +51,7 @@ impl<'p> MatchInstance<'p> {
                     InstanceAction::Remain
                 }
             }
+            StateData::Output { subpattern_id:_ } => unreachable!(),
         }
     }
 
