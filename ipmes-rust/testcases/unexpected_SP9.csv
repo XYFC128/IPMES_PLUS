@@ -1,11 +1,11 @@
-0.608,0.608,fork#Process::hello.sh#Process::hello.sh,0,0,1
-0.608,0.608,execve#Process::hello.sh#Process::tar,1,1,2
-0.612,0.612,fork#Process::tar#Process::tar,2,2,3
-0.612,0.612,create#Process::tar#Artifact::file::/home/admin/hello.tar.gz,3,3,4
-1.402,1.402,open#Artifact::file::/lib/x86_64-linux-gnu/libnss_files.so.2#Process::tar,4,5,2
-1.406,1.406,open#Artifact::file::/home/admin/ipcon.txt#Process::tar,5,6,2
-1.406,1.414,read#Artifact::unnamed pipe::#Process::gzip,6,7,8
-1.414,1.414,write#Process::tar#Artifact::unnamed pipe::,7,2,9
-1.414,1.414,update#Artifact::file::/home/admin/hello.tar.gz#Artifact::file::/home/admin/hello.tar.gz,8,4,10
-1.414,1.414,write#Process::gzip#Artifact::file::/home/admin/hello.tar.gz,9,8,10
-1.414,1.414,open#Artifact::directory::/home/admin/doc#Process::tar,10,11,2
+0.608,0.608,0,fork,0,Process::hello.sh,1,Process::hello.sh
+0.608,0.608,1,execve,1,Process::hello.sh,2,Process::tar
+0.612,0.612,2,fork,2,Process::tar,3,Process::tar
+0.612,0.612,3,create,3,Process::tar,4,Artifact::file::/home/admin/hello.tar.gz
+1.402,1.402,4,open,5,Artifact::file::/lib/x86_64-linux-gnu/libnss_files.so.2,2,Process::tar
+1.406,1.406,5,open,6,Artifact::file::/home/admin/ipcon.txt,2,Process::tar
+1.406,1.414,6,read,7,Artifact::unnamed pipe::,8,Process::gzip
+1.414,1.414,7,write,2,Process::tar,9,Artifact::unnamed pipe::
+1.414,1.414,8,update,4,Artifact::file::/home/admin/hello.tar.gz,10,Artifact::file::/home/admin/hello.tar.gz
+1.414,1.414,9,write,8,Process::gzip,10,Artifact::file::/home/admin/hello.tar.gz
+1.414,1.414,10,open,11,Artifact::directory::/home/admin/doc,2,Process::tar

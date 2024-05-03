@@ -27,13 +27,11 @@ impl<'p> PartialMatch<'p> {
     /// Return `true` if the input entities in the partial match is unique.
     fn check_entity_uniqueness(&self) -> bool {
         let mut used = HashSet::new();
-        for entity_match in &self.entity_id_map {
-            if let Some(entity_id) = entity_match {
-                if used.contains(entity_id) {
-                    return false;
-                } else {
-                    used.insert(entity_id);
-                }
+        for entity_id in self.entity_id_map.iter().flatten() {
+            if used.contains(entity_id) {
+                return false;
+            } else {
+                used.insert(entity_id);
             }
         }
 
@@ -78,8 +76,8 @@ impl<'p> SubMatcher<'p> {
         // duplicate the partial match and add the input edge into the new partial match
         let mut entity_id_map = partial_match.entity_id_map.clone();
         let mut events = partial_match.events.clone();
-        entity_id_map[match_event.matched.subject] = Some(match_event.input_event.subject);
-        entity_id_map[match_event.matched.object] = Some(match_event.input_event.object);
+        entity_id_map[match_event.matched.subject.id] = Some(match_event.input_event.subject_id);
+        entity_id_map[match_event.matched.object.id] = Some(match_event.input_event.object_id);
 
         let timestamp = min(match_event.input_event.timestamp, partial_match.timestamp);
         events.push(match_event.clone());
@@ -102,14 +100,14 @@ impl<'p> SubMatcher<'p> {
         match_event: &MatchEvent<'p>,
         partial_match: &PartialMatch<'p>,
     ) -> bool {
-        if let Some(subject_match) = partial_match.entity_id_map[match_event.matched.subject] {
-            if subject_match != match_event.input_event.subject {
+        if let Some(subject_match) = partial_match.entity_id_map[match_event.matched.subject.id] {
+            if subject_match != match_event.input_event.subject_id {
                 return true;
             }
         }
 
-        if let Some(object_match) = partial_match.entity_id_map[match_event.matched.object] {
-            if object_match != match_event.input_event.object {
+        if let Some(object_match) = partial_match.entity_id_map[match_event.matched.object.id] {
+            if object_match != match_event.input_event.object_id {
                 return true;
             }
         }
@@ -122,8 +120,7 @@ impl<'p> SubMatcher<'p> {
         partial_match
             .events
             .iter()
-            .find(|edge| edge.input_event.id == input_event.id)
-            .is_some()
+            .any(|edge| edge.input_event.event_id == input_event.event_id)
     }
 
     /// Clear the entries in the buffer which timestamp < time_bound
@@ -161,7 +158,7 @@ impl<'p, P> CompositionLayer<'p, P> {
                 let max_node_id = sub_pattern
                     .events
                     .iter()
-                    .map(|e| max(e.subject, e.object))
+                    .map(|e| max(e.subject.id, e.object.id))
                     .max()
                     .unwrap();
                 // Insert an empty partial match that is never expired. All the partial match for
@@ -218,7 +215,7 @@ where
                 return Some(result);
             } else {
                 let next_matcher = &mut self.sub_matchers[match_order + 1];
-                next_matcher.buffer.extend(result.into_iter());
+                next_matcher.buffer.extend(result);
             }
         }
     }
@@ -227,7 +224,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::Event as PatternEvent;
+    use crate::pattern::{PatternEntity, PatternEvent, PatternEventType};
     use std::rc::Rc;
 
     /// Create match event for testing purpose
@@ -240,10 +237,12 @@ mod tests {
     ) -> MatchEvent<'p> {
         let input_event = Rc::new(InputEvent {
             timestamp: 0,
-            signature: signature.to_string(),
-            id,
-            subject,
-            object,
+            event_id: id,
+            event_signature: signature.to_string(),
+            subject_id: subject,
+            subject_signature: String::new(),
+            object_id: object,
+            object_signature: String::new(),
         });
 
         MatchEvent {
@@ -257,15 +256,29 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "edge1".to_string(),
-                subject: 0,
-                object: 1,
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "edge2".to_string(),
-                subject: 1,
-                object: 2,
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
         ];
 
@@ -292,21 +305,42 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "a".to_string(),
-                subject: 0,
-                object: 1,
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "b".to_string(),
-                subject: 1,
-                object: 2,
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 2,
+                event_type: PatternEventType::Default,
                 signature: "a".to_string(),
-                subject: 3,
-                object: 1,
+                subject: PatternEntity {
+                    id: 3,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
         ];
 
@@ -331,15 +365,29 @@ mod tests {
         let patterns = [
             PatternEvent {
                 id: 0,
+                event_type: PatternEventType::Default,
                 signature: "edge1".to_string(),
-                subject: 0,
-                object: 1,
+                subject: PatternEntity {
+                    id: 0,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
             },
             PatternEvent {
                 id: 1,
+                event_type: PatternEventType::Default,
                 signature: "edge2".to_string(),
-                subject: 1,
-                object: 2,
+                subject: PatternEntity {
+                    id: 1,
+                    signature: "".to_string(),
+                },
+                object: PatternEntity {
+                    id: 2,
+                    signature: "".to_string(),
+                },
             },
         ];
 

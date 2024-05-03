@@ -7,7 +7,7 @@ use cpu_time::ProcessTime;
 
 use ipmes_rust::pattern::Pattern;
 use ipmes_rust::process_layers::{
-    CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
+    CompoLayer, CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
 };
 use ipmes_rust::sub_pattern::decompose;
 
@@ -44,18 +44,18 @@ fn main() {
         .expect("Failed to open input graph");
     let parse_layer = ParseLayer::new(&mut csv);
     let matching_layer =
-        MatchingLayer::new(parse_layer, &decomposition, pattern.use_regex).unwrap();
-    let composition_layer = CompositionLayer::new(matching_layer, &decomposition, window_size);
+        MatchingLayer::new(parse_layer, &pattern, &decomposition, window_size).unwrap();
+    let composition_layer = CompoLayer::new(matching_layer, &decomposition, window_size);
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 
     let start_time = ProcessTime::now();
 
     let mut num_result = 0u32;
-    for pattern_match in uniqueness_layer {
-        info!("Pattern Match: {}", pattern_match);
-        num_result += 1;
-    }
+    // for pattern_match in uniqueness_layer {
+    //     info!("Pattern Match: {}", pattern_match);
+    //     num_result += 1;
+    // }
     println!("Total number of matches: {num_result}");
 
     println!(

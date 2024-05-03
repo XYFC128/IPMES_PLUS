@@ -1,17 +1,14 @@
-use std::cmp::Ordering;
-use crate::input_event::InputEvent;
 use itertools::Itertools;
-use std::fmt;
+use std::cmp::Ordering;
 use std::fmt::Formatter;
-use std::hash::{Hash, Hasher};
-use std::iter::zip;
-use std::rc::Rc;
+use std::fmt::{self};
+use std::hash::Hash;
 
 /// Complete Pattern Match
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct PatternMatch {
-    /// Matched edges of this pattern. `match_events[i]` is the input edge that matches pattern edge `i`.
-    pub matched_events: Vec<Rc<InputEvent>>,
+    /// Matched event ids of this pattern. [(pattern_event_id, input_event_id)]
+    pub matched_events: Box<[(usize, u64)]>,
     /// The timestamp of the last event (in `matched_events`), which is also the latest timestamp; indicating "current time".
     pub latest_time: u64,
     /// The timestamp of the earliest event; for determining expiry of this match.
@@ -20,32 +17,45 @@ pub struct PatternMatch {
 
 impl fmt::Display for PatternMatch {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "[{}]",
-            self.matched_events.iter().map(|e| e.id).join(", ")
-        )
-    }
-}
+        write!(f, "[")?;
 
-impl Eq for PatternMatch {}
+        let write_range = |f: &mut Formatter<'_>, start: usize, end: usize| {
+            if start + 1 == end {
+                write!(f, "{}", self.matched_events[start].1)
+            } else {
+                write!(
+                    f,
+                    "({})",
+                    self.matched_events[start..end]
+                        .iter()
+                        .map(|p| p.1)
+                        .join(", ")
+                )
+            }
+        };
 
-impl PartialEq for PatternMatch {
-    fn eq(&self, other: &Self) -> bool {
-        zip(&self.matched_events, &other.matched_events).all(|(a, b)| a.id.eq(&b.id))
-    }
-}
+        if let Some((mut prev_pat_id, _)) = self.matched_events.first() {
+            let mut prev_start = 0;
+            for (i, (pat_id, _)) in self.matched_events.iter().enumerate().skip(1) {
+                if *pat_id != prev_pat_id {
+                    write_range(f, prev_start, i)?;
+                    write!(f, ", ")?;
+                    prev_pat_id = *pat_id;
+                    prev_start = i;
+                }
+            }
 
-impl Hash for PatternMatch {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        for edge in &self.matched_events {
-            edge.id.hash(state);
+            if prev_start < self.matched_events.len() {
+                write_range(f, prev_start, self.matched_events.len())?;
+            }
         }
+
+        write!(f, "]")
     }
 }
 
 /// Helper structure that implements `PartialEq`, `Ord`, `PartialOrd` traits for `PatternMatch`.
-/// 
+///
 /// *Earliest* refers to `PatternMatch.earliest_time`.
 #[derive(Clone)]
 pub struct EarliestFirst(pub PatternMatch);
@@ -66,5 +76,37 @@ impl Ord for EarliestFirst {
 impl PartialOrd<Self> for EarliestFirst {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn format_pattern_match(match_events: &[(usize, u64)]) -> String {
+        let pat_match = PatternMatch {
+            matched_events: match_events.into(),
+            earliest_time: 0,
+            latest_time: 0,
+        };
+        pat_match.to_string()
+    }
+
+    #[test]
+    fn test_formatting() {
+        assert_eq!(format_pattern_match(&[]), "[]");
+        assert_eq!(format_pattern_match(&[(0, 3), (1, 2), (2, 1)]), "[3, 2, 1]");
+        assert_eq!(
+            format_pattern_match(&[(0, 3), (1, 2), (1, 1)]),
+            "[3, (2, 1)]"
+        );
+        assert_eq!(
+            format_pattern_match(&[(0, 3), (0, 2), (1, 1)]),
+            "[(3, 2), 1]"
+        );
+        assert_eq!(
+            format_pattern_match(&[(0, 3), (0, 2), (0, 1)]),
+            "[(3, 2, 1)]"
+        );
     }
 }

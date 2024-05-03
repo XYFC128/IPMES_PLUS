@@ -1,8 +1,8 @@
+use crate::input_event::InputEvent;
+use crate::pattern::PatternEvent;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use crate::input_event::InputEvent;
-use crate::pattern::Event as PatternEvent;
 
 /// The structure that pairs up an input event with the pattern event it matches.
 #[derive(Clone)]
@@ -13,19 +13,18 @@ pub struct MatchEvent<'p> {
     pub matched: &'p PatternEvent,
 }
 
-impl<'p> MatchEvent<'p> {
-}
+impl<'p> MatchEvent<'p> {}
 
 impl Debug for MatchEvent<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "[({}, {}), {}, {}, {}]",
-            self.input_event.id,
+            self.input_event.event_id,
             self.matched.id,
             self.input_event.timestamp,
-            self.input_event.subject,
-            self.input_event.object,
+            self.input_event.subject_id,
+            self.input_event.object_id,
         )
     }
 }
@@ -45,19 +44,19 @@ impl<'p> EventAttributes for MatchEvent<'p> {
     }
 
     fn get_signature(&self) -> &str {
-        &self.input_event.signature
+        &self.input_event.event_signature
     }
 
     fn get_id(&self) -> u64 {
-        self.input_event.id
+        self.input_event.event_id
     }
 
     fn get_subject(&self) -> u64 {
-        self.input_event.subject
+        self.input_event.subject_id
     }
 
     fn get_object(&self) -> u64 {
-        self.input_event.object   
+        self.input_event.object_id
     }
 
     fn get_matched(&self) -> &PatternEvent {

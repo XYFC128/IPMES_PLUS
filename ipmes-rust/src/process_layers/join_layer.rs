@@ -1,30 +1,32 @@
 mod sub_pattern_buffer;
 
+use crate::match_event::MatchEvent;
+use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
 use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
+use log::debug;
+use std::collections::{BinaryHeap, HashMap};
 pub use sub_pattern_buffer::SubPatternBuffer;
 
-use crate::match_event::MatchEvent;
-use crate::pattern::Pattern;
-use crate::process_layers::composition_layer::PartialMatch;
-use log::{debug, warn};
-use std::collections::{BinaryHeap, HashMap};
-use std::mem;
-use std::rc::Rc;
+use super::compo_layer;
 
 /// The layer that joins sub-pattern matches into pattern matches.
 #[derive(Debug)]
 pub struct JoinLayer<'p, P> {
     prev_layer: P,
+
     /// The behavioral pattern.
     pattern: &'p Pattern,
+
     /// Binary-tree-structured buffers that store sub-pattern matches.
     ///
     /// A sub-pattern match in a parent node is joined from sub-patterns in its two children buffers.
     sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
+
     /// See `clear_expired()`.
     window_size: u64,
+
     /// Complete pattern matches.
     full_match: Vec<PatternMatch>,
 }
@@ -37,9 +39,9 @@ impl<'p, P> JoinLayer<'p, P> {
         init_buffers: &mut HashMap<usize, SubPatternBuffer>,
     ) {
         let relations = SubPatternBuffer::generate_relations(
-            &pattern,
+            pattern,
             &init_buffers[&buffer_id],
-            &init_buffers[&(buffer_id + 1)]
+            &init_buffers[&(buffer_id + 1)],
         );
 
         // update
@@ -48,28 +50,31 @@ impl<'p, P> JoinLayer<'p, P> {
 
         init_buffers.insert(
             get_parent_id(buffer_id),
-            SubPatternBuffer::merge_buffers(&init_buffers[&buffer_id], &init_buffers[&(buffer_id + 1)]),
+            SubPatternBuffer::merge_buffers(
+                &init_buffers[&buffer_id],
+                &init_buffers[&(buffer_id + 1)],
+            ),
         );
     }
     pub fn new(
         prev_layer: P,
         pattern: &'p Pattern,
-        sub_patterns: &'p Vec<SubPattern>,
+        sub_patterns: &[SubPattern<'p>],
         window_size: u64,
     ) -> Self {
         let buffer_len = 2 * sub_patterns.len() - 1;
         let mut sub_pattern_buffers = Vec::with_capacity(buffer_len);
         let mut init_buffers = HashMap::new();
 
-        for i in 0..sub_patterns.len() {
+        for (i, sub_pattern) in sub_patterns.iter().enumerate() {
             let buffer_id = get_buffer_id(i, buffer_len);
             init_buffers.insert(
                 buffer_id,
                 SubPatternBuffer::new(
                     buffer_id,
                     get_sibling_id(buffer_id),
-                    &sub_patterns[i],
-                    pattern.num_entities,
+                    sub_pattern,
+                    pattern.entities.len(),
                     pattern.events.len(),
                 ),
             );
@@ -96,24 +101,25 @@ impl<'p, P> JoinLayer<'p, P> {
     fn pattern_match_conversion(buffer: &mut BinaryHeap<EarliestFirst<'p>>) -> Vec<PatternMatch> {
         let mut pattern_matches = Vec::with_capacity(buffer.len());
 
-        for mut sub_pattern_match in buffer.drain() {
+        for sub_pattern_match in buffer.drain() {
             debug!("sub_pattern_match id: {}", sub_pattern_match.0.id);
-            let mut matched_events = Vec::with_capacity(sub_pattern_match.0.match_events.len());
+            let mut matched_events = Vec::with_capacity(sub_pattern_match.0.event_ids.len());
             let mut earliest_time = u64::MAX;
             let mut latest_time = u64::MIN;
-            sub_pattern_match
-                .0
-                .match_events
-                .sort_by(|a, b| a.matched.id.cmp(&b.matched.id));
 
-            for match_event in &sub_pattern_match.0.match_events {
-                matched_events.push(Rc::clone(&match_event.input_event));
-                earliest_time = u64::min(earliest_time, match_event.input_event.timestamp);
-                latest_time = u64::max(latest_time, match_event.input_event.timestamp);
+            for (idx, entry) in sub_pattern_match.0.match_event_map.iter().enumerate() {
+                if let Some(event) = entry {
+                    for id in event.event_ids.iter() {
+                        matched_events.push((idx, *id));
+                    }
+                    earliest_time = u64::min(earliest_time, event.start_time);
+                    latest_time = u64::max(latest_time, event.end_time);
+                }
             }
+            matched_events.sort_unstable();
 
             pattern_matches.push(PatternMatch {
-                matched_events,
+                matched_events: matched_events.into_boxed_slice(),
                 earliest_time,
                 latest_time,
             });
@@ -168,9 +174,9 @@ impl<'p, P> JoinLayer<'p, P> {
                 debug!(
                     "now try merging\n{}: {:?} and\n{}: {:?}",
                     sub_pattern_match1.0.id,
-                    sub_pattern_match1.0.match_events,
+                    sub_pattern_match1.0.match_event_map,
                     sub_pattern_match2.0.id,
-                    sub_pattern_match2.0.match_events
+                    sub_pattern_match2.0.match_event_map
                 );
 
                 if let Some(merged) = SubPatternMatch::merge_matches(
@@ -214,10 +220,8 @@ impl<'p, P> JoinLayer<'p, P> {
                 .extend(joined);
 
             // move new matches to buffer
-            let new_matches = mem::replace(
-                &mut self.sub_pattern_buffers[buffer_id].new_match_buffer,
-                BinaryHeap::new(),
-            );
+            let new_matches =
+                std::mem::take(&mut self.sub_pattern_buffers[buffer_id].new_match_buffer);
 
             self.sub_pattern_buffers[buffer_id]
                 .buffer
@@ -242,7 +246,7 @@ impl<'p, P> JoinLayer<'p, P> {
 }
 
 /// Node id format conversion.
-fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<Option<u64>>) {
+fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &[Option<u64>]) {
     for (i, node_id) in node_ids.iter().enumerate() {
         if let Some(matched_id) = node_id {
             entity_id_map.push((*matched_id, i as u64));
@@ -253,9 +257,9 @@ fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &Vec<Opt
 }
 
 /// Convert a vector of events into a vector of event ids indexed by match event id.
-fn create_event_id_map(event_id_map: &mut Vec<Option<u64>>, events: &Vec<MatchEvent>) {
+fn create_event_id_map(event_id_map: &mut [Option<u64>], events: &Vec<MatchEvent>) {
     for edge in events {
-        event_id_map[edge.matched.id] = Some(edge.input_event.id);
+        event_id_map[edge.matched.id] = Some(edge.input_event.event_id);
     }
 }
 
@@ -301,55 +305,26 @@ fn get_root_buffer_id() -> usize {
 
 impl<'p, P> Iterator for JoinLayer<'p, P>
 where
-    P: Iterator<Item = Vec<PartialMatch<'p>>>,
+    P: Iterator<Item = (u32, compo_layer::MatchInstance<'p>)>,
 {
     type Item = PatternMatch;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.full_match.is_empty() {
-            let partial_matches = self.prev_layer.next()?;
+            let (sub_pattern_id, match_instance) = self.prev_layer.next()?;
 
-            // Convert PartialMatch to SubPatternMatch
-            for partial_match in partial_matches {
-                debug!("partial match id: {}", partial_match.id);
-                debug!("partial match {:?}", partial_match);
-                let latest_time = if let Some(edge) = partial_match.events.last() {
-                    edge.input_event.timestamp
-                } else {
-                    warn!("Got an empty PartialMatch");
-                    continue;
-                };
-
-                let mut entity_id_map = Vec::with_capacity(self.pattern.num_entities);
-                let mut event_id_map = vec![None; self.pattern.events.len()];
-                convert_entity_id_map(&mut entity_id_map, &partial_match.entity_id_map);
-                create_event_id_map(&mut event_id_map, &partial_match.events);
-
-                let mut match_events = partial_match.events;
-                match_events.sort_by(|x, y| x.input_event.id.cmp(&y.input_event.id));
-
-                let sub_pattern_match = SubPatternMatch {
-                    id: partial_match.id,
-                    latest_time,
-                    earliest_time: partial_match.timestamp,
-                    match_entities: entity_id_map,
-                    event_id_map,
-                    match_events,
-                };
-
-                let buffer_id = get_buffer_id(sub_pattern_match.id, self.sub_pattern_buffers.len());
+            let num_pat_event = self.pattern.events.len();
+            if let Some(sub_match) =
+                SubPatternMatch::build(sub_pattern_id, match_instance, num_pat_event)
+            {
+                let buffer_id = get_buffer_id(sub_match.id, self.sub_pattern_buffers.len());
+                let current_time = sub_match.latest_time;
                 // put the sub-pattern match to its corresponding buffer
                 self.sub_pattern_buffers[buffer_id]
                     .new_match_buffer
-                    .push(EarliestFirst(sub_pattern_match));
-            }
+                    .push(EarliestFirst(sub_match));
 
-            for buffer_id in 0..self.sub_pattern_buffers.len() {
-                let new_match_buffer = &self.sub_pattern_buffers[buffer_id].new_match_buffer;
-                if !new_match_buffer.is_empty() {
-                    let current_time = new_match_buffer.peek().unwrap().0.latest_time;
-                    self.join(current_time, buffer_id);
-                }
+                self.join(current_time, buffer_id);
             }
         }
 

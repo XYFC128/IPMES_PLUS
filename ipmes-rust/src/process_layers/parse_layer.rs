@@ -1,19 +1,21 @@
-use std::cmp::Reverse;
 use crate::input_event::InputEvent;
+use ::std::rc::Rc;
 use csv::DeserializeRecordsIter;
+use log::warn;
+use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::File;
-use::std::rc::Rc;
-use log::warn;
 
 #[derive(Debug, serde::Deserialize)]
 struct Record {
     pub timestamp1: f64,
     pub timestamp2: f64,
-    pub signature: String,
     pub id: u64,
-    pub subject: u64,
-    pub object: u64,
+    pub signature: String,
+    pub subject_id: u64,
+    pub subject_signature: String,
+    pub object_id: u64,
+    pub object_signature: String,
 }
 
 fn parse(record: Record) -> (InputEvent, Option<InputEvent>) {
@@ -23,19 +25,18 @@ fn parse(record: Record) -> (InputEvent, Option<InputEvent>) {
 
     let edge1 = InputEvent {
         timestamp: timestamp1,
-        signature: record.signature.clone(),
-        id: record.id,
-        subject: record.subject,
-        object: record.object,
+        event_id: record.id,
+        event_signature: record.signature,
+        subject_id: record.subject_id,
+        subject_signature: record.subject_signature,
+        object_id: record.object_id,
+        object_signature: record.object_signature,
     };
 
     if timestamp1 != timestamp2 {
         let edge2 = InputEvent {
             timestamp: timestamp2,
-            signature: record.signature,
-            id: record.id,
-            subject: record.subject,
-            object: record.object,
+            ..edge1.clone()
         };
         (edge1, Some(edge2))
     } else {
@@ -62,7 +63,7 @@ impl<'a> ParseLayer<'a> {
         while let Some(result) = self.csv_iter.next() {
             match result {
                 Ok(record) => return Some(record),
-                Err(e) => warn!("Error occurred in input file: {e}")
+                Err(e) => warn!("Error occurred in input file: {e}"),
             };
         }
         None
@@ -70,9 +71,7 @@ impl<'a> ParseLayer<'a> {
 
     fn nothing_to_send(&self) -> bool {
         match self.buffer.peek() {
-            Some(edge) => {
-                edge.0.timestamp >= self.boundary_time
-            },
+            Some(edge) => edge.0.timestamp >= self.boundary_time,
             None => true,
         }
     }
@@ -129,7 +128,8 @@ mod tests {
     fn test() {
         let mut csv = csv::ReaderBuilder::new()
             .has_headers(false)
-            .from_path("testcases/test.csv").unwrap();
+            .from_path("testcases/test.csv")
+            .unwrap();
         let parse_layer = ParseLayer::new(&mut csv);
 
         for batch in parse_layer {
