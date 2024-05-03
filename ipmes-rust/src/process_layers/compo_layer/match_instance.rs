@@ -26,6 +26,17 @@ pub struct MatchInstance<'p> {
 }
 
 impl<'p> MatchInstance<'p> {
+    pub fn dead_default() -> Self {
+        Self {
+            start_time: 0,
+            match_events: Box::new([]),
+            match_entities: Box::new([]),
+            event_ids: Box::new([]),
+            state_id: 0,
+            state_data: StateData::Dead,
+        }
+    }
+
     pub fn accept(&mut self, match_event: &PartialMatchEvent<'p>) -> InstanceAction<'p> {
         if self.contains_event(match_event.input_event.event_id) {
             return InstanceAction::Remain;
@@ -43,15 +54,23 @@ impl<'p> MatchInstance<'p> {
             } => {
                 current_set.insert(match_event.input_event.event_id);
                 if current_set.len() >= *frequency as usize {
-                    InstanceAction::NewInstance {
-                        new_state_id: *next_state,
-                        new_event: match_event.into(),
+                    let new_state_id = *next_state;
+
+                    // modify the last match event
+                    if let Some(last_event) = self.match_events.last_mut() {
+                        last_event.end_time = match_event.input_event.timestamp;
+
+                        let mut ids: Vec<u64> = current_set.drain().collect();
+                        ids.sort_unstable();
+                        last_event.event_ids = ids.into_boxed_slice();
                     }
+
+                    InstanceAction::MoveInstance { new_state_id }
                 } else {
                     InstanceAction::Remain
                 }
             }
-            StateData::Output { subpattern_id:_ } => unreachable!(),
+            _ => InstanceAction::Remain,
         }
     }
 
@@ -185,6 +204,9 @@ impl<'p> MatchInstance<'p> {
 #[derive(Clone)]
 pub enum InstanceAction<'p> {
     Remain,
+    MoveInstance {
+        new_state_id: u32,
+    },
     NewInstance {
         new_state_id: u32,
         new_event: UniversalMatchEvent<'p>,

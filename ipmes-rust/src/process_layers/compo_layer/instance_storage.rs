@@ -2,7 +2,7 @@ use crate::process_layers::matching_layer::PartialMatchEvent;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use super::{filter::FilterInfo, MatchInstance, StateInfo};
+use super::{filter::FilterInfo, MatchInstance, StateData, StateInfo};
 
 pub struct InstanceStorage<'p> {
     /// The match instances that can go to next state once an input event matches the specified
@@ -89,10 +89,12 @@ impl<'p> InstanceStorage<'p> {
         K: Eq + Hash,
         F: FnMut(&mut MatchInstance<'p>),
     {
-        let is_in_window = |inst: &MatchInstance| inst.start_time >= window_bound;
+        let is_valid = |inst: &MatchInstance| {
+            inst.start_time >= window_bound && !matches!(inst.state_data, StateData::Dead)
+        };
 
         if let Some(instances) = storage.get_mut(&filter) {
-            instances.retain(is_in_window);
+            instances.retain(is_valid);
             if instances.is_empty() {
                 storage.remove(&filter);
             } else {

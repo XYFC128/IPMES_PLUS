@@ -68,9 +68,16 @@ mod tests {
 
     use super::*;
     use crate::input_event::InputEvent;
-    use crate::pattern::Pattern;
+    use crate::pattern::{Pattern, PatternEventType};
     use crate::process_layers::MatchingLayer;
+    use crate::universal_match_event::UniversalMatchEvent;
 
+    /// Creates a pattern consists of 3 event and 4 entities. They form a path from v0 to v3.
+    ///
+    /// ```text
+    ///     e0       e1       e2
+    /// v0 ----> v1 ----> v2 ----> v3
+    /// ```
     fn basic_pattern() -> Pattern {
         Pattern::from_graph(
             &["v0", "v1", "v2", "v3"],
@@ -171,6 +178,47 @@ mod tests {
             MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
         let mut layer = CompoLayer::new(match_layer, &decomposition, window_size);
 
+        assert!(layer.next().is_none());
+    }
+
+    fn verify_event(
+        match_event: &UniversalMatchEvent,
+        time_pair: (u64, u64),
+        entity_id_pair: (u64, u64),
+        event_ids: &[u64],
+    ) {
+        assert_eq!(match_event.start_time, time_pair.0);
+        assert_eq!(match_event.end_time, time_pair.1);
+        assert_eq!(match_event.subject_id, entity_id_pair.0);
+        assert_eq!(match_event.object_id, entity_id_pair.1);
+        assert_eq!(*match_event.event_ids, *event_ids)
+    }
+
+    #[test]
+    fn test_frequency() {
+        let mut pattern = basic_pattern();
+        pattern.events[1].event_type = PatternEventType::Frequency(3);
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
+            id: 0,
+            events: pattern.events.iter().collect(),
+        }];
+
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v2"),
+            event(2, 1, 2, "e1#v1#v2"),
+            event(3, 1, 2, "e1#v1#v2"),
+            event(4, 2, 3, "e2#v2#v3"),
+        ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompoLayer::new(match_layer, &decomposition, window_size);
+
+        let match_events = layer.next().unwrap().1.match_events;
+        verify_event(&match_events[0], (0, 0), (0, 1), &[0]);
+        verify_event(&match_events[1], (1, 3), (1, 2), &[1, 2, 3]);
+        verify_event(&match_events[2], (4, 4), (2, 3), &[4]);
         assert!(layer.next().is_none());
     }
 }

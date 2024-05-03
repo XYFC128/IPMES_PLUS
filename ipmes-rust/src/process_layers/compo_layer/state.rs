@@ -20,7 +20,8 @@ pub enum StateData {
     },
     Output {
         subpattern_id: u32,
-    }
+    },
+    Dead,
 }
 
 #[cfg(test)]
@@ -34,9 +35,7 @@ impl From<StateInfo> for StateData {
     fn from(value: StateInfo) -> Self {
         match value {
             StateInfo::Default { next_state } => StateData::Default { next_state },
-            StateInfo::Output { subpattern_id } => {
-                StateData::Output { subpattern_id }
-            }
+            StateInfo::Output { subpattern_id } => StateData::Output { subpattern_id },
             StateInfo::InitFreq { next_state } => StateData::Default { next_state },
             StateInfo::AggFreq {
                 next_state,
@@ -49,4 +48,3 @@ impl From<StateInfo> for StateData {
         }
     }
 }
-

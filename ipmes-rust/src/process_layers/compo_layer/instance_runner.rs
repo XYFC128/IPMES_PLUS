@@ -80,58 +80,53 @@ impl<'p> InstanceRunner<'p> {
     }
 
     pub fn run(&mut self, instance: &mut MatchInstance<'p>, match_event: &PartialMatchEvent<'p>) {
-        if let InstanceAction::NewInstance {
-            new_state_id,
-            new_event,
-        } = instance.accept(match_event)
-        {
-            let (state_info, filter_info) = self.state_table[new_state_id as usize];
-            if let Some(new_instance) = self.new_instance_from(instance, new_state_id, new_event) {
-                if let StateInfo::Output { subpattern_id } = state_info {
-                    self.output_buffer.push((subpattern_id, new_instance));
-                } else {
-                    let filter = Self::extract_filter(&new_instance, filter_info);
-                    self.new_instance.push((filter, new_instance));
+        match instance.accept(match_event) {
+            InstanceAction::NewInstance {
+                new_state_id,
+                new_event,
+            } => {
+                let old_filter = self.state_table[instance.state_id as usize].1;
+                if let Some(new_instance) = instance.clone_extend(new_event, &old_filter) {
+                    self.place_new_instance(new_instance, new_state_id);
                 }
             }
+            InstanceAction::MoveInstance { new_state_id } => {
+                let new_instance = std::mem::replace(instance, MatchInstance::dead_default());
+                self.place_new_instance(new_instance, new_state_id);
+            }
+            InstanceAction::Remain => {}
         }
     }
 
-    pub fn new_instance_from(
-        &self,
-        old_instance: &MatchInstance<'p>,
-        new_state_id: u32,
-        new_event: UniversalMatchEvent<'p>,
-    ) -> Option<MatchInstance<'p>> {
-        let (state_info, _) = self.state_table[new_state_id as usize];
-
-        match state_info {
-            StateInfo::AggFreq {
-                next_state,
-                frequency,
-            } => {
-                let mut current_set = HashSet::new();
+    fn place_new_instance(&mut self, mut new_instance: MatchInstance<'p>, new_state_id: u32) {
+        let (state_info, filter_info) = self.state_table[new_state_id as usize];
+        let state_data = if let StateInfo::AggFreq {
+            next_state,
+            frequency,
+        } = state_info
+        {
+            let mut current_set = HashSet::new();
+            if let Some(new_event) = new_instance.match_events.last() {
                 for event_id in new_event.event_ids.iter() {
                     current_set.insert(*event_id);
                 }
+            }
+            StateData::AggFreq {
+                next_state,
+                frequency,
+                current_set,
+            }
+        } else {
+            state_info.into()
+        };
+        new_instance.state_data = state_data;
+        new_instance.state_id = new_state_id;
 
-                Some(MatchInstance {
-                    state_data: StateData::AggFreq {
-                        next_state,
-                        frequency,
-                        current_set,
-                    },
-                    state_id: next_state,
-                    ..old_instance.clone()
-                })
-            }
-            _ => {
-                let old_filter = self.state_table[old_instance.state_id as usize].1;
-                let mut new_instance = old_instance.clone_extend(new_event, &old_filter)?;
-                new_instance.state_id = new_state_id;
-                new_instance.state_data = state_info.into();
-                Some(new_instance)
-            }
+        if let StateInfo::Output { subpattern_id } = state_info {
+            self.output_buffer.push((subpattern_id, new_instance));
+        } else {
+            let filter = Self::extract_filter(&new_instance, filter_info);
+            self.new_instance.push((filter, new_instance));
         }
     }
 
