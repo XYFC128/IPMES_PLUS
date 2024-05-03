@@ -1,0 +1,248 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 4
+                },
+                {
+                    "id": 1,
+                    "signature": "update#Process::sh#Process::sh",
+                    "subject": 4,
+                    "object": 5
+                },
+                {
+                    "id": 2,
+                    "signature": "execve#Process::sh#Process::sudo",
+                    "subject": 5,
+                    "object": 6
+                },
+                {
+                    "id": 5,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 6,
+                    "object": 16
+                },
+                {
+                    "id": 6,
+                    "signature": "read#Artifact::file::/etc/sudoers#Process::sudo",
+                    "subject": 20,
+                    "object": 16
+                },
+                {
+                    "id": 7,
+                    "signature": "setgid#Process::sudo#Process::sudo",
+                    "subject": 16,
+                    "object": 16
+                },
+                {
+                    "id": 8,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 16,
+                    "object": 16
+                },
+                {
+                    "id": 9,
+                    "signature": "lseek#Process::sudo#Artifact::file::/etc/sudoers",
+                    "subject": 21,
+                    "object": 20
+                },
+                {
+                    "id": 10,
+                    "signature": "open#Artifact::file::/etc/sudoers#Process::sudo",
+                    "subject": 20,
+                    "object": 21
+                },
+                {
+                    "id": 11,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 21,
+                    "object": 16
+                },
+                {
+                    "id": 12,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 16,
+                    "object": 21
+                },
+                {
+                    "id": 3,
+                    "signature": "setgid#Process::sudo#Process::sudo",
+                    "subject": 6,
+                    "object": 6
+                },
+                {
+                    "id": 13,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 6,
+                    "object": 6
+                },
+                {
+                    "id": 14,
+                    "signature": "setuid#Process::sudo#Process::sudo",
+                    "subject": 16,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 22,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 23,
+                    "signature": "execve#Process::sh#Process::sshpass",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 24,
+                    "signature": "load#Artifact::file::/usr/bin/sshpass#Process::sshpass",
+                    "subject": 3,
+                    "object": 2
+                },
+                {
+                    "id": 26,
+                    "signature": "fork#Process::sshpass#Process::sshpass",
+                    "subject": 2,
+                    "object": 7
+                },
+                {
+                    "id": 27,
+                    "signature": "execve#Process::sshpass#Process::scp",
+                    "subject": 7,
+                    "object": 8
+                },
+                {
+                    "id": 28,
+                    "signature": "load#Artifact::file::/usr/bin/scp#Process::scp",
+                    "subject": 9,
+                    "object": 8
+                },
+                {
+                    "id": 29,
+                    "signature": "fork#Process::scp#Process::scp",
+                    "subject": 8,
+                    "object": 22
+                },
+                {
+                    "id": 30,
+                    "signature": "execve#Process::scp#Process::ssh",
+                    "subject": 22,
+                    "object": 14
+                },
+                {
+                    "id": 31,
+                    "signature": "lseek#Process::ssh#Artifact::file::/etc/passwd",
+                    "subject": 14,
+                    "object": 13
+                },
+                {
+                    "id": 32,
+                    "signature": "connect#Process::ssh#Artifact::network socket::192.168.99.4:22",
+                    "subject": 14,
+                    "object": 15
+                },
+                {
+                    "id": 33,
+                    "signature": "read#Artifact::network socket::192.168.99.4:22#Process::ssh",
+                    "subject": 15,
+                    "object": 14
+                },
+                {
+                    "id": 34,
+                    "signature": "open#Artifact::file::/home/admin/shadow#Process::scp",
+                    "subject": 25,
+                    "object": 8
+                },
+                {
+                    "id": 35,
+                    "signature": "write#Process::ssh#Artifact::network socket::192.168.99.4:22",
+                    "subject": 14,
+                    "object": 15
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 15,
+                    "signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+                    "subject": 12,
+                    "object": 11
+                },
+                {
+                    "id": 16,
+                    "signature": "open#Artifact::file::/etc/shadow#Process::cp",
+                    "subject": 10,
+                    "object": 11
+                },
+                {
+                    "id": 17,
+                    "signature": "create#Process::cp#Artifact::file::/home/admin/shadow",
+                    "subject": 11,
+                    "object": 23
+                },
+                {
+                    "id": 21,
+                    "signature": "update#Artifact::file::/home/admin/shadow#Artifact::file::/home/admin/shadow",
+                    "subject": 23,
+                    "object": 24
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "events": [
+                {
+                    "id": 18,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 17
+                },
+                {
+                    "id": 19,
+                    "signature": "update#Process::sh#Process::sh",
+                    "subject": 17,
+                    "object": 18
+                },
+                {
+                    "id": 20,
+                    "signature": "execve#Process::sh#Process::sudo",
+                    "subject": 18,
+                    "object": 19
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "events": [
+                {
+                    "id": 4,
+                    "signature": "update#Process::sudo#Process::sudo",
+                    "subject": 16,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "events": [
+                {
+                    "id": 25,
+                    "signature": "update#Artifact::file::/home/admin/shadow#Artifact::file::/home/admin/shadow",
+                    "subject": 24,
+                    "object": 25
+                }
+            ]
+        }
+    ]

@@ -1,0 +1,82 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 1,
+                    "signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+                    "subject": 3,
+                    "object": 1
+                },
+                {
+                    "id": 2,
+                    "signature": "execve#Process::hello.sh#Process::cp",
+                    "subject": 6,
+                    "object": 1
+                },
+                {
+                    "id": 3,
+                    "signature": "open#Artifact::file::/home/text1.doc#Process::cp",
+                    "subject": 2,
+                    "object": 1
+                },
+                {
+                    "id": 4,
+                    "signature": "create#Process::cp#Artifact::file::/home/admin/doc/text1.doc",
+                    "subject": 1,
+                    "object": 8
+                },
+                {
+                    "id": 5,
+                    "signature": "load#Artifact::file::/usr/bin/cp#Process::cp",
+                    "subject": 3,
+                    "object": 4
+                },
+                {
+                    "id": 8,
+                    "signature": "open#Artifact::file::/text.doc#Process::cp",
+                    "subject": 5,
+                    "object": 4
+                },
+                {
+                    "id": 9,
+                    "signature": "create#Process::cp#Artifact::file::/home/admin/doc/text.doc",
+                    "subject": 4,
+                    "object": 9
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 6,
+                    "signature": "execve#Process::hello.sh#Process::cp",
+                    "subject": 7,
+                    "object": 4
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "events": [
+                {
+                    "id": 7,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 7
+                }
+            ]
+        }
+    ]
