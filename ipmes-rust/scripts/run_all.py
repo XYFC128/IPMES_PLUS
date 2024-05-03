@@ -5,14 +5,20 @@ import os
 import re
 import pandas as pd 
 
-def run(pattern_file: str, data_graph: str, window_size: int):
+def run(pattern_file: str, data_graph: str, window_size: int, log_level: str = None):
+    if log_level is not None:
+        os.environ["RUST_LOG"] = log_level
     run_cmd = ['./target/release/ipmes-rust', pattern_file, data_graph, '-w', str(window_size)]
     print('Running: `{}`'.format(' '.join(run_cmd)))
 
     proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding='utf-8')
     outs, errs = proc.communicate()
 
-    print(outs)
+    if log_level is not None:
+        os.makedirs("./output_logs/", exist_ok=True)
+        filename = pattern_file.split('/')[3].split('.')[0] + '.log'
+        with open(f"./output_logs/{filename}", "w") as log_file:
+            log_file.write(errs)
 
     num_match = re.search('Total number of matches: (\d+)', outs).group(1)
     num_match = int(num_match)
@@ -56,6 +62,9 @@ if __name__ == '__main__':
                     default='../results/ipmes-rust/',
                     type=str,
                     help='the output folder')
+    parser.add_argument('-n', '--no-darpa',
+                        help='Do not run darpa dataset',
+                        action='store_true')
     args = parser.parse_args()
 
     
@@ -75,17 +84,19 @@ if __name__ == '__main__':
         for graph in spade_graphs:
             pattern = os.path.join(args.pattern_dir, f'SP{i}_regex.json')
             data_graph = os.path.join(args.data_graph, graph + '.csv')
-            num_match, cpu_time, peak_mem = run(pattern, data_graph, 1800)
+
+            num_match, cpu_time, peak_mem = run(pattern, data_graph, 1800, "info")
             run_result.append([f'SP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
 
-    for i in range(1, 6):
-        for graph in darpa_graphs:
-            pattern = os.path.join(args.pattern_dir, f'DP{i}_regex.json')
-            data_graph = os.path.join(args.data_graph, graph + '.csv')
-            num_match, cpu_time, peak_mem = run(pattern, data_graph, 1000)
-            run_result.append([f'DP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
+    if args.no_darpa is False: 
+        for i in range(1, 6):
+            for graph in darpa_graphs:
+                pattern = os.path.join(args.pattern_dir, f'DP{i}_regex.json')
+                # pattern = os.path.join(args.pattern_dir, f'DP{i}_regex.json')
+                data_graph = os.path.join(args.data_graph, graph + '.csv')
+                num_match, cpu_time, peak_mem = run(pattern, data_graph, 1000, "info")
+                run_result.append([f'DP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
 
     df = pd.DataFrame(data=run_result, columns=['Pattern', 'Data Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
     print(df.to_string(index=False))
     df.to_csv(os.path.join(args.out_dir, 'run_result.csv'), index=False)
-
