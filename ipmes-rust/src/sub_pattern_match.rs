@@ -50,8 +50,6 @@ impl<'p> Debug for SubPatternMatch<'p> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SubPatternMatch")
             .field("id", &self.id)
-            .field("latest_time", &self.latest_time)
-            .field("earliest_time", &self.earliest_time)
             .field("match_entities", &self.match_entities)
             .field("event_ids", &self.event_ids)
             .field(
@@ -166,7 +164,10 @@ impl<'p> SubPatternMatch<'p> {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        debug!("try merge_match_events...");
+        debug!(
+            "now try merging\n{:?} and\n{:?}",
+            sub_pattern_match1, sub_pattern_match2,
+        );
 
         let event_ids =
             try_merge_event_ids(&sub_pattern_match1.event_ids, &sub_pattern_match2.event_ids)?;

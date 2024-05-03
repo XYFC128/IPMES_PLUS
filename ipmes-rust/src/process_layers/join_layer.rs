@@ -171,13 +171,6 @@ impl<'p, P> JoinLayer<'p, P> {
         for sub_pattern_match1 in buffer1 {
             for sub_pattern_match2 in buffer2 {
                 debug!("***********************************");
-                debug!(
-                    "now try merging\n{}: {:?} and\n{}: {:?}",
-                    sub_pattern_match1.0.id,
-                    DebugMatchEventMap(&sub_pattern_match1.0.match_event_map),
-                    sub_pattern_match2.0.id,
-                    DebugMatchEventMap(&sub_pattern_match2.0.match_event_map)
-                );
 
                 if let Some(merged) = SubPatternMatch::merge_matches(
                     &self.sub_pattern_buffers[my_id],

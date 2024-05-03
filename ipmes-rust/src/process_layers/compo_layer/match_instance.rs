@@ -155,7 +155,7 @@ impl<'p> MatchInstance<'p> {
                 event.matched.subject.id as u64,
             ),
             FilterInfo::MatchOrdOnly { match_ord: _ } => {
-                if event.subject_id > event.object_id {
+                if event.subject_id < event.object_id {
                     Some(Box::new([
                         (event.subject_id, event.matched.subject.id as u64),
                         (event.object_id, event.matched.object.id as u64),
