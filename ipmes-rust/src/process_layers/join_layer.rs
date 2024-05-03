@@ -4,7 +4,7 @@ use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
-use crate::sub_pattern_match::{EarliestFirst, SubPatternMatch};
+use crate::sub_pattern_match::{DebugMatchEventMap, EarliestFirst, SubPatternMatch};
 use log::debug;
 use std::collections::{BinaryHeap, HashMap};
 pub use sub_pattern_buffer::SubPatternBuffer;
@@ -174,9 +174,9 @@ impl<'p, P> JoinLayer<'p, P> {
                 debug!(
                     "now try merging\n{}: {:?} and\n{}: {:?}",
                     sub_pattern_match1.0.id,
-                    sub_pattern_match1.0.match_event_map,
+                    DebugMatchEventMap(&sub_pattern_match1.0.match_event_map),
                     sub_pattern_match2.0.id,
-                    sub_pattern_match2.0.match_event_map
+                    DebugMatchEventMap(&sub_pattern_match2.0.match_event_map)
                 );
 
                 if let Some(merged) = SubPatternMatch::merge_matches(

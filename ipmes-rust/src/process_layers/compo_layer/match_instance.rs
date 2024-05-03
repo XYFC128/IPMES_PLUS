@@ -1,4 +1,5 @@
 use std::cmp::min;
+use std::fmt::Debug;
 
 use itertools::Itertools;
 
@@ -10,7 +11,7 @@ use crate::universal_match_event::UniversalMatchEvent;
 type InputEntityId = u64;
 type PatternEntityId = u64;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(test, derive(Default))]
 pub struct MatchInstance<'p> {
     pub start_time: u64,
@@ -198,6 +199,18 @@ impl<'p> MatchInstance<'p> {
 
         new_entities.extend(iter);
         Some(new_entities.into_boxed_slice())
+    }
+}
+
+impl<'p> Debug for MatchInstance<'p> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MatchInstance")
+            .field("start_time", &self.start_time)
+            .field("match_events", &self.match_events)
+            .field("match_entities", &self.match_entities)
+            .field("state_id", &self.state_id)
+            .field("state_data", &self.state_data)
+            .finish()
     }
 }
 

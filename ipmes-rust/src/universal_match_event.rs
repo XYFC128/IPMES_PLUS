@@ -1,7 +1,9 @@
+use std::fmt::Debug;
+
 use crate::pattern::PatternEvent;
 use crate::process_layers::matching_layer::PartialMatchEvent;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct UniversalMatchEvent<'p> {
     pub matched: &'p PatternEvent,
     pub start_time: u64,
@@ -9,6 +11,19 @@ pub struct UniversalMatchEvent<'p> {
     pub subject_id: u64,
     pub object_id: u64,
     pub event_ids: Box<[u64]>,
+}
+
+impl<'p> Debug for UniversalMatchEvent<'p> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UniversalMatchEvent")
+            .field("matched", &self.matched.id)
+            .field("start_time", &self.start_time)
+            .field("end_time", &self.end_time)
+            .field("subject_id", &self.subject_id)
+            .field("object_id", &self.object_id)
+            .field("event_ids", &self.event_ids)
+            .finish()
+    }
 }
 
 impl<'p> From<&PartialMatchEvent<'p>> for UniversalMatchEvent<'p> {

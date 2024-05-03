@@ -5,9 +5,10 @@ use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
+use std::fmt::{Debug, Pointer};
 
 /// Matches of sub-patterns.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SubPatternMatch<'p> {
     /// The id of the matched sub-pattern.
     pub id: usize,
@@ -30,6 +31,35 @@ pub struct SubPatternMatch<'p> {
     ///
     /// > Note: The terms **matched event** and pattern event are used interchangeably.
     pub match_event_map: Box<[Option<UniversalMatchEvent<'p>>]>,
+}
+
+pub struct DebugMatchEventMap<'p, 't>(pub &'t [Option<UniversalMatchEvent<'p>>]);
+impl<'p, 't> Debug for DebugMatchEventMap<'p, 't> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list()
+            .entries(
+                self.0
+                    .iter()
+                    .map(|opt| opt.as_ref().map(|val| &val.event_ids)),
+            )
+            .finish()
+    }
+}
+
+impl<'p> Debug for SubPatternMatch<'p> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SubPatternMatch")
+            .field("id", &self.id)
+            .field("latest_time", &self.latest_time)
+            .field("earliest_time", &self.earliest_time)
+            .field("match_entities", &self.match_entities)
+            .field("event_ids", &self.event_ids)
+            .field(
+                "match_event_map",
+                &DebugMatchEventMap(&self.match_event_map),
+            )
+            .finish()
+    }
 }
 
 /// > Note: Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.

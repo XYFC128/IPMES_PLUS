@@ -10,6 +10,7 @@ mod match_instance;
 mod state;
 use instance_runner::InstanceRunner;
 use instance_storage::InstanceStorage;
+use log::debug;
 pub use match_instance::MatchInstance;
 use state::*;
 
@@ -57,6 +58,9 @@ where
             self.accept_match_event(match_event);
         }
 
+        if let Some(output) = self.runner.output_buffer.last() {
+            debug!("output: ({:?})", output);
+        }
         self.runner.output_buffer.pop()
     }
 }
