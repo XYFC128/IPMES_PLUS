@@ -1,0 +1,63 @@
+{
+    "Version": "0.2.0",
+    "UseRegex": true,
+    "Entities": [
+        {
+            "ID": 0,
+            "Signature": "Process::.*"
+        },
+        {
+            "ID": 1,
+            "Signature": "Process::.*"
+        },
+        {
+            "ID": 2,
+            "Signature": "Process::journalctl"
+        },
+        {
+            "ID": 3,
+            "Signature": "Artifact::directory::/var/log/journal"
+        },
+        {
+            "ID": 4,
+            "Signature": "Artifact::file::/usr/bin/journalctl"
+        }
+    ],
+    "Events": [
+        {
+            "ID": 0,
+            "Signature": "fork",
+            "SubjectID": 0,
+            "ObjectID": 1
+        },
+        {
+            "ID": 1,
+            "Type": "Frequency",
+            "Frequency": 3,
+            "Signature": "execve",
+            "SubjectID": 1,
+            "ObjectID": 2,
+            "Parents": [
+                0
+            ]
+        },
+        {
+            "ID": 2,
+            "Signature": "load",
+            "SubjectID": 4,
+            "ObjectID": 2,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Signature": "open",
+            "SubjectID": 3,
+            "ObjectID": 2,
+            "Parents": [
+                2
+            ]
+        }
+    ]
+}
