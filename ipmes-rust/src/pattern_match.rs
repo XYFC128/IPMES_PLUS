@@ -5,7 +5,7 @@ use std::fmt::{self};
 use std::hash::Hash;
 
 /// Complete Pattern Match
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PatternMatch {
     /// Matched event ids of this pattern. [(pattern_event_id, input_event_id)]
     pub matched_events: Box<[(usize, u64)]>,
@@ -13,6 +13,12 @@ pub struct PatternMatch {
     pub latest_time: u64,
     /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
+}
+
+impl Hash for PatternMatch {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.matched_events.hash(state);
+    }
 }
 
 impl fmt::Display for PatternMatch {

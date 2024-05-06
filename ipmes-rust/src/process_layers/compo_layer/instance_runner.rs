@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use log::debug;
+
 use crate::pattern::PatternEventType;
 use crate::process_layers::matching_layer::PartialMatchEvent;
 use crate::sub_pattern::SubPattern;
@@ -71,6 +73,8 @@ impl<'p> InstanceRunner<'p> {
                 FilterInfo::None,
             ));
         }
+
+        debug!("state table:\n{:#?}", state_table);
 
         Self {
             state_table,

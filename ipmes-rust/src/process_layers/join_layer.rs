@@ -1,10 +1,12 @@
 mod sub_pattern_buffer;
+mod sub_pattern_match;
 
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
-use crate::sub_pattern_match::{DebugMatchEventMap, EarliestFirst, SubPatternMatch};
+pub use sub_pattern_match::SubPatternMatch;
+use sub_pattern_match::EarliestFirst;
 use log::debug;
 use std::collections::{BinaryHeap, HashMap};
 pub use sub_pattern_buffer::SubPatternBuffer;
@@ -107,14 +109,18 @@ impl<'p, P> JoinLayer<'p, P> {
             let mut earliest_time = u64::MAX;
             let mut latest_time = u64::MIN;
 
-            for (idx, entry) in sub_pattern_match.0.match_event_map.iter().enumerate() {
-                if let Some(event) = entry {
-                    for id in event.event_ids.iter() {
-                        matched_events.push((idx, *id));
-                    }
-                    earliest_time = u64::min(earliest_time, event.start_time);
-                    latest_time = u64::max(latest_time, event.end_time);
+            for (idx, event) in sub_pattern_match
+                .0
+                .match_event_map
+                .iter()
+                .flatten()
+                .enumerate()
+            {
+                for id in event.event_ids.iter() {
+                    matched_events.push((idx, *id));
                 }
+                earliest_time = u64::min(earliest_time, event.start_time);
+                latest_time = u64::max(latest_time, event.end_time);
             }
             matched_events.sort_unstable();
 

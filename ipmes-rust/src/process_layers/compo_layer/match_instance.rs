@@ -2,6 +2,7 @@ use std::cmp::min;
 use std::fmt::Debug;
 
 use itertools::Itertools;
+use log::debug;
 
 use super::filter::FilterInfo;
 use super::StateData;
@@ -176,28 +177,28 @@ impl<'p> MatchInstance<'p> {
     /// Returns [None] when the `entity_id` is already in it.
     fn dup_extend_entities_list(
         match_entities: &[(InputEntityId, PatternEntityId)],
-        new_entity: u64,
-        match_id: u64,
+        entity_id: u64,
+        pattern_id: u64,
     ) -> Option<Box<[(InputEntityId, PatternEntityId)]>> {
         if match_entities.is_empty() {
             return None;
         }
 
         let mut new_entities = Vec::with_capacity(match_entities.len() + 1);
-        let mut iter = match_entities.iter();
-        for entry in iter.take_while_ref(|(ent_id, _)| *ent_id < new_entity) {
+        let mut iter = match_entities.iter().peekable();
+        for entry in iter.take_while_ref(|(ent_id, _)| *ent_id < entity_id) {
             new_entities.push(*entry);
         }
 
-        if let Some(entry) = iter.next() {
-            if entry.0 == new_entity {
+        if let Some(entry) = iter.peek() {
+            if entry.0 == entity_id {
                 return None; // entity id duplicates
             }
-            new_entities.push((new_entity, match_id));
-            new_entities.push(*entry);
         }
 
+        new_entities.push((entity_id, pattern_id));
         new_entities.extend(iter);
+
         Some(new_entities.into_boxed_slice())
     }
 }
@@ -257,14 +258,23 @@ mod tests {
     #[test]
     fn test_dup_extend_entities_list() {
         let match_entities: Box<[(u64, u64)]> = Box::new([(100, 1), (101, 0), (103, 2)]);
+        
+        // insert last
+        assert_eq!(
+            *MatchInstance::dup_extend_entities_list(&match_entities, 104, 3).unwrap(),
+            [(100, 1), (101, 0), (103, 2), (104, 3)],
+        );
+        // insert middle
         assert_eq!(
             *MatchInstance::dup_extend_entities_list(&match_entities, 102, 3).unwrap(),
             [(100, 1), (101, 0), (102, 3), (103, 2)],
         );
+        // event_id duplicates
         assert_eq!(
             MatchInstance::dup_extend_entities_list(&match_entities, 100, 1),
             None
         );
+        // event_id duplicates
         assert_eq!(
             MatchInstance::dup_extend_entities_list(&match_entities, 100, 3),
             None

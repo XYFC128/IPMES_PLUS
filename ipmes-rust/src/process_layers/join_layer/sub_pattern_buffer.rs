@@ -1,6 +1,5 @@
 use crate::sub_pattern::SubPattern;
-use crate::sub_pattern_match::EarliestFirst;
-
+use super::sub_pattern_match::EarliestFirst;
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
@@ -53,6 +52,7 @@ impl Relation {
                     return false;
                 }
             } else {
+                debug!("failed to get events specified in the order relation");
                 return false;
             }
         }
@@ -270,6 +270,7 @@ impl<'p> SubPatternBuffer<'p> {
 
         while let (Some(node1), Some(node2)) = (next1, next2) {
             if used_nodes[node1.1 as usize] || used_nodes[node2.1 as usize] {
+                debug!("different inputs match the same pattern");
                 return None;
             }
 
@@ -283,6 +284,7 @@ impl<'p> SubPatternBuffer<'p> {
                 next2 = p2.next();
             } else {
                 if node1.1 != node2.1 {
+                    debug!("an input match to different pattern");
                     return None;
                 }
                 merged.push(*node1);

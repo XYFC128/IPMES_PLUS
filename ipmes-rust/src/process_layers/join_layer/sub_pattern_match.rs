@@ -66,7 +66,7 @@ where
     T: Clone,
 {
     assert_eq!(event_map1.len(), event_map2.len());
-    let mut merged = Vec::with_capacity(event_map1.len() + event_map2.len());
+    let mut merged = Vec::with_capacity(event_map1.len());
     for (a, b) in event_map1.iter().zip(event_map2.iter()) {
         if a.is_some() {
             merged.push(a.clone());
@@ -92,7 +92,10 @@ fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>>
                 merged.push(*id1);
                 next1 = p1.next();
             }
-            Ordering::Equal => return None,
+            Ordering::Equal => { 
+                debug!("event id duplicates: {}", id1);
+                return None;
+            },
             Ordering::Greater => {
                 merged.push(*id2);
                 next2 = p2.next();
@@ -168,6 +171,8 @@ impl<'p> SubPatternMatch<'p> {
             "now try merging\n{:?} and\n{:?}",
             sub_pattern_match1, sub_pattern_match2,
         );
+
+        debug!("event uniqueness checking...");
 
         let event_ids =
             try_merge_event_ids(&sub_pattern_match1.event_ids, &sub_pattern_match2.event_ids)?;
