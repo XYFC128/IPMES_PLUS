@@ -29,6 +29,11 @@ data_name_mapping = {
     # TODO: DDx
 }
 
+# data graph format
+EVENT_ID_FIELD = 2
+SUBJECT_ID_FIELD = 4
+OBJECT_ID_FIELD = 6
+
 def to_ans_file(pattern_name: str) -> str:
     key = pattern_name.removesuffix('_regex')
     old_pattern_name = pattern_name_mapping[key]
@@ -62,7 +67,7 @@ def index_data_graph(data_graph: str) -> dict[int, tuple[int, str]]:
         fields = line.split(',')
         if len(fields) < 4:
             continue
-        event_id = fields[2]
+        event_id = fields[EVENT_ID_FIELD]
         data_edges[event_id] = (ln, line)
 
     return data_edges
@@ -120,13 +125,13 @@ def reassign_event_id(event_string: str) -> str:
         if len(fields) < 6:
             continue
         
-        edge_id_map.setdefault(fields[3], str(len(edge_id_map) + 1))
-        fields[3] = edge_id_map[fields[3]]
+        edge_id_map.setdefault(fields[EVENT_ID_FIELD], str(len(edge_id_map) + 1))
+        fields[EVENT_ID_FIELD] = edge_id_map[fields[EVENT_ID_FIELD]]
 
-        node_id_map.setdefault(fields[4], str(len(node_id_map) + 1))
-        node_id_map.setdefault(fields[5], str(len(node_id_map) + 1))
-        fields[4] = node_id_map[fields[4]]
-        fields[5] = node_id_map[fields[5]]
+        node_id_map.setdefault(fields[SUBJECT_ID_FIELD], str(len(node_id_map) + 1))
+        node_id_map.setdefault(fields[OBJECT_ID_FIELD], str(len(node_id_map) + 1))
+        fields[SUBJECT_ID_FIELD] = node_id_map[fields[SUBJECT_ID_FIELD]]
+        fields[OBJECT_ID_FIELD] = node_id_map[fields[OBJECT_ID_FIELD]]
         output += ','.join(fields) + '\n'
 
     return output
