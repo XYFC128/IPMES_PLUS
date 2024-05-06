@@ -1,6 +1,5 @@
 import os
 import re
-import tempfile
 import subprocess
 
 pattern_name_mapping = {
@@ -44,7 +43,7 @@ def parse_ans_file(file_path: str) -> list[list[str]]:
     with open(file_path) as f:
         lines = f.readlines()
     
-    ans_pattern = re.compile('<.*>\[([0-9,]*)\]')
+    ans_pattern = re.compile(r'<.*>\[([0-9,]*)\]')
     answers = []
     for line in lines:
         result = ans_pattern.search(line)
@@ -54,7 +53,7 @@ def parse_ans_file(file_path: str) -> list[list[str]]:
         answers.append(ans.split(','))
     return answers
 
-def index_data_graph(data_graph: str) -> dict[tuple[int, str]]:
+def index_data_graph(data_graph: str) -> dict[int, tuple[int, str]]:
     with open(data_graph) as f:
         lines = f.readlines()
     
@@ -63,14 +62,14 @@ def index_data_graph(data_graph: str) -> dict[tuple[int, str]]:
         fields = line.split(',')
         if len(fields) < 4:
             continue
-        event_id = fields[3]
+        event_id = fields[2]
         data_edges[event_id] = (ln, line)
 
     return data_edges
 
 def get_num_results_from_stdout(stdout: bytes) -> int:
     stdout = stdout.decode()
-    match_result = re.search('Total number of matches: (\d+)', stdout)
+    match_result = re.search(r'Total number of matches: (\d+)', stdout)
     if match_result is None:
         return 0
     
@@ -78,7 +77,7 @@ def get_num_results_from_stdout(stdout: bytes) -> int:
 
 def get_match_results_from_stderr(stderr: bytes):
     lines = stderr.decode().split('\n')
-    ans_pattern = re.compile('Pattern Match: \[([0-9,\s]+)\]')
+    ans_pattern = re.compile(r'Pattern Match: \[([0-9,\s]+)\]')
     match_results = []
     for line in lines:
         found = ans_pattern.search(line)
@@ -149,12 +148,31 @@ if __name__ == '__main__':
     parser = parser = argparse.ArgumentParser(
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                 description='Automatic bug finder')
+    parser.add_argument('-a', '--ans-folder',
+                        default='../data/answer',
+                        type=str,
+                        help='the path to answer folder')
+    parser.add_argument('-d', '--data-folder',
+                        default='../data/preprocessed',
+                        type=str,
+                        help='the path to data graph folder')
+    parser.add_argument('-o', '--out-dir',
+                        default='../data/temp',
+                        type=str,
+                        help='the path to output folder')
+    parser.add_argument('pattern',
+                        type=str,
+                        help='the name of pattern (ex. SP2_regex)')
+    parser.add_argument('graph',
+                        type=str,
+                        help='the name of input graph (ex. attack)')
     
-    ans_folder = '../data/answer'
-    data_folder = '../data/preprocessed'
-    out_dir = '../data/temp'
-    pattern = 'SP8_regex'
-    data = 'attack'
+    args = parser.parse_args()
+    ans_folder = args.ans_folder
+    data_folder = args.data_folder
+    out_dir = args.out_dir
+    pattern = args.pattern
+    data = args.graph
 
     os.makedirs(out_dir, exist_ok=True)
 
@@ -164,7 +182,7 @@ if __name__ == '__main__':
     print('Indexing data graph...')
     input_events = index_data_graph(os.path.join(data_folder, f'{data}.csv'))
 
-    run_args = ['cargo', 'run', '--', f'../data/universal_patterns/{pattern}.json', os.path.join(data_folder, f'{data}.csv')]
+    run_args = ['cargo', 'run', '--release', '--', f'../data/universal_patterns/{pattern}.json', os.path.join(data_folder, f'{data}.csv')]
     print(run_args)
     os.environ['RUST_LOG'] = 'info'
     run = subprocess.run(run_args, capture_output=True)
