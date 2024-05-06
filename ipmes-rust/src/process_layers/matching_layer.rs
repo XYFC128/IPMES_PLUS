@@ -58,7 +58,7 @@ impl<'p, P> MatchingLayer<'p, P> {
         })
     }
 
-    fn get_match(&mut self) -> Option<PartialMatchEvent<'p>> {
+    fn get_match(&mut self) -> Option<(PartialMatchEvent<'p>, bool)> {
         let matcher = &mut self.matchers[self.matcher_state];
         let input = &self.cur_time_batch[self.time_batch_state];
         matcher.get_match(input)
@@ -83,8 +83,11 @@ where
                 self.time_batch_state = 0;
             }
 
-            if let Some(mut result) = self.get_match() {
+            if let Some((mut result, more)) = self.get_match() {
                 result.match_ord = self.matcher_state;
+                if !more {
+                    self.time_batch_state += 1;
+                }
                 return Some(result);
             }
             self.time_batch_state += 1;
@@ -97,15 +100,7 @@ mod tests {
     use super::*;
 
     fn simple_input_edge(id: u64, signature: &str) -> Rc<InputEvent> {
-        Rc::new(InputEvent {
-            timestamp: 0,
-            event_id: id,
-            event_signature: signature.to_string(),
-            subject_id: 1,
-            subject_signature: "u".to_string(),
-            object_id: 2,
-            object_signature: "v".to_string(),
-        })
+        Rc::new(InputEvent::new(0, id, signature, 1, "u", 2, "v"))
     }
 
     #[test]

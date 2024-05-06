@@ -38,11 +38,11 @@ fn main() {
     let decomposition = decompose(&pattern);
     info!("Decomposition results: {:#?}", decomposition);
 
-    let mut csv = csv::ReaderBuilder::new()
+    let csv_reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(args.data_graph)
         .expect("Failed to open input graph");
-    let parse_layer = ParseLayer::new(&mut csv);
+    let parse_layer = ParseLayer::new(csv_reader);
     let matching_layer =
         MatchingLayer::new(parse_layer, &pattern, &decomposition, window_size).unwrap();
     let composition_layer = CompoLayer::new(matching_layer, &decomposition, window_size);

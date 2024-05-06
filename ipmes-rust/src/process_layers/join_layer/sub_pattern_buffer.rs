@@ -1,10 +1,10 @@
-use crate::sub_pattern::SubPattern;
 use super::sub_pattern_match::EarliestFirst;
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
     FirstToSecond, SecondToFirst,
 };
+use crate::sub_pattern::SubPattern;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
@@ -522,15 +522,7 @@ mod tests {
     }
 
     fn gen_input_edge(id: u64, timestamp: u64) -> InputEvent {
-        InputEvent {
-            timestamp,
-            event_id: id,
-            event_signature: "".to_string(),
-            subject_id: 0,
-            subject_signature: "".to_string(),
-            object_id: 0,
-            object_signature: "".to_string(),
-        }
+        InputEvent::new(timestamp, id, "", 0, "", 0, "")
     }
 
     /// only check ids

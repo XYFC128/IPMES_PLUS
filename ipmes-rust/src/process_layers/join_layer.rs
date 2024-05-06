@@ -5,11 +5,11 @@ use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern_match::PatternMatch;
 use crate::sub_pattern::SubPattern;
-pub use sub_pattern_match::SubPatternMatch;
-use sub_pattern_match::EarliestFirst;
 use log::debug;
 use std::collections::{BinaryHeap, HashMap};
 pub use sub_pattern_buffer::SubPatternBuffer;
+use sub_pattern_match::EarliestFirst;
+pub use sub_pattern_match::SubPatternMatch;
 
 use super::compo_layer;
 

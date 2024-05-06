@@ -99,15 +99,9 @@ mod tests {
     /// - `sig`: signature of the event, the subject and the object separated by '#'
     fn event(eid: u64, sub_id: u64, obj_id: u64, sig: &str) -> Vec<Rc<InputEvent>> {
         let sigs: Vec<&str> = sig.split('#').collect();
-        vec![Rc::new(InputEvent {
-            timestamp: eid,
-            event_id: eid,
-            event_signature: sigs[0].to_string(),
-            subject_id: sub_id,
-            subject_signature: sigs[1].to_string(),
-            object_id: obj_id,
-            object_signature: sigs[2].to_string(),
-        })]
+        vec![Rc::new(InputEvent::new(
+            eid, eid, sigs[0], sub_id, sigs[1], obj_id, sigs[2],
+        ))]
     }
 
     fn verify_instance(

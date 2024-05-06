@@ -11,13 +11,11 @@ use crate::pattern::PatternEvent;
 use super::PartialMatchEvent;
 
 pub trait Matcher<'p> {
-    /// If the input event match the matchers requirement, returns an [PartialMatchEvent]. Otherwise, return [None].
-    /// The matcher could return multiple [PartialMatchEvent]s. To get all the match events, the caller should
-    /// keep calling this function with the same [InputEvent] until it returns [None].
+    /// If the input event match the matchers requirement, returns ([PartialMatchEvent], `more`). Otherwise, return [None].
     ///
-    /// **Important**: If previous call to this function returns Some, the next call is assumed to have the same argument as the previous one.
-    /// Otherwise, the behavior is undefined.
-    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>>;
+    /// If the second return value `more` is true, the caller should call this method again with
+    /// the same input until the returned `more` becomes false or return [None].
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<(PartialMatchEvent<'p>, bool)>;
 }
 
 /// Helper function to construct regex object matching the whole input.
@@ -31,50 +29,41 @@ fn construct_regex(pattern: &str, escape_regex: bool) -> Result<Regex, RegexErro
 }
 
 pub struct DefaultMatcher<'p> {
-    event_signature: Regex,
-    subject_signature: Regex,
-    object_signature: Regex,
+    regex_matcher: Regex,
     matched: &'p PatternEvent,
-    prev_match: bool,
 }
 
 impl<'p> DefaultMatcher<'p> {
     pub fn new(pattern: &'p PatternEvent, use_regex: bool) -> Result<Self, RegexError> {
+        let regex_pattern = format!(
+            "{}\0{}\0{}",
+            pattern.signature, pattern.subject.signature, pattern.object.signature
+        );
         Ok(Self {
-            event_signature: construct_regex(&pattern.signature, !use_regex)?,
-            subject_signature: construct_regex(&pattern.subject.signature, !use_regex)?,
-            object_signature: construct_regex(&pattern.object.signature, !use_regex)?,
+            regex_matcher: construct_regex(&regex_pattern, !use_regex)?,
             matched: pattern,
-            prev_match: false,
         })
     }
 
     /// Return true if and only if signatures of input event and its endpoints matches the given pattern.
     pub fn is_match(&self, input: &InputEvent) -> bool {
-        let event_match = self.event_signature.is_match(&input.event_signature);
-        let subject_match = self.subject_signature.is_match(&input.subject_signature);
-        let object_match = self.object_signature.is_match(&input.object_signature);
-
-        event_match && subject_match && object_match
+        self.regex_matcher.is_match(input.get_signatures())
     }
 }
 
 impl<'p> Matcher<'p> for DefaultMatcher<'p> {
-    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>> {
-        if self.prev_match {
-            self.prev_match = false;
-            return None;
-        }
-
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<(PartialMatchEvent<'p>, bool)> {
         if self.is_match(input) {
-            self.prev_match = true;
-            Some(PartialMatchEvent {
-                matched: self.matched,
-                match_ord: 0,
-                subject_id: input.subject_id,
-                start_time: input.timestamp,
-                input_event: Rc::clone(input),
-            })
+            Some((
+                PartialMatchEvent {
+                    matched: self.matched,
+                    match_ord: 0,
+                    subject_id: input.subject_id,
+                    start_time: input.timestamp,
+                    input_event: Rc::clone(input),
+                },
+                false,
+            ))
         } else {
             None
         }
@@ -144,11 +133,13 @@ impl<'p> FlowMatcher<'p> {
 }
 
 impl<'p> Matcher<'p> for FlowMatcher<'p> {
-    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<PartialMatchEvent<'p>> {
+    fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<(PartialMatchEvent<'p>, bool)> {
         if self.next_state == 0 {
-            // last time not found, this is an new input event
-            self.subject_match = self.subject_signature.is_match(&input.subject_signature);
-            self.object_match = self.object_signature.is_match(&input.object_signature);
+            // this is an new input event
+            self.subject_match = self
+                .subject_signature
+                .is_match(input.get_subject_signature());
+            self.object_match = self.object_signature.is_match(input.get_object_signature());
 
             self.windowing(input.timestamp);
         }
@@ -161,13 +152,16 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
             if head_in_set {
                 reach.reachable_set.insert(input.object_id);
                 if self.object_match {
-                    return Some(PartialMatchEvent {
-                        matched: self.matched,
-                        match_ord: 0,
-                        start_time: reach.start_time,
-                        subject_id: reach.start_id,
-                        input_event: Rc::clone(input),
-                    });
+                    return Some((
+                        PartialMatchEvent {
+                            matched: self.matched,
+                            match_ord: 0,
+                            start_time: reach.start_time,
+                            subject_id: reach.start_id,
+                            input_event: Rc::clone(input),
+                        },
+                        true,
+                    ));
                 }
             }
         }
@@ -179,21 +173,19 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
             self.new_reachable_set(input);
         }
 
+        self.next_state = 0;
         if self.object_match && self.subject_match {
-            // the next call to get_match should return None
-            self.next_state = self.reachable_sets.len();
-            self.subject_match = false;
-            self.object_match = false;
-
-            Some(PartialMatchEvent {
-                matched: self.matched,
-                match_ord: 0,
-                start_time: input.timestamp,
-                subject_id: input.subject_id,
-                input_event: Rc::clone(input),
-            })
+            Some((
+                PartialMatchEvent {
+                    matched: self.matched,
+                    match_ord: 0,
+                    start_time: input.timestamp,
+                    subject_id: input.subject_id,
+                    input_event: Rc::clone(input),
+                },
+                false,
+            ))
         } else {
-            self.next_state = 0;
             None
         }
     }
@@ -235,39 +227,14 @@ mod tests {
             },
         };
 
-        let input1 = Rc::new(InputEvent {
-            timestamp: 1,
-            event_id: 0,
-            event_signature: String::new(),
-            subject_id: 0,
-            object_id: 1,
-            subject_signature: "u".to_string(),
-            object_signature: "x".to_string(),
-        });
-        let input2 = Rc::new(InputEvent {
-            timestamp: 1,
-            event_id: 0,
-            event_signature: String::new(),
-            subject_id: 1,
-            object_id: 2,
-            subject_signature: "x".to_string(),
-            object_signature: "x".to_string(),
-        });
-        let input3 = Rc::new(InputEvent {
-            timestamp: 3,
-            event_id: 0,
-            event_signature: String::new(),
-            subject_id: 2,
-            object_id: 3,
-            subject_signature: "x".to_string(),
-            object_signature: "v".to_string(),
-        });
+        let input1 = Rc::new(InputEvent::new(1, 0, "", 0, "u", 1, "x"));
+        let input2 = Rc::new(InputEvent::new(1, 0, "", 1, "x", 2, "x"));
+        let input3 = Rc::new(InputEvent::new(3, 0, "", 2, "x", 3, "v"));
 
         let mut matcher = setup_flow_matcher(&pattern);
         assert!(matcher.get_match(&input1).is_none());
         assert!(matcher.get_match(&input2).is_none());
         assert!(matcher.get_match(&input3).is_some());
-        assert!(matcher.get_match(&input3).is_none());
     }
 
     #[test]
@@ -286,18 +253,9 @@ mod tests {
             },
         };
 
-        let input1 = Rc::new(InputEvent {
-            timestamp: 1,
-            event_id: 0,
-            event_signature: String::new(),
-            subject_id: 0,
-            object_id: 1,
-            subject_signature: "u".to_string(),
-            object_signature: "v".to_string(),
-        });
+        let input1 = Rc::new(InputEvent::new(1, 0, "", 0, "u", 1, "v"));
 
         let mut matcher = setup_flow_matcher(&pattern);
         assert!(matcher.get_match(&input1).is_some());
-        assert!(matcher.get_match(&input1).is_none());
     }
 }

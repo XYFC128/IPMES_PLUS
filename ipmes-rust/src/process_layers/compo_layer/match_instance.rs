@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn test_dup_extend_entities_list() {
         let match_entities: Box<[(u64, u64)]> = Box::new([(100, 1), (101, 0), (103, 2)]);
-        
+
         // insert last
         assert_eq!(
             *MatchInstance::dup_extend_entities_list(&match_entities, 104, 3).unwrap(),

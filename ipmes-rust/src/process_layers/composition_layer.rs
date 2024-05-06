@@ -235,15 +235,7 @@ mod tests {
         object: u64,
         matched: &'p PatternEvent,
     ) -> MatchEvent<'p> {
-        let input_event = Rc::new(InputEvent {
-            timestamp: 0,
-            event_id: id,
-            event_signature: signature.to_string(),
-            subject_id: subject,
-            subject_signature: String::new(),
-            object_id: object,
-            object_signature: String::new(),
-        });
+        let input_event = Rc::new(InputEvent::new(0, id, signature, subject, "", object, ""));
 
         MatchEvent {
             input_event,

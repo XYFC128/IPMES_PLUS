@@ -92,10 +92,10 @@ fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>>
                 merged.push(*id1);
                 next1 = p1.next();
             }
-            Ordering::Equal => { 
+            Ordering::Equal => {
                 debug!("event id duplicates: {}", id1);
                 return None;
-            },
+            }
             Ordering::Greater => {
                 merged.push(*id2);
                 next2 = p2.next();
@@ -251,15 +251,7 @@ mod tests {
     use std::rc::Rc;
 
     fn dummy_input_event(event_id: u64) -> Rc<InputEvent> {
-        Rc::new(InputEvent {
-            timestamp: 0,
-            event_id,
-            event_signature: String::new(),
-            subject_id: 0,
-            subject_signature: String::new(),
-            object_id: 0,
-            object_signature: String::new(),
-        })
+        Rc::new(InputEvent::new(0, event_id, "", 0, "", 0, ""))
     }
 
     #[test]
