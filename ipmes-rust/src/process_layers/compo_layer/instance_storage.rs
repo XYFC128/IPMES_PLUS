@@ -1,5 +1,5 @@
 use crate::process_layers::matching_layer::PartialMatchEvent;
-use std::collections::HashMap;
+use ahash::{HashMap, HashMapExt};
 use std::hash::Hash;
 
 use super::{filter::FilterInfo, MatchInstance, StateData, StateInfo};
