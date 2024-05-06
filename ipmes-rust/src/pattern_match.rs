@@ -5,7 +5,7 @@ use std::fmt::{self};
 use std::hash::Hash;
 
 /// Complete Pattern Match
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PatternMatch {
     /// Matched event ids of this pattern. [(pattern_event_id, input_event_id)]
     pub matched_events: Box<[(usize, u64)]>,
@@ -18,6 +18,14 @@ pub struct PatternMatch {
 impl Hash for PatternMatch {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.matched_events.hash(state);
+    }
+}
+
+impl Eq for PatternMatch {}
+
+impl PartialEq for PatternMatch {
+    fn eq(&self, other: &Self) -> bool {
+        self.matched_events == other.matched_events
     }
 }
 

@@ -53,6 +53,7 @@ where
         while self.unique_matches.is_empty() {
             debug!("no instance available yet");
             if let Some(pattern_match) = self.prev_layer.next() {
+                debug!("Got pattern match: {:?}", pattern_match);
                 let latest_time = pattern_match.latest_time;
                 self.flush_expired(latest_time);
                 if !self.uniqueness_pool.contains(&pattern_match) {
