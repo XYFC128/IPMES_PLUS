@@ -23,3 +23,10 @@ windows = { version = "0.52.0", features = ["System_Diagnostics"] }
 
 [profile.release]
 debug = 1
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "my_benchmark"
+harness = false
