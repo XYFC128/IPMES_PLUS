@@ -1,14 +1,16 @@
+mod default_matcher;
+mod flow_matcher;
 mod matcher;
 mod partial_match_event;
 
+use self::default_matcher::DefaultMatcher;
+use self::flow_matcher::FlowMatcher;
+use self::matcher::Matcher;
 use crate::pattern::{Pattern, PatternEventType};
 use crate::{input_event::InputEvent, sub_pattern::SubPattern};
-use matcher::DefaultMatcher;
 pub use partial_match_event::PartialMatchEvent;
 use regex::Error as RegexError;
 use std::rc::Rc;
-
-use self::matcher::{FlowMatcher, Matcher};
 
 pub struct MatchingLayer<'p, P> {
     prev_layer: P,
