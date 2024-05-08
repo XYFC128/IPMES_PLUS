@@ -4,12 +4,12 @@ use crate::input_event::InputEvent;
 use crate::pattern::PatternEvent;
 use regex::Error as RegexError;
 use regex::Regex;
-use std::collections::HashSet;
+use ahash::{HashSet, HashSetExt};
 use std::collections::VecDeque;
 use std::rc::Rc;
 
 struct ReachableSet {
-    start_id: u64,
+    start_entity_id: u64,
     start_time: u64,
     reachable_set: HashSet<u64>,
 }
@@ -52,7 +52,7 @@ impl<'p> FlowMatcher<'p> {
             if front.start_time >= window_bound {
                 break;
             }
-            self.is_root.remove(&front.start_id);
+            self.is_root.remove(&front.start_entity_id);
             self.reachable_sets.pop_front();
         }
     }
@@ -62,7 +62,7 @@ impl<'p> FlowMatcher<'p> {
         reachable_set.insert(input.subject_id);
         reachable_set.insert(input.object_id);
         self.reachable_sets.push_back(ReachableSet {
-            start_id: input.subject_id,
+            start_entity_id: input.subject_id,
             start_time: input.timestamp,
             reachable_set,
         });
@@ -95,7 +95,7 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
                             matched: self.matched,
                             match_ord: 0,
                             start_time: reach.start_time,
-                            subject_id: reach.start_id,
+                            subject_id: reach.start_entity_id,
                             input_event: Rc::clone(input),
                         },
                         true,
