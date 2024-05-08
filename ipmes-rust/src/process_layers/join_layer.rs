@@ -11,7 +11,7 @@ pub use sub_pattern_buffer::SubPatternBuffer;
 use sub_pattern_match::EarliestFirst;
 pub use sub_pattern_match::SubPatternMatch;
 
-use super::compo_layer;
+use super::composition_layer;
 
 /// The layer that joins sub-pattern matches into pattern matches.
 #[derive(Debug)]
@@ -304,7 +304,7 @@ fn get_root_buffer_id() -> usize {
 
 impl<'p, P> Iterator for JoinLayer<'p, P>
 where
-    P: Iterator<Item = (u32, compo_layer::MatchInstance<'p>)>,
+    P: Iterator<Item = (u32, composition_layer::MatchInstance<'p>)>,
 {
     type Item = PatternMatch;
 

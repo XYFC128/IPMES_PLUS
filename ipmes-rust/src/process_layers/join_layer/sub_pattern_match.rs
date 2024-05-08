@@ -1,5 +1,5 @@
 use crate::match_event::MatchEvent;
-use crate::process_layers::compo_layer;
+use crate::process_layers::composition_layer;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
@@ -130,7 +130,7 @@ fn check_edge_uniqueness(match_events: &[MatchEvent]) -> bool {
 impl<'p> SubPatternMatch<'p> {
     pub fn build(
         sub_pattern_id: u32,
-        match_instance: compo_layer::MatchInstance<'p>,
+        match_instance: composition_layer::MatchInstance<'p>,
         num_pattern_event: usize,
     ) -> Option<Self> {
         let latest_time = match_instance.match_events.last()?.end_time;

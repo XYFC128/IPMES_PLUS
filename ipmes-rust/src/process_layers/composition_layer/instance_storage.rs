@@ -108,7 +108,7 @@ impl<'p> InstanceStorage<'p> {
 
 #[cfg(test)]
 mod tests {
-    use crate::process_layers::compo_layer::entity_encode::EntityEncode;
+    use crate::process_layers::composition_layer::entity_encode::EntityEncode;
 
     use super::*;
 

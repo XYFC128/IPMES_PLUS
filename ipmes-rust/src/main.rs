@@ -7,7 +7,7 @@ use cpu_time::ProcessTime;
 
 use ipmes_rust::pattern::Pattern;
 use ipmes_rust::process_layers::{
-    CompoLayer, CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
+    CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
 };
 use ipmes_rust::sub_pattern::decompose;
 
@@ -45,7 +45,7 @@ fn main() {
     let parse_layer = ParseLayer::new(csv_reader);
     let matching_layer =
         MatchingLayer::new(parse_layer, &pattern, &decomposition, window_size).unwrap();
-    let composition_layer = CompoLayer::new(matching_layer, &decomposition, window_size);
+    let composition_layer = CompositionLayer::new(matching_layer, &decomposition, window_size);
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 

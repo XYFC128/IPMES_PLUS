@@ -1,400 +1,271 @@
-use crate::input_event::InputEvent;
-use crate::match_event::MatchEvent;
 use crate::sub_pattern::SubPattern;
-use std::cmp::{max, min};
-use std::collections::HashSet;
-use std::collections::VecDeque;
 
-/// Internal representation of a not complete subpattern match
-#[derive(Debug)]
-pub struct PartialMatch<'p> {
-    /// the id of the matched sub-pattern
-    pub id: usize,
-    /// the earliest timestamp
-    pub timestamp: u64,
-    /// Maps the id of entities in the pattern to the id of input entities
-    ///
-    /// For example, if the input entity `i` match the pattern entity `p`, then
-    /// `entity_id_map[p] = Some(i)`.
-    ///
-    /// If the pattern entity `p` doesn't match any pattern in this partial match,
-    /// then `entity_id_map[p] = None`.
-    pub entity_id_map: Vec<Option<u64>>,
-    pub events: Vec<MatchEvent<'p>>,
-}
+use super::matching_layer::PartialMatchEvent;
 
-impl<'p> PartialMatch<'p> {
-    /// Return `true` if the input entities in the partial match is unique.
-    fn check_entity_uniqueness(&self) -> bool {
-        let mut used = HashSet::new();
-        for entity_id in self.entity_id_map.iter().flatten() {
-            if used.contains(entity_id) {
-                return false;
-            } else {
-                used.insert(entity_id);
-            }
-        }
-
-        true
-    }
-}
-
-/// Represent a small buffer for matching an edge
-struct SubMatcher<'p> {
-    /// Whether this is the last buffer of some subpattern
-    is_last: bool,
-    /// buffer for the partial match results, dequeue is used for windowing
-    buffer: VecDeque<PartialMatch<'p>>,
-}
-
-impl<'p> SubMatcher<'p> {
-    pub fn new() -> Self {
-        Self {
-            is_last: false,
-            buffer: VecDeque::new(),
-        }
-    }
-
-    pub fn match_against(&mut self, match_event: &MatchEvent<'p>) -> Vec<PartialMatch<'p>> {
-        self.buffer
-            .iter()
-            .filter_map(|partial_match| self.merge(match_event, partial_match))
-            .collect()
-    }
-
-    fn merge(
-        &self,
-        match_event: &MatchEvent<'p>,
-        partial_match: &PartialMatch<'p>,
-    ) -> Option<PartialMatch<'p>> {
-        if self.has_entity_collision(match_event, partial_match)
-            || Self::event_duplicates(&match_event.input_event, partial_match)
-        {
-            return None;
-        }
-
-        // duplicate the partial match and add the input edge into the new partial match
-        let mut entity_id_map = partial_match.entity_id_map.clone();
-        let mut events = partial_match.events.clone();
-        entity_id_map[match_event.matched.subject.id] = Some(match_event.input_event.subject_id);
-        entity_id_map[match_event.matched.object.id] = Some(match_event.input_event.object_id);
-
-        let timestamp = min(match_event.input_event.timestamp, partial_match.timestamp);
-        events.push(match_event.clone());
-
-        Some(PartialMatch {
-            id: partial_match.id,
-            timestamp,
-            entity_id_map,
-            events,
-        })
-    }
-
-    /// Return `true` if the input event's entities **do not match** the expected id in the partial match.
-    ///
-    /// That is, if the input event's subject (id = `x`) matches pattern entity `n0`, and `n0` in
-    /// this partial match matches `y`, then `x` must equals to `y` for this input event to be merged
-    /// into the partial match.
-    fn has_entity_collision(
-        &self,
-        match_event: &MatchEvent<'p>,
-        partial_match: &PartialMatch<'p>,
-    ) -> bool {
-        if let Some(subject_match) = partial_match.entity_id_map[match_event.matched.subject.id] {
-            if subject_match != match_event.input_event.subject_id {
-                return true;
-            }
-        }
-
-        if let Some(object_match) = partial_match.entity_id_map[match_event.matched.object.id] {
-            if object_match != match_event.input_event.object_id {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    /// Return `true` if the id of the input event already exist in the partial match.
-    fn event_duplicates(input_event: &InputEvent, partial_match: &PartialMatch<'p>) -> bool {
-        partial_match
-            .events
-            .iter()
-            .any(|edge| edge.input_event.event_id == input_event.event_id)
-    }
-
-    /// Clear the entries in the buffer which timestamp < time_bound
-    pub fn clear_expired(&mut self, time_bound: u64) {
-        while let Some(head) = self.buffer.front() {
-            if head.timestamp < time_bound {
-                self.buffer.pop_front();
-            } else {
-                break;
-            }
-        }
-    }
-}
+mod entity_encode;
+mod filter;
+mod instance_runner;
+mod instance_storage;
+mod match_instance;
+mod state;
+use instance_runner::InstanceRunner;
+use instance_storage::InstanceStorage;
+use log::debug;
+pub use match_instance::MatchInstance;
+use state::*;
 
 pub struct CompositionLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
-    sub_matchers: Vec<SubMatcher<'p>>,
+    runner: InstanceRunner<'p>,
+    storage: InstanceStorage<'p>,
 }
 
 impl<'p, P> CompositionLayer<'p, P> {
-    pub fn new(prev_layer: P, decomposition: &'p [SubPattern], window_size: u64) -> Self {
-        let mut sub_matchers = Vec::new();
-        for sub_pattern in decomposition {
-            // create sub-matcher for each edge
-            for _ in &sub_pattern.events {
-                sub_matchers.push(SubMatcher::new());
-            }
-            // get the first sub-matcher for this sub-pattern
-            if let Some(first) = sub_matchers
-                .iter_mut()
-                .nth_back(sub_pattern.events.len() - 1)
-            {
-                // the entity_id_map only need to store up to the maximum node id nodes
-                let max_node_id = sub_pattern
-                    .events
-                    .iter()
-                    .map(|e| max(e.subject.id, e.object.id))
-                    .max()
-                    .unwrap();
-                // Insert an empty partial match that is never expired. All the partial match for
-                // sub pattern will be duplicated from this partial match
-                first.buffer.push_back(PartialMatch {
-                    id: sub_pattern.id,
-                    timestamp: u64::MAX,
-                    entity_id_map: vec![None; max_node_id + 1],
-                    events: vec![],
-                })
-            }
-            // get the last sub-matcher for this sub-pattern
-            if let Some(last) = sub_matchers.last_mut() {
-                last.is_last = true;
-            }
-        }
-
+    pub fn new(prev_layer: P, decomposition: &[SubPattern<'p>], window_size: u64) -> Self {
+        let runner = InstanceRunner::new(decomposition);
+        let storage = InstanceStorage::init_from_state_table(&runner.state_table);
         Self {
             prev_layer,
             window_size,
-            sub_matchers,
+            runner,
+            storage,
         }
+    }
+
+    pub fn accept_match_event(&mut self, match_event: PartialMatchEvent<'p>) {
+        let callback = |instance: &mut MatchInstance<'p>| {
+            self.runner.run(instance, &match_event);
+        };
+
+        let window_bound = match_event.start_time.saturating_sub(self.window_size);
+
+        self.storage.query(&match_event, window_bound, callback);
+
+        self.runner.store_new_instances(&mut self.storage);
     }
 }
 
 impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
-    P: Iterator<Item = (MatchEvent<'p>, usize)>,
+    P: Iterator<Item = PartialMatchEvent<'p>>,
 {
-    type Item = Vec<PartialMatch<'p>>;
+    type Item = (u32, MatchInstance<'p>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let (match_event, match_order) = self.prev_layer.next()?;
-
-            let sub_matcher = &mut self.sub_matchers[match_order];
-
-            let time_bound = match_event
-                .input_event
-                .timestamp
-                .saturating_sub(self.window_size);
-            sub_matcher.clear_expired(time_bound);
-
-            let mut result = sub_matcher.match_against(&match_event);
-            if result.is_empty() {
-                continue;
-            }
-
-            if sub_matcher.is_last {
-                result.retain(|partial_match| partial_match.check_entity_uniqueness());
-                if result.is_empty() {
-                    continue;
-                }
-                return Some(result);
-            } else {
-                let next_matcher = &mut self.sub_matchers[match_order + 1];
-                next_matcher.buffer.extend(result);
-            }
+        while self.runner.output_buffer.is_empty() {
+            let match_event = self.prev_layer.next()?;
+            self.accept_match_event(match_event);
         }
+
+        if let Some(output) = self.runner.output_buffer.last() {
+            debug!("output: ({:?})", output);
+        }
+        self.runner.output_buffer.pop()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::pattern::{PatternEntity, PatternEvent, PatternEventType};
+    use core::panic;
     use std::rc::Rc;
 
-    /// Create match event for testing purpose
-    fn match_event<'p>(
-        id: u64,
-        signature: &str,
-        subject: u64,
-        object: u64,
-        matched: &'p PatternEvent,
-    ) -> MatchEvent<'p> {
-        let input_event = Rc::new(InputEvent::new(0, id, signature, subject, "", object, ""));
+    use super::*;
+    use crate::input_event::InputEvent;
+    use crate::pattern::{Pattern, PatternEventType};
+    use crate::process_layers::MatchingLayer;
+    use crate::universal_match_event::UniversalMatchEvent;
 
-        MatchEvent {
-            input_event,
-            matched,
+    /// Creates a pattern consists of 3 event and 4 entities. They form a path from v0 to v3.
+    ///
+    /// ```text
+    ///     e0       e1       e2
+    /// v0 ----> v1 ----> v2 ----> v3
+    /// ```
+    fn basic_pattern() -> Pattern {
+        Pattern::from_graph(
+            &["v0", "v1", "v2", "v3"],
+            &[(0, 1, "e0"), (1, 2, "e1"), (2, 3, "e2")],
+            false,
+        )
+    }
+
+    /// Creates a batch containing only one input event.
+    ///
+    /// Parameters:
+    /// - `eid`: the id of the input event, also used as the timestamp of the event
+    /// - `sub_id`: the id of the subject
+    /// - `obj_id`: the id of the object
+    /// - `sig`: signature of the event, the subject and the object separated by '#'
+    fn event(eid: u64, sub_id: u64, obj_id: u64, sig: &str) -> Vec<Rc<InputEvent>> {
+        let sigs: Vec<&str> = sig.split('#').collect();
+        vec![Rc::new(InputEvent::new(
+            eid, eid, sigs[0], sub_id, sigs[1], obj_id, sigs[2],
+        ))]
+    }
+
+    fn verify_instance(
+        result: Option<(u32, MatchInstance)>,
+        expect_sub_pattern_id: u32,
+        expect_ts: u64,
+        expect_ids: &[u64],
+    ) {
+        if let Some(output) = result {
+            assert_eq!(output.0, expect_sub_pattern_id, "sub_pattern_id");
+
+            let instance = output.1;
+            assert_eq!(instance.start_time, expect_ts, "start_time");
+
+            let mut sorted_ids = expect_ids.to_vec();
+            sorted_ids.sort_unstable();
+            assert_eq!(*instance.event_ids, sorted_ids, "event_ids");
+
+            let ids: Vec<u64> = instance
+                .match_events
+                .iter()
+                .map(|x| x.event_ids[0])
+                .collect();
+            assert_eq!(ids, *expect_ids, "match_events");
+        } else {
+            panic!("result is None");
         }
     }
 
     #[test]
-    fn test_linear_subpattern() {
-        let patterns = [
-            PatternEvent {
-                id: 0,
-                event_type: PatternEventType::Default,
-                signature: "edge1".to_string(),
-                subject: PatternEntity {
-                    id: 0,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-            },
-            PatternEvent {
-                id: 1,
-                event_type: PatternEventType::Default,
-                signature: "edge2".to_string(),
-                subject: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 2,
-                    signature: "".to_string(),
-                },
-            },
-        ];
-
-        let sub_pattern = SubPattern {
+    fn test_basic() {
+        let pattern = basic_pattern();
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
             id: 0,
-            events: patterns.iter().collect(),
-        };
-        let decomposition = [sub_pattern];
+            events: pattern.events.iter().collect(),
+        }];
 
-        let match_events = vec![
-            (match_event(1, "edge1", 1, 2, &patterns[0]), 0),
-            (match_event(2, "edge2", 2, 3, &patterns[1]), 1),
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v2"),
+            event(2, 2, 3, "e2#v2#v3"),
         ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
 
-        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
-        let result = layer.next().unwrap();
-        assert_eq!(result.len(), 1);
+        verify_instance(
+            layer.next(),
+            0,          // sub-pattern id
+            0,          // start_time
+            &[0, 1, 2], // matched input event ids
+        );
+        assert!(layer.next().is_none());
     }
 
-    /// In this testcase, the pattern event `p1` and `p3` matches the same input edge `i1`,
-    /// but `(i1, i2, i1)` is not a valid match state, since the input edge `i1` is duplicated.
     #[test]
     fn test_event_uniqueness() {
-        let patterns = [
-            PatternEvent {
-                id: 0,
-                event_type: PatternEventType::Default,
-                signature: "a".to_string(),
-                subject: PatternEntity {
-                    id: 0,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-            },
-            PatternEvent {
-                id: 1,
-                event_type: PatternEventType::Default,
-                signature: "b".to_string(),
-                subject: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 2,
-                    signature: "".to_string(),
-                },
-            },
-            PatternEvent {
-                id: 2,
-                event_type: PatternEventType::Default,
-                signature: "a".to_string(),
-                subject: PatternEntity {
-                    id: 3,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-            },
-        ];
-
-        let sub_pattern = SubPattern {
+        let pattern = Pattern::from_graph(
+            &["v0", "v1", "v2"],
+            &[(0, 1, "e0"), (1, 2, "e1"), (1, 2, "e.")],
+            true,
+        );
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
             id: 0,
-            events: patterns.iter().collect(),
-        };
-        let decomposition = [sub_pattern];
+            events: pattern.events.iter().collect(),
+        }];
 
-        let match_events = vec![
-            (match_event(1, "a", 1, 2, &patterns[0]), 0),
-            (match_event(2, "b", 2, 3, &patterns[1]), 1),
-            (match_event(1, "a", 1, 2, &patterns[2]), 2),
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v2"), // matches pattern event 1 & 2
         ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
 
-        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
         assert!(layer.next().is_none());
     }
 
     #[test]
     fn test_entity_uniqueness() {
-        let patterns = [
-            PatternEvent {
-                id: 0,
-                event_type: PatternEventType::Default,
-                signature: "edge1".to_string(),
-                subject: PatternEntity {
-                    id: 0,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-            },
-            PatternEvent {
-                id: 1,
-                event_type: PatternEventType::Default,
-                signature: "edge2".to_string(),
-                subject: PatternEntity {
-                    id: 1,
-                    signature: "".to_string(),
-                },
-                object: PatternEntity {
-                    id: 2,
-                    signature: "".to_string(),
-                },
-            },
-        ];
-
-        let sub_pattern = SubPattern {
+        let pattern = Pattern::from_graph(
+            &["v0", "v1", "v.", "v3"],
+            &[(0, 1, "e0"), (1, 2, "e1"), (1, 3, "e2")],
+            true,
+        );
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
             id: 0,
-            events: patterns.iter().collect(),
-        };
-        let decomposition = [sub_pattern];
+            events: pattern.events.iter().collect(),
+        }];
 
-        let match_events = vec![
-            (match_event(1, "edge1", 1, 2, &patterns[0]), 0),
-            (match_event(2, "edge2", 2, 1, &patterns[1]), 1), // entity ID 1 duplicated
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v3"),
+            event(2, 1, 2, "e2#v1#v3"), // input entity 2 duplicates
         ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
 
-        let mut layer = CompositionLayer::new(match_events.into_iter(), &decomposition, u64::MAX);
+        assert!(layer.next().is_none());
+    }
+
+    #[test]
+    fn test_basic_windowing() {
+        let pattern = basic_pattern();
+        let window_size = 3;
+        let decomposition = [SubPattern {
+            id: 0,
+            events: pattern.events.iter().collect(),
+        }];
+
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v2"),
+            event(4, 2, 3, "e2#v2#v3"),
+        ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+
+        assert!(layer.next().is_none());
+    }
+
+    fn verify_event(
+        match_event: &UniversalMatchEvent,
+        time_pair: (u64, u64),
+        entity_id_pair: (u64, u64),
+        event_ids: &[u64],
+    ) {
+        assert_eq!(match_event.start_time, time_pair.0);
+        assert_eq!(match_event.end_time, time_pair.1);
+        assert_eq!(match_event.subject_id, entity_id_pair.0);
+        assert_eq!(match_event.object_id, entity_id_pair.1);
+        assert_eq!(*match_event.event_ids, *event_ids)
+    }
+
+    #[test]
+    fn test_frequency() {
+        let mut pattern = basic_pattern();
+        pattern.events[1].event_type = PatternEventType::Frequency(3);
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
+            id: 0,
+            events: pattern.events.iter().collect(),
+        }];
+
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#v2"),
+            event(2, 1, 2, "e1#v1#v2"),
+            event(3, 1, 2, "e1#v1#v2"),
+            event(4, 2, 3, "e2#v2#v3"),
+        ];
+        let match_layer =
+            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
+        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+
+        let match_events = layer.next().unwrap().1.match_events;
+        verify_event(&match_events[0], (0, 0), (0, 1), &[0]);
+        verify_event(&match_events[1], (1, 3), (1, 2), &[1, 2, 3]);
+        verify_event(&match_events[2], (4, 4), (2, 3), &[4]);
         assert!(layer.next().is_none());
     }
 }
