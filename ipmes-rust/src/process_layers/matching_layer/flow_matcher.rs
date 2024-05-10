@@ -2,9 +2,9 @@ use super::matcher::{construct_regex, Matcher};
 use super::PartialMatchEvent;
 use crate::input_event::InputEvent;
 use crate::pattern::PatternEvent;
+use ahash::{HashSet, HashSetExt};
 use regex::Error as RegexError;
 use regex::Regex;
-use ahash::{HashSet, HashSetExt};
 use std::collections::VecDeque;
 use std::rc::Rc;
 
