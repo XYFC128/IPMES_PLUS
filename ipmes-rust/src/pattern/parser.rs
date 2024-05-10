@@ -190,21 +190,22 @@ fn parse_order_relation(events: &[Value]) -> Result<OrderRelation, PatternParsin
             .as_u64()
             .ok_or(PatternParsingError::KeyError("ID"))? as u32;
 
-        let parents = event["Parents"]
-            .as_array()
-            .ok_or(PatternParsingError::KeyError("Parents"))?;
-
-        for parent in parents {
-            let parent_id = parent
-                .as_u64()
-                .ok_or(PatternParsingError::KeyError("Parents"))?
+        if let Some(parents) = event["Parents"].as_array() {
+            for parent in parents {
+                let parent_id = parent
+                    .as_u64()
+                    .ok_or(PatternParsingError::KeyError("Parents"))?
                 as u32;
-            orel_edges.push((parent_id + 1, my_id + 1));
-        }
+                orel_edges.push((parent_id + 1, my_id + 1));
+            }
 
-        if parents.is_empty() {
+            if parents.is_empty() {
+                orel_edges.push((0, my_id + 1));
+            }
+        } else {
             orel_edges.push((0, my_id + 1));
         }
+
     }
 
     let graph: Graph<usize, ()> = Graph::from_edges(&orel_edges);
