@@ -65,12 +65,9 @@ impl Relation {
         event2: &UniversalMatchEvent,
         time_order: &TimeOrder,
     ) -> bool {
-        if event1.end_time < event2.start_time {
-            *time_order == FirstToSecond
-        } else if event1.start_time > event2.end_time {
-            *time_order == SecondToFirst
-        } else {
-            true // since event1 and event2 overlaps, they can satisfy any order
+        match time_order {
+            FirstToSecond => event1.end_time <= event2.start_time,
+            SecondToFirst => event2.end_time <= event1.start_time,
         }
     }
 
