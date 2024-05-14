@@ -14,12 +14,12 @@ def run(pattern_file: str, data_graph: str, window_size: int):
 
     print(outs)
 
-    num_match = re.search('Total number of matches: (\d+)', outs).group(1)
+    num_match = re.search(r'Total number of matches: (\d+)', outs).group(1)
     num_match = int(num_match)
-    cpu_time = re.search('CPU time elapsed: (\d+\.\d+) secs', outs).group(1)
+    cpu_time = re.search(r'CPU time elapsed: (\d+\.\d+) secs', outs).group(1)
     cpu_time = float(cpu_time)
 
-    peak_mem_result = re.search('Peak memory usage: (\d+) (.)B', outs)
+    peak_mem_result = re.search(r'Peak memory usage: (\d+) (.)B', outs)
     if peak_mem_result is not None:
         peak_mem = peak_mem_result.group(1)
         peak_mem_unit = peak_mem_result.group(2)
