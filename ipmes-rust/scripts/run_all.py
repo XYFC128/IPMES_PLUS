@@ -56,6 +56,14 @@ if __name__ == '__main__':
                     default='../results/ipmes-rust/',
                     type=str,
                     help='the output folder')
+    parser.add_argument('--no-darpa',
+                    default=False,
+                    action='store_true',
+                    help='Do not run on DARPA')
+    parser.add_argument('--no-spade',
+                    default=False,
+                    action='store_true',
+                    help='Do not run on SPADE')
     args = parser.parse_args()
 
     
@@ -71,21 +79,25 @@ if __name__ == '__main__':
 
     run_result = []
 
-    for i in range(1, 13):
-        for graph in spade_graphs:
-            pattern = os.path.join(args.pattern_dir, f'SP{i}_regex.json')
-            data_graph = os.path.join(args.data_graph, graph + '.csv')
-            num_match, cpu_time, peak_mem = run(pattern, data_graph, 1800)
-            run_result.append([f'SP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
+    if not args.no_spade:
+        for i in range(1, 13):
+            for graph in spade_graphs:
+                pattern = os.path.join(args.pattern_dir, f'SP{i}_regex.json')
+                data_graph = os.path.join(args.data_graph, graph + '.csv')
+                num_match, cpu_time, peak_mem = run(pattern, data_graph, 1800)
+                run_result.append([f'SP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
 
-    for i in range(1, 6):
-        for graph in darpa_graphs:
-            pattern = os.path.join(args.pattern_dir, f'DP{i}_regex.json')
-            data_graph = os.path.join(args.data_graph, graph + '.csv')
-            num_match, cpu_time, peak_mem = run(pattern, data_graph, 1000)
-            run_result.append([f'DP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
+    if not args.no_darpa:
+        for i in range(1, 6):
+            for graph in darpa_graphs:
+                pattern = os.path.join(args.pattern_dir, f'DP{i}_regex.json')
+                data_graph = os.path.join(args.data_graph, graph + '.csv')
+                num_match, cpu_time, peak_mem = run(pattern, data_graph, 1000)
+                run_result.append([f'DP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
 
     df = pd.DataFrame(data=run_result, columns=['Pattern', 'Data Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
     print(df.to_string(index=False))
-    df.to_csv(os.path.join(args.out_dir, 'run_result.csv'), index=False)
+    out_file = os.path.join(args.out_dir, 'run_result.csv')
+    df.to_csv(out_file, index=False)
+    print(f'The table is saved to {out_file}')
 
