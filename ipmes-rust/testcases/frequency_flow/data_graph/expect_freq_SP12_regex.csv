@@ -1,6 +1,0 @@
-1.0,1.0,1,fork,1,Process::aaa,2,Process::bbb
-2.0,2.0,2,execve,2,Process::aaa,3,Process::journalctl
-2.1,2.1,3,execve,2,Process::bbb,3,Process::journalctl
-2.2,2.2,4,execve,2,Process::ccc,3,Process::journalctl
-3.0,3.0,5,load,5,Artifact::file::/usr/bin/journalctl,3,Process::journalctl
-4.0,4.0,6,open,4,Artifact::directory::/var/log/journal,3,Process::journalctl
