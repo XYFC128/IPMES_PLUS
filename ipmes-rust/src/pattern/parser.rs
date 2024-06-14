@@ -152,7 +152,7 @@ fn parse_events(
         let signature = event["Signature"].as_str().unwrap_or_default().to_string();
         if event_type == PatternEventType::Flow && !signature.is_empty() {
             warn!("Signature on pattern event of type Flow will be ignored");
-        } else if signature.is_empty() {
+        } else if event_type != PatternEventType::Flow && signature.is_empty() {
             warn!("Empty signature detected, the matching behavior is undefined");
         }
 
