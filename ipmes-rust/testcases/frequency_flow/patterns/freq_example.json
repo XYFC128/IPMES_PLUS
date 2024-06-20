@@ -1,14 +1,14 @@
 {
     "Version": "0.2.0",
-    "UseRegex": false,
+    "UseRegex": true,
     "Entities": [
         {
             "ID": 0,
-            "Signature": "Process::aaa"
+            "Signature": "Process::vim"
         },
         {
             "ID": 1,
-            "Signature": "Artifact::file::/tmp/hello.txt"
+            "Signature": "Artifact::file::/.*/cronbtabs/root"
         }
     ],
     "Events": [
