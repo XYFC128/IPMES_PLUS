@@ -1,7 +1,9 @@
 mod default_matcher;
 mod flow_matcher;
+mod flow_tracer;
 mod matcher;
 mod partial_match_event;
+mod transitive_closure;
 
 use self::default_matcher::DefaultMatcher;
 use self::flow_matcher::FlowMatcher;
