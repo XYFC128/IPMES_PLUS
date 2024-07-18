@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 struct Node {
@@ -25,22 +25,12 @@ impl ReachSet {
         }
     }
 
-    pub fn merge_with(&mut self, other: &Self, cur_time: u64, time_bound: u64) {
-        self.root.update_time = cur_time;
-        for node in other.nodes.values() {
-            if node.update_time < time_bound || node.id == self.root.id {
-                continue;
-            }
-
-            if let Some(our_node) = self.nodes.get_mut(&node.id) {
-                if our_node.update_time < node.update_time {
-                    our_node.parent = node.parent;
-                    our_node.update_time = node.update_time;
-                }
-            } else {
-                self.nodes.insert(node.id, node.clone());
-            }
+    pub fn connect_from(&mut self, other: &Self, cur_time: u64, time_bound: u64) {
+        if other.root.id == self.root.id {
+            return;
         }
+
+        self.root.update_time = cur_time;
 
         if let Some(other_root) = self.nodes.get_mut(&other.root.id) {
             other_root.parent = self.root.id;
@@ -55,10 +45,63 @@ impl ReachSet {
                 },
             );
         }
+
+        if other.get_update_time() < time_bound {
+            return;
+        }
+
+        for node in other.nodes.values() {
+            if node.update_time < time_bound || node.id == self.root.id {
+                continue;
+            }
+
+            if let Some(our_node) = self.nodes.get_mut(&node.id) {
+                if our_node.update_time < node.update_time {
+                    our_node.parent = node.parent;
+                    our_node.update_time = node.update_time;
+                }
+            } else {
+                self.nodes.insert(node.id, node.clone());
+            }
+        }
+    }
+
+    pub fn apply_new_changes(&mut self, other: &Self, time_bound: u64) {
+        if let Some(other_root) = self.nodes.get(&other.root.id) {
+            if other_root.update_time != other.root.update_time {
+                // the new changes is to late to be applied
+                return;
+            }
+        } else {
+            return; // `other.root` is not in this set
+        }
+
+        for node in other.nodes.values() {
+            if node.update_time < time_bound || node.id == self.root.id {
+                continue;
+            }
+
+            if let Some(our_node) = self.nodes.get_mut(&node.id) {
+                if our_node.update_time < node.update_time {
+                    our_node.parent = node.parent;
+                    our_node.update_time = node.update_time;
+                }
+            } else {
+                self.nodes.insert(node.id, node.clone());
+            }
+        }
     }
 
     pub fn query(&self, id: u64) -> bool {
         id == self.root.id || self.nodes.contains_key(&id)
+    }
+
+    pub fn get_id(&self) -> u64 {
+        self.root.id
+    }
+
+    pub fn get_update_time(&self) -> u64 {
+        self.root.update_time
     }
 }
 
@@ -85,11 +128,40 @@ impl FlowTracer {
 
         let src_set = self.sets.get(&src).unwrap();
         let dst_set = self.sets.get(&dst).unwrap();
-        dst_set.borrow_mut().merge_with(
+        dst_set.borrow_mut().connect_from(
             &src_set.borrow(),
             time,
             time.saturating_sub(self.window_size),
         );
+    }
+
+    pub fn add_batch(&mut self, batch: impl IntoIterator<Item = (u64, u64)>, time: u64) {
+        let mut modified = HashSet::new();
+        let time_bound = time.saturating_sub(self.window_size);
+        for (src, dst) in batch {
+            if src == dst {
+                continue;
+            }
+            self.make_sure_exist(src, time);
+            self.make_sure_exist(dst, time);
+
+            let src_set = self.sets.get(&src).unwrap();
+            let dst_set = self.sets.get(&dst).unwrap();
+            dst_set
+                .borrow_mut()
+                .connect_from(&src_set.borrow(), time, time_bound);
+            modified.insert(dst);
+            for m in &modified {
+                if *m == dst {
+                    continue;
+                }
+                let set = self.sets.get(m).unwrap();
+                if set.borrow().query(dst) {
+                    set.borrow_mut()
+                        .apply_new_changes(&dst_set.borrow(), time_bound);
+                }
+            }
+        }
     }
 
     fn make_sure_exist(&mut self, id: u64, time: u64) {
@@ -144,5 +216,43 @@ mod tests {
         assert!(t.query(2, 1));
         assert!(t.query(3, 1));
         assert!(!t.query(3, 2)); // because 1 -> 2 is before 3 -> 1
+    }
+
+    #[test]
+    fn test_add_batch() {
+        let mut t = FlowTracer::new(10);
+        t.add_arc(1, 2, 0);
+        t.add_batch([(4, 5), (3, 4), (2, 3), (6, 7), (7, 8)], 1);
+
+        assert!(t.query(1, 5));
+        assert!(t.query(6, 8));
+    }
+
+    #[test]
+    fn add_batch_cycle() {
+        let mut t = FlowTracer::new(10);
+        t.add_arc(1, 2, 0);
+        t.add_batch([(3, 1), (2, 3)], 1);
+
+        assert!(t.query(1, 3));
+        assert!(t.query(2, 3));
+        assert!(t.query(2, 1));
+        assert!(t.query(3, 1));
+        assert!(!t.query(3, 2)); // because 1 -> 2 is before 3 -> 1
+    }
+
+    #[test]
+    fn mix_add_batch_and_add_arc() {
+        let mut t = FlowTracer::new(10);
+        t.add_arc(1, 2, 0);
+        t.add_arc(3, 1, 0);
+        t.add_batch([(2, 3), (4, 2), (5, 1)], 1);
+
+        assert!(t.query(1, 3)); // 1, 2, 3
+        assert!(!t.query(3, 2)); // because 1 -> 2 is before 3 -> 1
+        assert!(t.query(4, 3)); // 4, 2, 3
+
+        t.add_arc(1, 2, 0);
+        assert!(t.query(3, 2)); // 3, 1, 2
     }
 }
