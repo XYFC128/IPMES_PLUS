@@ -115,22 +115,7 @@ impl ReachSet {
         }
     }
 
-    pub fn query_path(&self, src: u64, path_buf: &mut Vec<u64>) {
-        if !self.query(src) {
-            return;
-        }
-
-        path_buf.clear();
-        let mut cur = src;
-        while cur != self.root.id {
-            let cur_node = self.nodes.get(&cur).expect("tree structer is well maintained");
-            path_buf.push(cur);
-            cur = cur_node.parent;
-        }
-        path_buf.push(self.root.id);
-    }
-
-    pub fn query_path_iter(&self, src: u64) -> PathIter {
+    pub fn query_path(&self, src: u64) -> PathIter {
         if let Some(node) = self.nodes.get(&src) {
             PathIter {
                 reach_set: self,
@@ -329,7 +314,7 @@ mod tests {
         t.add_arc(2, 3, 0);
         
         let set = t.sets.get(&3).unwrap().borrow();
-        let mut path_iter = set.query_path_iter(1);
+        let mut path_iter = set.query_path(1);
         assert_eq!(path_iter.next(), Some(1));
         assert_eq!(path_iter.next(), Some(2));
         assert_eq!(path_iter.next(), Some(3));
