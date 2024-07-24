@@ -11,6 +11,9 @@ struct Node {
 struct ReachSet {
     nodes: HashMap<u64, Node>,
     root: Node,
+
+    /// the updated node ids of the set since last modified
+    updated_nodes: Vec<u64>,
 }
 
 impl ReachSet {
@@ -22,6 +25,7 @@ impl ReachSet {
                 parent: id,
                 update_time: time,
             },
+            updated_nodes: Vec::new(),
         }
     }
 
@@ -31,6 +35,7 @@ impl ReachSet {
         }
 
         self.root.update_time = cur_time;
+        self.updated_nodes.clear();
 
         if let Some(other_root) = self.nodes.get_mut(&other.root.id) {
             other_root.parent = self.root.id;
@@ -55,14 +60,7 @@ impl ReachSet {
                 continue;
             }
 
-            if let Some(our_node) = self.nodes.get_mut(&node.id) {
-                if our_node.update_time < node.update_time {
-                    our_node.parent = node.parent;
-                    our_node.update_time = node.update_time;
-                }
-            } else {
-                self.nodes.insert(node.id, node.clone());
-            }
+            self.update_or_insert(node);
         }
     }
 
@@ -76,20 +74,27 @@ impl ReachSet {
             return; // `other.root` is not in this set
         }
 
+        self.updated_nodes.clear();
+
         for node in other.nodes.values() {
             if node.update_time < time_bound || node.id == self.root.id {
                 continue;
             }
 
-            if let Some(our_node) = self.nodes.get_mut(&node.id) {
-                if our_node.update_time < node.update_time {
-                    our_node.parent = node.parent;
-                    our_node.update_time = node.update_time;
-                }
-            } else {
-                self.nodes.insert(node.id, node.clone());
-            }
+            self.update_or_insert(node);
         }
+    }
+
+    fn update_or_insert(&mut self, node: &Node) {
+        if let Some(our_node) = self.nodes.get_mut(&node.id) {
+            if our_node.update_time < node.update_time {
+                our_node.parent = node.parent;
+                our_node.update_time = node.update_time;
+            }
+        } else {
+            self.nodes.insert(node.id, node.clone());
+        }
+        self.updated_nodes.push(node.id);
     }
 
     pub fn query(&self, id: u64) -> bool {
@@ -102,6 +107,67 @@ impl ReachSet {
 
     pub fn get_update_time(&self) -> u64 {
         self.root.update_time
+    }
+
+    pub fn visit_updated_nodes(&self, mut f: impl FnMut(u64)) {
+        for id in &self.updated_nodes {
+            f(*id);
+        }
+    }
+
+    pub fn query_path(&self, src: u64, path_buf: &mut Vec<u64>) {
+        if !self.query(src) {
+            return;
+        }
+
+        path_buf.clear();
+        let mut cur = src;
+        while cur != self.root.id {
+            let cur_node = self.nodes.get(&cur).expect("tree structer is well maintained");
+            path_buf.push(cur);
+            cur = cur_node.parent;
+        }
+        path_buf.push(self.root.id);
+    }
+
+    pub fn query_path_iter(&self, src: u64) -> PathIter {
+        if let Some(node) = self.nodes.get(&src) {
+            PathIter {
+                reach_set: self,
+                cur_node: Some(node),
+            }
+        } else {
+            PathIter {
+                reach_set: self,
+                cur_node: None,
+            }
+        }
+    }
+}
+
+pub struct PathIter<'a> {
+    reach_set: &'a ReachSet,
+    cur_node: Option<&'a Node>,
+}
+
+impl<'a> Iterator for PathIter<'a> {
+    type Item = u64;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(cur_node) = self.cur_node {
+            let cur_id = cur_node.id;
+
+            if cur_id == self.reach_set.root.id {
+                self.cur_node = None;
+            } else if cur_node.parent == self.reach_set.root.id {
+                self.cur_node = Some(&self.reach_set.root);
+            } else {
+                self.cur_node = self.reach_set.nodes.get(&cur_node.parent);
+            }
+
+            Some(cur_id)
+        } else {
+            None
+        }
     }
 }
 
@@ -254,5 +320,19 @@ mod tests {
 
         t.add_arc(1, 2, 0);
         assert!(t.query(3, 2)); // 3, 1, 2
+    }
+
+    #[test]
+    fn test_query_path_iter() {
+        let mut t = FlowTracer::new(10);
+        t.add_arc(1, 2, 0);
+        t.add_arc(2, 3, 0);
+        
+        let set = t.sets.get(&3).unwrap().borrow();
+        let mut path_iter = set.query_path_iter(1);
+        assert_eq!(path_iter.next(), Some(1));
+        assert_eq!(path_iter.next(), Some(2));
+        assert_eq!(path_iter.next(), Some(3));
+        assert_eq!(path_iter.next(), None);
     }
 }
