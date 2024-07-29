@@ -12,7 +12,7 @@ struct ReachSet {
     nodes: HashMap<u64, Node>,
     root: Node,
 
-    /// the updated node ids of the set since last modified
+    /// the updated node ids of the set since last time update_time is advanced
     updated_nodes: Vec<u64>,
 }
 
@@ -34,8 +34,10 @@ impl ReachSet {
             return;
         }
 
-        self.root.update_time = cur_time;
-        self.updated_nodes.clear();
+        if cur_time > self.root.update_time {
+            self.root.update_time = cur_time;
+            self.updated_nodes.clear();
+        }
 
         self.updated_nodes.push(other.root.id);
         if let Some(other_root) = self.nodes.get_mut(&other.root.id) {
@@ -75,7 +77,7 @@ impl ReachSet {
             return; // `other.root` is not in this set
         }
 
-        self.updated_nodes.clear();
+        // NOTE: No need to clear updated_nodes here as the update_time is not advanced
 
         for node in other.nodes.values() {
             if node.update_time < time_bound || node.id == self.root.id {
@@ -91,11 +93,12 @@ impl ReachSet {
             if our_node.update_time < node.update_time {
                 our_node.parent = node.parent;
                 our_node.update_time = node.update_time;
+                self.updated_nodes.push(node.id);
             }
         } else {
             self.nodes.insert(node.id, node.clone());
+            self.updated_nodes.push(node.id);
         }
-        self.updated_nodes.push(node.id);
     }
 
     pub fn query(&self, id: u64) -> bool {
