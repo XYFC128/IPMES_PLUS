@@ -39,10 +39,12 @@ impl ReachSet {
             self.updated_nodes.clear();
         }
 
-        self.updated_nodes.push(other.root.id);
         if let Some(other_root) = self.nodes.get_mut(&other.root.id) {
-            other_root.parent = self.root.id;
-            other_root.update_time = cur_time;
+            if cur_time > other_root.update_time || other_root.parent != self.root.id {
+                other_root.parent = self.root.id;
+                other_root.update_time = cur_time;
+                self.updated_nodes.push(other.root.id);
+            }
         } else {
             self.nodes.insert(
                 other.root.id,
@@ -52,6 +54,7 @@ impl ReachSet {
                     update_time: cur_time,
                 },
             );
+            self.updated_nodes.push(other.root.id);
         }
 
         if other.get_update_time() < time_bound {
