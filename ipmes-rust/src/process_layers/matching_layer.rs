@@ -1,6 +1,5 @@
 mod default_matcher;
 mod flow_matcher;
-mod flow_tracer;
 mod matcher;
 mod partial_match_event;
 mod transitive_closure;

@@ -8,6 +8,7 @@ mod instance_runner;
 mod instance_storage;
 mod match_instance;
 mod state;
+mod flow_tracer;
 use instance_runner::InstanceRunner;
 use instance_storage::InstanceStorage;
 use log::debug;
