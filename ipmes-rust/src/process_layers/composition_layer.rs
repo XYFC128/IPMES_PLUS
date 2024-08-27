@@ -373,4 +373,31 @@ mod tests {
         verify_event(&match_events[2], (4, 4), (2, 3), &[4]);
         assert!(layer.next().is_none());
     }
+
+    #[test]
+    fn test_flow() {
+        let mut pattern = basic_pattern();
+        pattern.events[1].event_type = PatternEventType::Flow;
+        let window_size = u64::MAX;
+        let decomposition = [SubPattern {
+            id: 0,
+            events: pattern.events.iter().collect(),
+        }];
+
+        let input = [
+            event(0, 0, 1, "e0#v0#v1"),
+            event(1, 1, 2, "e1#v1#vx"),
+            event(2, 2, 3, "e1#vx#vy"),
+            event(3, 3, 4, "e1#vy#v2"),
+            event(4, 4, 5, "e2#v2#v3"),
+        ];
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
+
+        let match_events = layer.next().unwrap().1.match_events;
+        verify_event(&match_events[0], (0, 0), (0, 1), &[0]);
+        verify_event(&match_events[1], (1, 3), (1, 4), &[1, 2, 3]);
+        verify_event(&match_events[2], (4, 4), (4, 5), &[4]);
+        assert!(layer.next().is_none());
+    }
 }
