@@ -7,7 +7,7 @@ use cpu_time::ProcessTime;
 
 use ipmes_rust::pattern::{decompose, Pattern};
 use ipmes_rust::process_layers::{
-    CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
+    CompositionLayer, JoinLayer, ParseLayer, UniquenessLayer,
 };
 
 /// IPMES implemented in rust

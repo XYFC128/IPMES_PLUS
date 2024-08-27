@@ -1,8 +1,5 @@
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
-use std::{
-    borrow::Borrow,
-    cell::{Ref, RefCell},
-};
+use std::cell::{Ref, RefCell};
 
 #[derive(Clone)]
 struct Node<E> {
@@ -273,14 +270,6 @@ where
     pub fn get_update_time(&self, src: u64, dst: u64) -> Option<u64> {
         let dst_set = self.sets.get(&dst)?;
         dst_set.borrow().get_update_time_of(src)
-    }
-
-    pub fn visit_updated_nodes(&self, dst: u64, mut f: impl FnMut(u64)) {
-        if let Some(dst_set) = self.sets.get(&dst) {
-            for node in dst_set.borrow().get_updated_nodes() {
-                f(*node);
-            }
-        }
     }
 
     pub fn visit_path(&self, src: u64, dst: u64, mut f: impl FnMut(E)) {

@@ -2,13 +2,13 @@ use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt};
 use std::borrow::Borrow;
 use std::hash::Hash;
-use std::slice::{Iter, IterMut};
+use std::slice::IterMut;
 
 use super::filter::Filter;
 use super::match_instance::FreqInstance;
 use super::state_table::StateTable;
 use super::{
-    filter::FilterInfo, pattern_info::SharedNodeInfo, MatchInstance, StateData, StateInfo,
+    filter::FilterInfo, pattern_info::SharedNodeInfo, MatchInstance, StateInfo,
 };
 
 pub struct StorageRequest {

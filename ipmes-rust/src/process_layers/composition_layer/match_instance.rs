@@ -3,7 +3,7 @@ use std::fmt::Debug;
 
 use super::pattern_info::SharedNodeInfo;
 use crate::universal_match_event::UniversalMatchEvent;
-use ahash::{HashSet, HashSetExt};
+use std::collections::HashSet;
 use itertools::Itertools;
 
 type InputEntityId = u64;

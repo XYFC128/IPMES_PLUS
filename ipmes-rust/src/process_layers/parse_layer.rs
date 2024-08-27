@@ -4,7 +4,6 @@ use crate::input_event::InputEvent;
 use ::std::rc::Rc;
 use csv::StringRecord;
 use ordered_event::OrderedEvent;
-use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::File;
 
