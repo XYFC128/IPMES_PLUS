@@ -1,0 +1,58 @@
+{
+    "Version": "0.2.0",
+    "UseRegex": true,
+    "Entities": [
+        {
+            "ID": 0,
+            "Signature": "Process::name::.*"
+        },
+        {
+            "ID": 1,
+            "Signature": "File::path::/var/log/.*"
+        },
+        {
+            "ID": 2,
+            "Signature": "Process::name::vim"
+        },
+        {
+            "ID": 3,
+            "Signature": "File::path::/.*/crontabs/root"
+        }
+    ],
+    "Events": [
+        {
+            "ID": 0,
+            "Type": "Flow",
+            "SubjectID": 0,
+            "ObjectID": 1
+        },
+        {
+            "ID": 1,
+            "Signature": "fork",
+            "SubjectID": 0,
+            "ObjectID": 2
+        },
+        {
+            "ID": 2,
+            "Type": "Frequency",
+            "Frequency": 2,
+            "Signature": "read",
+            "SubjectID": 3,
+            "ObjectID": 2,
+            "Parents": [
+                1
+            ]
+        },
+        {
+            "ID": 3,
+            "Type": "Frequency",
+            "Frequency": 2,
+            "Signature": "write",
+            "SubjectID": 2,
+            "ObjectID": 3,
+            "Parents": [
+                1
+            ]
+        }
+    ]
+}
