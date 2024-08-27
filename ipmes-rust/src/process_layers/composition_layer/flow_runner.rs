@@ -80,6 +80,10 @@ impl FlowRunner {
     }
 
     pub fn set_batch(&mut self, batch: &[Rc<InputEvent>], time: u64) {
+        if self.node_regexes.is_empty() {
+            return;
+        }
+
         for event in batch {
             self.update_node_match(event.subject_id, event.get_subject_signature());
             self.update_node_match(event.object_id, event.get_object_signature());
