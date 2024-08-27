@@ -1,10 +1,3 @@
-use std::rc::Rc;
-
-use crate::{
-    input_event::InputEvent,
-    pattern::{PatternEventType, SubPattern},
-};
-
 mod entity_encode;
 mod filter;
 mod flow_runner;
@@ -16,6 +9,8 @@ mod pattern_info;
 mod state;
 mod state_table;
 
+use crate::input_event::InputEvent;
+use crate::pattern::{PatternEventType, SubPattern};
 use ahash::HashMap;
 use flow_runner::FlowRunner;
 use instance_runner::InstanceRunner;
@@ -26,6 +21,7 @@ use pattern_info::{FlowPattern, FreqPattern, PatternInfo, SinglePattern};
 use regex::Error as RegexError;
 use state::*;
 use state_table::StateTable;
+use std::rc::Rc;
 
 pub struct CompositionLayer<'p, P> {
     prev_layer: P,
