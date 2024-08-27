@@ -85,10 +85,18 @@ impl FlowRunner {
             self.update_node_match(event.object_id, event.get_object_signature());
         }
 
-        let iter = batch
-            .iter()
-            .map(|event| (event.subject_id, event.object_id, event.event_id));
-        self.modified = self.flow_tracer.add_batch(iter, time);
+        if batch.len() == 1 {
+            let event = &batch[0];
+            self.flow_tracer.add_arc(event.subject_id, event.object_id, time, event.event_id);
+            self.modified.clear();
+            self.modified.insert(event.object_id);
+        } else {
+            let iter = batch
+                .iter()
+                .map(|event| (event.subject_id, event.object_id, event.event_id));
+            self.modified = self.flow_tracer.add_batch(iter, time);
+        }
+
         self.cur_time = time;
     }
 
