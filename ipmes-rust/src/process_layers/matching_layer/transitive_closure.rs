@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap};
 
 /// Transitive closure **T** of a directed graph **G** shares the same vertices as **G** but as
 /// an arc from **u** to **v** if and only if there is a path from **u** to **v** in **G**. This
@@ -50,7 +50,6 @@ struct NodeData {
     children: Vec<Rc<RefCell<NodeData>>>,
 }
 
-
 struct Index {
     index: HashMap<(u64, u64), Rc<RefCell<NodeData>>>,
 }
@@ -58,7 +57,7 @@ struct Index {
 impl Index {
     pub fn new() -> Self {
         Self {
-            index: HashMap::new()
+            index: HashMap::new(),
         }
     }
 
@@ -68,7 +67,7 @@ impl Index {
             Rc::new(RefCell::new(NodeData {
                 id,
                 children: Vec::new(),
-            }))
+            })),
         );
     }
 

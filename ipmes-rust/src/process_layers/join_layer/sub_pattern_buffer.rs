@@ -1,10 +1,10 @@
 use super::sub_pattern_match::EarliestFirst;
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
+use crate::pattern::SubPattern;
 use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
     FirstToSecond, SecondToFirst,
 };
-use crate::sub_pattern::SubPattern;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};

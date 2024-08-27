@@ -5,11 +5,10 @@ use log::{info, warn};
 
 use cpu_time::ProcessTime;
 
-use ipmes_rust::pattern::Pattern;
+use ipmes_rust::pattern::{decompose, Pattern};
 use ipmes_rust::process_layers::{
     CompositionLayer, JoinLayer, MatchingLayer, ParseLayer, UniquenessLayer,
 };
-use ipmes_rust::sub_pattern::decompose;
 
 /// IPMES implemented in rust
 #[derive(Parser, Debug)]
@@ -43,9 +42,8 @@ fn main() {
         .from_path(args.data_graph)
         .expect("Failed to open input graph");
     let parse_layer = ParseLayer::new(csv_reader);
-    let matching_layer =
-        MatchingLayer::new(parse_layer, &pattern, &decomposition, window_size).unwrap();
-    let composition_layer = CompositionLayer::new(matching_layer, &decomposition, window_size);
+    let composition_layer =
+        CompositionLayer::new(parse_layer, &decomposition, window_size, pattern.use_regex).unwrap();
     let join_layer = JoinLayer::new(composition_layer, &pattern, &decomposition, window_size);
     let uniqueness_layer = UniquenessLayer::new(join_layer, window_size);
 

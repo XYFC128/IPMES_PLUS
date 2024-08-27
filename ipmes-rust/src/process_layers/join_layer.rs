@@ -3,8 +3,8 @@ mod sub_pattern_match;
 
 use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
+use crate::pattern::SubPattern;
 use crate::pattern_match::PatternMatch;
-use crate::sub_pattern::SubPattern;
 use log::debug;
 use std::collections::{BinaryHeap, HashMap};
 pub use sub_pattern_buffer::SubPatternBuffer;
@@ -334,7 +334,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sub_pattern::decompose;
+    use crate::pattern::decompose;
     #[test]
     fn test_generate_sub_pattern_buffers() {
         let pattern = Pattern::parse("../data/universal_patterns/SP8_regex.json")

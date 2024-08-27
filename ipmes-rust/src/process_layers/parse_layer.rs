@@ -1,9 +1,9 @@
 mod ordered_event;
 
-use ordered_event::OrderedEvent;
 use crate::input_event::InputEvent;
 use ::std::rc::Rc;
 use csv::StringRecord;
+use ordered_event::OrderedEvent;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::File;
@@ -111,7 +111,7 @@ impl ParseLayer {
         }
     }
 
-    fn get_batch(&mut self) -> Option<Vec<Rc<InputEvent>>> {
+    fn get_batch(&mut self) -> Option<Box<[Rc<InputEvent>]>> {
         let mut edges_to_flush: Vec<Rc<InputEvent>> = Vec::new();
         loop {
             match self.buffer.peek() {
@@ -125,7 +125,7 @@ impl ParseLayer {
         }
 
         if !edges_to_flush.is_empty() {
-            Some(edges_to_flush)
+            Some(edges_to_flush.into_boxed_slice())
         } else {
             None
         }
@@ -133,7 +133,7 @@ impl ParseLayer {
 }
 
 impl Iterator for ParseLayer {
-    type Item = Vec<Rc<InputEvent>>;
+    type Item = Box<[Rc<InputEvent>]>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.nothing_to_send() {
@@ -146,8 +146,10 @@ impl Iterator for ParseLayer {
                     }
                     Some(RecordParseResult::Dual(input1, input2)) => {
                         self.boundary_time = input1.timestamp;
-                        self.buffer.push(OrderedEvent::new(input1, self.event_count));
-                        self.buffer.push(OrderedEvent::new(input2, self.event_count + 1));
+                        self.buffer
+                            .push(OrderedEvent::new(input1, self.event_count));
+                        self.buffer
+                            .push(OrderedEvent::new(input2, self.event_count + 1));
                         self.event_count += 2;
                     }
                     None => {}

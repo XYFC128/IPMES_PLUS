@@ -7,10 +7,7 @@ pub struct OrderedEvent {
 
 impl OrderedEvent {
     pub fn new(event: InputEvent, order: u32) -> Self {
-        Self {
-            event,
-            order
-        }
+        Self { event, order }
     }
 }
 

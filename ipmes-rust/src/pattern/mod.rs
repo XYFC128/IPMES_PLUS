@@ -1,11 +1,14 @@
+mod decomposed_pattern;
 pub mod order_relation;
 pub mod parser;
+pub mod sub_pattern;
 
 use self::parser::parse_json;
 pub use self::parser::PatternParsingError;
 use order_relation::OrderRelation;
 use serde_json::Value;
 use std::{fs::File, io::Read};
+pub use sub_pattern::{decompose, SubPattern};
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct PatternEntity {

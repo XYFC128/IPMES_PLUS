@@ -1,68 +1,177 @@
-use crate::sub_pattern::SubPattern;
+use std::rc::Rc;
 
-use super::matching_layer::PartialMatchEvent;
+use crate::{
+    input_event::InputEvent,
+    pattern::{PatternEventType, SubPattern},
+};
 
 mod entity_encode;
 mod filter;
+mod flow_runner;
+mod flow_tracer;
 mod instance_runner;
 mod instance_storage;
 mod match_instance;
+mod pattern_info;
 mod state;
-mod flow_tracer;
+mod state_table;
+
+use ahash::HashMap;
+use flow_runner::FlowRunner;
 use instance_runner::InstanceRunner;
 use instance_storage::InstanceStorage;
 use log::debug;
 pub use match_instance::MatchInstance;
+use pattern_info::{FlowPattern, FreqPattern, PatternInfo, SinglePattern};
+use regex::Error as RegexError;
 use state::*;
+use state_table::StateTable;
 
 pub struct CompositionLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
-    runner: InstanceRunner<'p>,
+    cur_time: u64,
+    pattern_infos: Vec<PatternInfo<'p>>,
     storage: InstanceStorage<'p>,
+    runner: InstanceRunner,
+    flow_runner: FlowRunner,
+    state_table: StateTable,
 }
 
 impl<'p, P> CompositionLayer<'p, P> {
-    pub fn new(prev_layer: P, decomposition: &[SubPattern<'p>], window_size: u64) -> Self {
-        let runner = InstanceRunner::new(decomposition);
-        let storage = InstanceStorage::init_from_state_table(&runner.state_table);
-        Self {
+    pub fn new(
+        prev_layer: P,
+        decomposition: &[SubPattern<'p>],
+        window_size: u64,
+        use_regex: bool,
+    ) -> Result<Self, RegexError> {
+        let state_table = StateTable::new(decomposition);
+        let storage = InstanceStorage::init_from_state_table(&state_table);
+        let runner = InstanceRunner::new(decomposition, window_size, use_regex)?;
+        let (flow_runner, sig_indices) = FlowRunner::new(decomposition, window_size, use_regex)?;
+        let pattern_infos = Self::build_pattern_infos(decomposition, &sig_indices, &state_table);
+
+        Ok(Self {
             prev_layer,
             window_size,
-            runner,
+            cur_time: 0,
+            pattern_infos,
             storage,
-        }
+            runner,
+            flow_runner,
+            state_table,
+        })
     }
 
-    pub fn accept_match_event(&mut self, match_event: PartialMatchEvent<'p>) {
-        let callback = |instance: &mut MatchInstance<'p>| {
-            self.runner.run(instance, &match_event);
+    /// build pattern_infos
+    ///
+    /// Arguments:
+    /// - `decomposition`: the decomposition of the pattern
+    /// - `sig_indices`: maps the entity id to the signature index in the `FlowRunner`
+    /// - `state_table`: state table
+    pub fn build_pattern_infos(
+        decomposition: &[SubPattern<'p>],
+        sig_indices: &HashMap<usize, usize>,
+        state_table: &StateTable,
+    ) -> Vec<PatternInfo<'p>> {
+        let mut match_idx = 0usize;
+        let mut signature_idx = 0usize;
+        let mut pattern_infos = vec![];
+        for sub_pattern in decomposition {
+            for pattern in &sub_pattern.events {
+                use PatternEventType::*;
+                let shared_node_info = state_table.get_shared_node_info(match_idx);
+                let info: PatternInfo = match pattern.event_type {
+                    Default => SinglePattern {
+                        pattern,
+                        match_idx,
+                        shared_node_info,
+                        signature_idx,
+                    }
+                    .into(),
+
+                    Frequency(frequency) => FreqPattern {
+                        pattern,
+                        match_idx,
+                        shared_node_info,
+                        signature_idx,
+                        frequency,
+                    }
+                    .into(),
+
+                    Flow => {
+                        let src_sig_idx = *sig_indices.get(&pattern.subject.id).unwrap();
+                        let dst_sig_idx = *sig_indices.get(&pattern.object.id).unwrap();
+                        FlowPattern {
+                            pattern,
+                            match_idx,
+                            shared_node_info,
+                            src_sig_idx,
+                            dst_sig_idx,
+                        }
+                        .into()
+                    }
+                };
+                pattern_infos.push(info);
+                match_idx += 1;
+                if !matches!(pattern.event_type, Flow) {
+                    signature_idx += 1;
+                }
+            }
+        }
+        pattern_infos
+    }
+
+    pub fn add_batch(&mut self, batch: &[Rc<InputEvent>]) {
+        let time = if let Some(first) = batch.first() {
+            first.timestamp
+        } else {
+            return;
         };
 
-        let window_bound = match_event.start_time.saturating_sub(self.window_size);
+        self.cur_time = time;
+        self.runner.set_batch(batch, time);
+        self.flow_runner.set_batch(batch, time);
 
-        self.storage.query(&match_event, window_bound, callback);
+        // TODO: Consider active windowing
+    }
 
-        self.runner.store_new_instances(&mut self.storage);
+    pub fn advance(&mut self) {
+        for info in &self.pattern_infos {
+            match info {
+                PatternInfo::Single(info) => {
+                    self.runner.run(info, &mut self.storage, &self.state_table)
+                }
+                PatternInfo::Freq(info) => {
+                    self.runner
+                        .run_freq(info, &mut self.storage, &self.state_table)
+                }
+                PatternInfo::Flow(info) => {
+                    self.flow_runner
+                        .run(info, &mut self.storage, &self.state_table)
+                }
+            }
+        }
     }
 }
 
 impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
-    P: Iterator<Item = PartialMatchEvent<'p>>,
+    P: Iterator<Item = Box<[Rc<InputEvent>]>>,
 {
     type Item = (u32, MatchInstance<'p>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.runner.output_buffer.is_empty() {
-            let match_event = self.prev_layer.next()?;
-            self.accept_match_event(match_event);
+        while self.storage.output_instances.is_empty() {
+            let batch = self.prev_layer.next()?;
+            self.add_batch(&batch);
+            self.advance();
         }
 
-        if let Some(output) = self.runner.output_buffer.last() {
+        if let Some(output) = self.storage.output_instances.last() {
             debug!("output: ({:?})", output);
         }
-        self.runner.output_buffer.pop()
+        self.storage.output_instances.pop()
     }
 }
 
@@ -74,7 +183,6 @@ mod tests {
     use super::*;
     use crate::input_event::InputEvent;
     use crate::pattern::{Pattern, PatternEventType};
-    use crate::process_layers::MatchingLayer;
     use crate::universal_match_event::UniversalMatchEvent;
 
     /// Creates a pattern consists of 3 event and 4 entities. They form a path from v0 to v3.
@@ -98,11 +206,12 @@ mod tests {
     /// - `sub_id`: the id of the subject
     /// - `obj_id`: the id of the object
     /// - `sig`: signature of the event, the subject and the object separated by '#'
-    fn event(eid: u64, sub_id: u64, obj_id: u64, sig: &str) -> Vec<Rc<InputEvent>> {
+    fn event(eid: u64, sub_id: u64, obj_id: u64, sig: &str) -> Box<[Rc<InputEvent>]> {
         let sigs: Vec<&str> = sig.split('#').collect();
         vec![Rc::new(InputEvent::new(
             eid, eid, sigs[0], sub_id, sigs[1], obj_id, sigs[2],
         ))]
+        .into_boxed_slice()
     }
 
     fn verify_instance(
@@ -146,9 +255,8 @@ mod tests {
             event(1, 1, 2, "e1#v1#v2"),
             event(2, 2, 3, "e2#v2#v3"),
         ];
-        let match_layer =
-            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
-        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
 
         verify_instance(
             layer.next(),
@@ -176,9 +284,8 @@ mod tests {
             event(0, 0, 1, "e0#v0#v1"),
             event(1, 1, 2, "e1#v1#v2"), // matches pattern event 1 & 2
         ];
-        let match_layer =
-            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
-        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
 
         assert!(layer.next().is_none());
     }
@@ -201,9 +308,8 @@ mod tests {
             event(1, 1, 2, "e1#v1#v3"),
             event(2, 1, 2, "e2#v1#v3"), // input entity 2 duplicates
         ];
-        let match_layer =
-            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
-        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
 
         assert!(layer.next().is_none());
     }
@@ -222,9 +328,8 @@ mod tests {
             event(1, 1, 2, "e1#v1#v2"),
             event(4, 2, 3, "e2#v2#v3"),
         ];
-        let match_layer =
-            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
-        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
 
         assert!(layer.next().is_none());
     }
@@ -259,9 +364,8 @@ mod tests {
             event(3, 1, 2, "e1#v1#v2"),
             event(4, 2, 3, "e2#v2#v3"),
         ];
-        let match_layer =
-            MatchingLayer::new(input.into_iter(), &pattern, &decomposition, window_size).unwrap();
-        let mut layer = CompositionLayer::new(match_layer, &decomposition, window_size);
+        let mut layer =
+            CompositionLayer::new(input.into_iter(), &decomposition, window_size, false).unwrap();
 
         let match_events = layer.next().unwrap().1.match_events;
         verify_event(&match_events[0], (0, 0), (0, 1), &[0]);

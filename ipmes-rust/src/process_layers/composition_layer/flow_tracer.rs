@@ -1,5 +1,8 @@
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
+use std::{
+    borrow::Borrow,
+    cell::{Ref, RefCell},
+};
 
 #[derive(Clone)]
 struct Node<E> {
@@ -9,7 +12,7 @@ struct Node<E> {
     edge_data: E,
 }
 
-struct ReachSet<E> {
+pub struct ReachSet<E> {
     nodes: HashMap<u64, Node<E>>,
     root_id: u64,
     update_time: u64,
@@ -119,10 +122,16 @@ where
         self.update_time
     }
 
-    pub fn visit_updated_nodes(&self, mut f: impl FnMut(u64)) {
-        for id in &self.updated_nodes {
-            f(*id);
+    pub fn get_update_time_of(&self, src: u64) -> Option<u64> {
+        if src == self.root_id {
+            Some(self.update_time)
+        } else {
+            self.nodes.get(&src).map(|node| node.update_time)
         }
+    }
+
+    pub fn get_updated_nodes(&self) -> &[u64] {
+        &self.updated_nodes
     }
 
     pub fn query_path(&self, src: u64) -> PathIter<E> {
@@ -167,6 +176,8 @@ where
     }
 }
 
+/// Incrementally trace the flow. [`E`] is the type of the data associated with the arcs in the
+/// graph.
 pub struct FlowTracer<E> {
     sets: HashMap<u64, RefCell<ReachSet<E>>>,
     window_size: u64,
@@ -201,7 +212,11 @@ where
         );
     }
 
-    pub fn add_batch(&mut self, batch: impl IntoIterator<Item = (u64, u64, E)>, time: u64) {
+    pub fn add_batch(
+        &mut self,
+        batch: impl IntoIterator<Item = (u64, u64, E)>,
+        time: u64,
+    ) -> HashSet<u64> {
         let mut modified = HashSet::new();
         let time_bound = time.saturating_sub(self.window_size);
         for (src, dst, edge_data) in batch {
@@ -231,6 +246,8 @@ where
                 }
             }
         }
+
+        modified
     }
 
     fn make_sure_exist(&mut self, id: u64, time: u64) {
@@ -248,6 +265,31 @@ where
             false
         }
     }
+
+    pub fn get_reachset(&self, id: u64) -> Option<Ref<'_, ReachSet<E>>> {
+        self.sets.get(&id).map(|set| set.borrow())
+    }
+
+    pub fn get_update_time(&self, src: u64, dst: u64) -> Option<u64> {
+        let dst_set = self.sets.get(&dst)?;
+        dst_set.borrow().get_update_time_of(src)
+    }
+
+    pub fn visit_updated_nodes(&self, dst: u64, mut f: impl FnMut(u64)) {
+        if let Some(dst_set) = self.sets.get(&dst) {
+            for node in dst_set.borrow().get_updated_nodes() {
+                f(*node);
+            }
+        }
+    }
+
+    pub fn visit_path(&self, src: u64, dst: u64, mut f: impl FnMut(E)) {
+        if let Some(dst_set) = self.sets.get(&dst) {
+            for edge_data in dst_set.borrow().query_path(src) {
+                f(edge_data.clone());
+            }
+        }
+    }
 }
 
 /// A wrapper for [FlowTracer] ignoring the associated edge data
@@ -263,12 +305,12 @@ impl NodeFlowTracer {
     }
 
     pub fn add_arc(&mut self, src: u64, dst: u64, time: u64) {
-        self.tracer.add_arc(src, dst, time, ())
+        self.tracer.add_arc(src, dst, time, ());
     }
 
     pub fn add_batch(&mut self, batch: impl IntoIterator<Item = (u64, u64)>, time: u64) {
         let iter = batch.into_iter().map(|(u, v)| (u, v, ()));
-        self.tracer.add_batch(iter, time)
+        self.tracer.add_batch(iter, time);
     }
 
     pub fn query(&self, src: u64, dst: u64) -> bool {
