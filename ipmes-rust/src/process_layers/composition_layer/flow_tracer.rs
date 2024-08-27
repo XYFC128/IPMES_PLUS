@@ -80,6 +80,8 @@ where
 
             self.update_or_insert(node);
         }
+
+        self.del_outdated(time_bound);
     }
 
     /// Add new elements of `other` into this set. The root node `u` of `other` must already in 
@@ -164,6 +166,14 @@ where
                 cur_node: None,
             }
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+
+    pub fn del_outdated(&mut self, time_bound: u64) {
+        self.nodes.retain(|_, nd| nd.update_time >= time_bound);
     }
 }
 
@@ -305,6 +315,13 @@ where
                 f(edge_data.clone());
             }
         }
+    }
+
+    pub fn del_outdated(&mut self, time_bound: u64) {
+        self.sets.retain(|_, set| {
+            set.borrow_mut().del_outdated(time_bound);
+            set.borrow().is_empty()
+        });
     }
 }
 

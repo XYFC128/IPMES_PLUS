@@ -30,6 +30,8 @@ pub struct FlowRunner {
 
     /// the time of the latest batch
     cur_time: u64,
+
+    cur_window_id: u64,
 }
 
 impl FlowRunner {
@@ -74,6 +76,7 @@ impl FlowRunner {
                 node_match_results: HashMap::new(),
                 window_size,
                 cur_time: 0,
+                cur_window_id: 0,
             },
             sig_indices,
         ))
@@ -102,6 +105,11 @@ impl FlowRunner {
         }
 
         self.cur_time = time;
+        let window_id = time / self.window_size;
+        if window_id > self.cur_window_id {
+            self.cur_window_id = window_id;
+            self.flow_tracer.del_outdated(time.saturating_sub(self.window_size));
+        }
     }
 
     fn update_node_match(&mut self, node_id: u64, signature: &str) {
