@@ -9,6 +9,8 @@ struct Node<E> {
     edge_data: E,
 }
 
+/// It maintains the nodes that can reach `v` for some node `v` in the graph. `E` is the type of 
+/// associated data on the arcs. 
 pub struct ReachSet<E> {
     nodes: HashMap<u64, Node<E>>,
     root_id: u64,
@@ -31,6 +33,13 @@ where
         }
     }
 
+    /// The root node `u` of `other` can connect to the root node `v` of this set. This operation
+    /// correspond to set union operation. Given that `u` can reach `v`, all nodes that can reach
+    /// `u` can reach `v` too, thus union the ReachSet of `u` to `v`.
+    ///
+    /// The union operation will ignore the nodes in `other` that are updated before `timebound`.
+    ///
+    /// The `edge_data` is the data associated with the arc `u -> v`.
     pub fn connect_from(&mut self, other: &Self, cur_time: u64, time_bound: u64, edge_data: E) {
         if other.root_id == self.root_id {
             return;
@@ -73,6 +82,8 @@ where
         }
     }
 
+    /// Add new elements of `other` into this set. The root node `u` of `other` must already in 
+    /// this set, and the update time of `other` must not be newer than that of `u` in this set.
     pub fn apply_new_changes(&mut self, other: &Self, time_bound: u64) {
         if let Some(other_root) = self.nodes.get(&other.root_id) {
             if other_root.update_time != other.update_time {
@@ -107,18 +118,23 @@ where
         }
     }
 
+    /// Returns `true` if some node of `id` can reach the root node of this set.
     pub fn query(&self, id: u64) -> bool {
         id == self.root_id || self.nodes.contains_key(&id)
     }
 
+    /// Returns the root node's id
     pub fn get_id(&self) -> u64 {
         self.root_id
     }
 
+    /// Returns the update time of this set.
     pub fn get_update_time(&self) -> u64 {
         self.update_time
     }
 
+    /// Returns the update time of the node `src` in this set.
+    /// Returns `None` if `src` is not in this set.
     pub fn get_update_time_of(&self, src: u64) -> Option<u64> {
         if src == self.root_id {
             Some(self.update_time)
@@ -127,10 +143,15 @@ where
         }
     }
 
+    /// Returns the node that are updated since last update of update time.
     pub fn get_updated_nodes(&self) -> &[u64] {
         &self.updated_nodes
     }
 
+    /// Get the path from `src` to the root node of this set.
+    ///
+    /// Returns an iterator of the edge_data associated to the arcs along the path from `u` to the
+    /// root of this set. If no path is found, the iterator will yeild nothing.
     pub fn query_path(&self, src: u64) -> PathIter<E> {
         if let Some(node) = self.nodes.get(&src) {
             PathIter {
@@ -175,6 +196,9 @@ where
 
 /// Incrementally trace the flow. [`E`] is the type of the data associated with the arcs in the
 /// graph.
+///
+/// The flow is a path on a directed graph where the timestamp of each arc on the path is newer
+/// than that of its previous arc.
 pub struct FlowTracer<E> {
     sets: HashMap<u64, RefCell<ReachSet<E>>>,
     window_size: u64,
@@ -191,6 +215,7 @@ where
         }
     }
 
+    /// add an arc connecting two nodes.
     pub fn add_arc(&mut self, src: u64, dst: u64, time: u64, edge_data: E) {
         if src == dst {
             return;
@@ -209,6 +234,7 @@ where
         );
     }
 
+    /// add multiple arcs with the same timestamp, indicating those arcs are added simultaneously.
     pub fn add_batch(
         &mut self,
         batch: impl IntoIterator<Item = (u64, u64, E)>,
@@ -253,6 +279,7 @@ where
             .or_insert(RefCell::new(ReachSet::new(id, time)));
     }
 
+    /// Returns `true` if there is a flow from `src` to `dst` in the graph.
     pub fn query(&self, src: u64, dst: u64) -> bool {
         if src == dst {
             true
