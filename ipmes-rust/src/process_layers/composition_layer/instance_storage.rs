@@ -1,15 +1,14 @@
+use super::filter::Filter;
+use super::filter::FilterInfo;
+use super::match_instance::{FreqInstance, MatchInstance};
+use super::pattern_info::SharedNodeInfo;
+use super::state::StateInfo;
+use super::state_table::StateTable;
 use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt};
 use std::borrow::Borrow;
 use std::hash::Hash;
 use std::slice::IterMut;
-
-use super::filter::Filter;
-use super::match_instance::FreqInstance;
-use super::state_table::StateTable;
-use super::{
-    filter::FilterInfo, pattern_info::SharedNodeInfo, MatchInstance, StateInfo,
-};
 
 pub struct StorageRequest {
     pub match_idx: usize,

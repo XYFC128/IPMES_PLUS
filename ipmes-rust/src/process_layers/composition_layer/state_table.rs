@@ -1,12 +1,11 @@
-use std::slice::Iter;
-
+use super::entity_encode::EntityEncode;
 use super::filter::FilterInfo;
 use super::pattern_info::SharedNodeInfo;
 use super::StateInfo;
 use crate::pattern::{PatternEventType, SubPattern};
-use crate::process_layers::composition_layer::entity_encode::EntityEncode;
 use ahash::{HashMap, HashMapExt};
 use log::debug;
+use std::slice::Iter;
 
 pub struct StateTable {
     pub table: Vec<(StateInfo, FilterInfo)>,

@@ -1,10 +1,10 @@
 use super::instance_storage::StorageRequest;
+use super::match_instance::FreqInstance;
 use super::pattern_info::{FreqPattern, SharedNodeInfo, SinglePattern};
 use super::state_table::StateTable;
 use super::{InstanceStorage, MatchInstance};
 use crate::input_event::InputEvent;
 use crate::pattern::{PatternEvent, PatternEventType, SubPattern};
-use crate::process_layers::composition_layer::match_instance::FreqInstance;
 use crate::universal_match_event::UniversalMatchEvent;
 use regex::{Error, RegexSet, SetMatches};
 use std::rc::Rc;

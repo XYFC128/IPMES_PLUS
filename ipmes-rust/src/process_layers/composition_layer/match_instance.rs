@@ -1,10 +1,9 @@
-use std::cmp::min;
-use std::fmt::Debug;
-
 use super::pattern_info::SharedNodeInfo;
 use crate::universal_match_event::UniversalMatchEvent;
-use std::collections::HashSet;
 use itertools::Itertools;
+use std::cmp::min;
+use std::collections::HashSet;
+use std::fmt::Debug;
 
 type InputEntityId = u64;
 type PatternEntityId = u64;

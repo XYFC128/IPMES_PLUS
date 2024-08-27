@@ -1,6 +1,5 @@
-use crate::pattern::PatternEvent;
-
 use super::filter::FilterInfo;
+use crate::pattern::PatternEvent;
 
 #[derive(Debug, Clone, Copy)]
 pub enum SharedNodeInfo {
