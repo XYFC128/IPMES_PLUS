@@ -108,7 +108,9 @@ impl FlowRunner {
         let window_id = time / self.window_size;
         if window_id > self.cur_window_id {
             self.cur_window_id = window_id;
-            self.flow_tracer.del_outdated(time.saturating_sub(self.window_size));
+            let window_bound = time.saturating_sub(self.window_size);
+            self.flow_tracer.del_outdated(window_bound);
+            self.node_match_results.retain(|_, r| r.update_time >= window_bound);
         }
     }
 

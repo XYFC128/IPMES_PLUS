@@ -80,8 +80,6 @@ where
 
             self.update_or_insert(node);
         }
-
-        self.del_outdated(time_bound);
     }
 
     /// Add new elements of `other` into this set. The root node `u` of `other` must already in 
@@ -98,11 +96,11 @@ where
 
         // NOTE: No need to clear updated_nodes here as the update_time is not advanced
 
-        for node in other.nodes.values() {
-            if node.update_time < time_bound || node.id == self.root_id {
+        for node_id in &other.updated_nodes {
+            if *node_id == self.root_id {
                 continue;
             }
-
+            let node = other.nodes.get(node_id).unwrap();
             self.update_or_insert(node);
         }
     }
@@ -320,7 +318,7 @@ where
     pub fn del_outdated(&mut self, time_bound: u64) {
         self.sets.retain(|_, set| {
             set.borrow_mut().del_outdated(time_bound);
-            set.borrow().is_empty()
+            !set.borrow().is_empty()
         });
     }
 }
