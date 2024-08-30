@@ -1,7 +1,7 @@
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
 use std::{
     cell::{Ref, RefCell},
-    collections::hash_map::{Entry, VacantEntry},
+    collections::hash_map::Entry,
 };
 
 #[derive(Clone)]
@@ -87,7 +87,7 @@ where
 
     /// Add new elements of `other` into this set. The root node `u` of `other` must already in
     /// this set, and the update time of `other` must not be newer than that of `u` in this set.
-    pub fn apply_new_changes(&mut self, other: &Self, time_bound: u64) {
+    pub fn apply_new_changes(&mut self, other: &Self) {
         if let Some(other_root) = self.nodes.get(&other.root_id) {
             if other_root.update_time != other.update_time {
                 // the new changes is to late to be applied
@@ -304,7 +304,7 @@ where
                 let set = self.sets.get(m).unwrap();
                 if set.borrow().query(dst) {
                     set.borrow_mut()
-                        .apply_new_changes(&dst_set.borrow(), time_bound);
+                        .apply_new_changes(&dst_set.borrow());
                 }
             }
         }
