@@ -1,5 +1,8 @@
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
-use std::cell::{Ref, RefCell};
+use std::{
+    cell::{Ref, RefCell},
+    collections::hash_map::{Entry, VacantEntry},
+};
 
 #[derive(Clone)]
 struct Node<E> {
@@ -9,8 +12,8 @@ struct Node<E> {
     edge_data: E,
 }
 
-/// It maintains the nodes that can reach `v` for some node `v` in the graph. `E` is the type of 
-/// associated data on the arcs. 
+/// It maintains the nodes that can reach `v` for some node `v` in the graph. `E` is the type of
+/// associated data on the arcs.
 pub struct ReachSet<E> {
     nodes: HashMap<u64, Node<E>>,
     root_id: u64,
@@ -82,7 +85,7 @@ where
         }
     }
 
-    /// Add new elements of `other` into this set. The root node `u` of `other` must already in 
+    /// Add new elements of `other` into this set. The root node `u` of `other` must already in
     /// this set, and the update time of `other` must not be newer than that of `u` in this set.
     pub fn apply_new_changes(&mut self, other: &Self, time_bound: u64) {
         if let Some(other_root) = self.nodes.get(&other.root_id) {
@@ -203,7 +206,8 @@ where
 }
 
 /// Incrementally trace the flow. [`E`] is the type of the data associated with the arcs in the
-/// graph.
+/// graph. The current implementation requires `E` to be cheaply cloneable. If `E` doesn't meet
+/// the requirement, wrap it with `Rc` or `Arc`.
 ///
 /// The flow is a path on a directed graph where the timestamp of each arc on the path is newer
 /// than that of its previous arc.
@@ -224,12 +228,25 @@ where
     }
 
     /// add an arc connecting two nodes.
-    pub fn add_arc(&mut self, src: u64, dst: u64, time: u64, edge_data: E) {
+    ///
+    /// Parameters:
+    /// - `src`: the source node id
+    /// - `dst`: the destination node id
+    /// - `time`: the timestamp of the arc
+    /// - `edge_data`: the data associated with the arc
+    /// - `is_orphan`: whether the source node is orphan. An orphan is a node that doesn't match
+    ///   any signature.
+    pub fn add_arc(&mut self, src: u64, dst: u64, time: u64, edge_data: E, is_orphan: bool) {
         if src == dst {
             return;
         }
 
-        self.make_sure_exist(src, time);
+        if let Entry::Vacant(entry) = self.sets.entry(src) {
+            if is_orphan {
+                return;
+            }
+            entry.insert(RefCell::new(ReachSet::new(src, time)));
+        }
         self.make_sure_exist(dst, time);
 
         let src_set = self.sets.get(&src).unwrap();
@@ -243,10 +260,17 @@ where
     }
 
     /// add multiple arcs with the same timestamp, indicating those arcs are added simultaneously.
+    ///
+    /// Parameters:
+    /// - `batch`: an iterator yeilds `(src_id, dst_id, edge_data)`
+    /// - `time`: current time, all arcs in the batch has this timestamp
+    /// - `is_orphan`: a function returns whether the given node is orphan. An orphan is a node
+    ///   that doesn't match any signature and not reachable by any arc in this batch.
     pub fn add_batch(
         &mut self,
         batch: impl IntoIterator<Item = (u64, u64, E)>,
         time: u64,
+        is_orphan: impl Fn(u64) -> bool,
     ) -> HashSet<u64> {
         let mut modified = HashSet::new();
         let time_bound = time.saturating_sub(self.window_size);
@@ -254,7 +278,14 @@ where
             if src == dst {
                 continue;
             }
-            self.make_sure_exist(src, time);
+
+            if let Entry::Vacant(entry) = self.sets.entry(src) {
+                if is_orphan(src) {
+                    continue;
+                }
+                entry.insert(RefCell::new(ReachSet::new(src, time)));
+            }
+
             self.make_sure_exist(dst, time);
 
             let src_set = self.sets.get(&src).unwrap();
@@ -336,12 +367,12 @@ impl NodeFlowTracer {
     }
 
     pub fn add_arc(&mut self, src: u64, dst: u64, time: u64) {
-        self.tracer.add_arc(src, dst, time, ());
+        self.tracer.add_arc(src, dst, time, (), false);
     }
 
     pub fn add_batch(&mut self, batch: impl IntoIterator<Item = (u64, u64)>, time: u64) {
         let iter = batch.into_iter().map(|(u, v)| (u, v, ()));
-        self.tracer.add_batch(iter, time);
+        self.tracer.add_batch(iter, time, |_| false);
     }
 
     pub fn query(&self, src: u64, dst: u64) -> bool {
@@ -427,8 +458,8 @@ mod tests {
     #[test]
     fn test_query_path_iter() {
         let mut t = FlowTracer::new(10);
-        t.add_arc(1, 2, 0, "1 -> 2");
-        t.add_arc(2, 3, 0, "2 -> 3");
+        t.add_arc(1, 2, 0, "1 -> 2", false);
+        t.add_arc(2, 3, 0, "2 -> 3", false);
 
         let set = t.sets.get(&3).unwrap().borrow();
         let mut path_iter = set.query_path(1);

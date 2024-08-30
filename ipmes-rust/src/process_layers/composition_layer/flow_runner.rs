@@ -94,14 +94,17 @@ impl FlowRunner {
 
         if batch.len() == 1 {
             let event = &batch[0];
-            self.flow_tracer.add_arc(event.subject_id, event.object_id, time, event.event_id);
+            let is_orphan = !self.node_matched_any(event.subject_id);
+            self.flow_tracer.add_arc(event.subject_id, event.object_id, time, event.event_id, is_orphan);
             self.modified.clear();
             self.modified.insert(event.object_id);
         } else {
+            let orphans = self.build_orphan_set(batch);
+            let is_orphan = |id| orphans.contains(&id);
             let iter = batch
                 .iter()
                 .map(|event| (event.subject_id, event.object_id, event.event_id));
-            self.modified = self.flow_tracer.add_batch(iter, time);
+            self.modified = self.flow_tracer.add_batch(iter, time, is_orphan);
         }
 
         self.cur_time = time;
@@ -112,6 +115,27 @@ impl FlowRunner {
             self.flow_tracer.del_outdated(window_bound);
             self.node_match_results.retain(|_, r| r.update_time >= window_bound);
         }
+    }
+
+    /// Builds a set containning orphan nodes.
+    ///
+    /// An orphan is a node that doesn't match any signature and not reachable by
+    /// any arc in this batch.
+    fn build_orphan_set(&self, batch: &[Rc<InputEvent>]) -> HashSet<u64> {
+        let mut orphan_set = HashSet::new();
+        for event in batch {
+            orphan_set.insert(event.subject_id);
+        }
+        for event in batch {
+            orphan_set.remove(&event.object_id);
+        }
+        orphan_set.retain(|id| !self.node_matched_any(*id));
+
+        orphan_set
+    }
+
+    fn node_matched_any(&self, id: u64) -> bool {
+        self.node_match_results.get(&id).is_some_and(|r| r.set_matches.matched_any())
     }
 
     fn update_node_match(&mut self, node_id: u64, signature: &str) {
