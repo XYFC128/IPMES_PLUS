@@ -174,7 +174,11 @@ where
     }
 
     pub fn del_outdated(&mut self, time_bound: u64) {
-        self.nodes.retain(|_, nd| nd.update_time >= time_bound);
+        if self.update_time < time_bound {
+            self.nodes.clear();
+        } else {
+            self.nodes.retain(|_, nd| nd.update_time >= time_bound);
+        }
     }
 }
 
@@ -296,7 +300,6 @@ where
                 time_bound,
                 edge_data.clone(),
             );
-            modified.insert(dst);
             for m in &modified {
                 if *m == dst {
                     continue;
@@ -307,6 +310,7 @@ where
                         .apply_new_changes(&dst_set.borrow());
                 }
             }
+            modified.insert(dst);
         }
 
         modified
