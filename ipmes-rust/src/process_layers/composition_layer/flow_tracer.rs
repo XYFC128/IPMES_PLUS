@@ -271,7 +271,7 @@ where
     /// - `is_orphan`: a function returns whether the given node is orphan. An orphan is a node
     ///   that doesn't match any signature and not reachable by any arc in this batch.
     ///
-    /// Returns a set of nodes that have new sources reachable to them.
+    /// Returns a set of nodes that have new sources reachable to them after adding this batch.
     pub fn add_batch(
         &mut self,
         batch: impl IntoIterator<Item = (u64, u64, E)>,
