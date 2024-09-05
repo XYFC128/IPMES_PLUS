@@ -44,7 +44,7 @@ impl<'p> EventAttributes for MatchEvent<'p> {
     }
 
     fn get_signature(&self) -> &str {
-        &self.input_event.get_event_signature()
+        self.input_event.get_event_signature()
     }
 
     fn get_id(&self) -> u64 {

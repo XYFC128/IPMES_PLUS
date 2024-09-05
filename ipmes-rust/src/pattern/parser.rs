@@ -152,7 +152,7 @@ fn parse_events(
         let signature = event["Signature"].as_str().unwrap_or_default().to_string();
         if event_type == PatternEventType::Flow && !signature.is_empty() {
             warn!("Signature on pattern event of type Flow will be ignored");
-        } else if signature.is_empty() {
+        } else if event_type != PatternEventType::Flow && signature.is_empty() {
             warn!("Empty signature detected, the matching behavior is undefined");
         }
 
@@ -195,7 +195,7 @@ fn parse_order_relation(events: &[Value]) -> Result<OrderRelation, PatternParsin
                 let parent_id = parent
                     .as_u64()
                     .ok_or(PatternParsingError::KeyError("Parents"))?
-                as u32;
+                    as u32;
                 orel_edges.push((parent_id + 1, my_id + 1));
             }
 
@@ -205,7 +205,6 @@ fn parse_order_relation(events: &[Value]) -> Result<OrderRelation, PatternParsin
         } else {
             orel_edges.push((0, my_id + 1));
         }
-
     }
 
     let graph: Graph<usize, ()> = Graph::from_edges(&orel_edges);

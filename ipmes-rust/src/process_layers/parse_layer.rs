@@ -1,7 +1,9 @@
+mod ordered_event;
+
 use crate::input_event::InputEvent;
 use ::std::rc::Rc;
 use csv::StringRecord;
-use std::cmp::Reverse;
+use ordered_event::OrderedEvent;
 use std::collections::BinaryHeap;
 use std::fs::File;
 
@@ -26,8 +28,9 @@ pub struct ParseLayer {
     reader: csv::Reader<File>,
     record: StringRecord,
     // a min heap
-    buffer: BinaryHeap<Reverse<InputEvent>>,
+    buffer: BinaryHeap<OrderedEvent>,
     boundary_time: u64,
+    event_count: u32,
 }
 
 enum RecordParseResult {
@@ -42,6 +45,7 @@ impl ParseLayer {
             record: StringRecord::new(),
             buffer: BinaryHeap::new(),
             boundary_time: 0,
+            event_count: 0,
         }
     }
 
@@ -101,17 +105,17 @@ impl ParseLayer {
 
     fn nothing_to_send(&self) -> bool {
         match self.buffer.peek() {
-            Some(edge) => edge.0.timestamp >= self.boundary_time,
+            Some(edge) => edge >= &self.boundary_time,
             None => true,
         }
     }
 
-    fn get_batch(&mut self) -> Option<Vec<Rc<InputEvent>>> {
+    fn get_batch(&mut self) -> Option<Box<[Rc<InputEvent>]>> {
         let mut edges_to_flush: Vec<Rc<InputEvent>> = Vec::new();
         loop {
             match self.buffer.peek() {
-                Some(edge) if edge.0.timestamp < self.boundary_time => {
-                    edges_to_flush.push(Rc::new(self.buffer.pop().unwrap().0));
+                Some(edge) if edge < &self.boundary_time => {
+                    edges_to_flush.push(Rc::new(self.buffer.pop().unwrap().into()));
                 }
                 _ => {
                     break;
@@ -120,7 +124,7 @@ impl ParseLayer {
         }
 
         if !edges_to_flush.is_empty() {
-            Some(edges_to_flush)
+            Some(edges_to_flush.into_boxed_slice())
         } else {
             None
         }
@@ -128,7 +132,7 @@ impl ParseLayer {
 }
 
 impl Iterator for ParseLayer {
-    type Item = Vec<Rc<InputEvent>>;
+    type Item = Box<[Rc<InputEvent>]>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.nothing_to_send() {
@@ -136,12 +140,16 @@ impl Iterator for ParseLayer {
                 match self.parse_record() {
                     Some(RecordParseResult::Single(input)) => {
                         self.boundary_time = input.timestamp;
-                        self.buffer.push(Reverse(input));
+                        self.buffer.push(OrderedEvent::new(input, self.event_count));
+                        self.event_count += 1;
                     }
                     Some(RecordParseResult::Dual(input1, input2)) => {
                         self.boundary_time = input1.timestamp;
-                        self.buffer.push(Reverse(input1));
-                        self.buffer.push(Reverse(input2));
+                        self.buffer
+                            .push(OrderedEvent::new(input1, self.event_count));
+                        self.buffer
+                            .push(OrderedEvent::new(input2, self.event_count + 1));
+                        self.event_count += 2;
                     }
                     None => {}
                 }

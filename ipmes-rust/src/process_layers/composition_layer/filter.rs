@@ -2,19 +2,19 @@ use super::entity_encode::EntityEncode;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Filter {
-    MatchOrdOnly {
-        match_ord: usize,
+    MatchIdxOnly {
+        match_idx: usize,
     },
     Subject {
-        match_ord: usize,
+        match_idx: usize,
         subject: u64,
     },
     Object {
-        match_ord: usize,
+        match_idx: usize,
         object: u64,
     },
     Endpoints {
-        match_ord: usize,
+        match_idx: usize,
         subject: u64,
         object: u64,
     },
@@ -23,19 +23,19 @@ pub enum Filter {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FilterInfo {
     None,
-    MatchOrdOnly {
-        match_ord: usize,
+    MatchIdxOnly {
+        match_idx: usize,
     },
     Subject {
-        match_ord: usize,
+        match_idx: usize,
         subject: EntityEncode,
     },
     Object {
-        match_ord: usize,
+        match_idx: usize,
         object: EntityEncode,
     },
     Endpoints {
-        match_ord: usize,
+        match_idx: usize,
         subject: EntityEncode,
         object: EntityEncode,
     },

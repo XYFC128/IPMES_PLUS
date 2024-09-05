@@ -6,6 +6,7 @@ pub enum StateInfo {
     Output { subpattern_id: u32 },
     InitFreq { next_state: u32 },
     AggFreq { next_state: u32, frequency: u32 },
+    AggFlow { next_state: u32 },
 }
 
 #[derive(Clone, Debug)]
@@ -45,6 +46,7 @@ impl From<StateInfo> for StateData {
                 frequency,
                 current_set: HashSet::new(),
             },
+            StateInfo::AggFlow { next_state } => StateData::Default { next_state },
         }
     }
 }

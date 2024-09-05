@@ -42,7 +42,7 @@ Options:
 
 #### Example
 - `ipmes-rust -w 3600 ../data/universal_patterns/SP12.json ../data/preprocessed/attack.csv`
-  - `-w 1800`: Set the window size to be `3600` seconds.
+  - `-w 3600`: Set the window size to be `3600` seconds.
   - `SP12.json`: A pattern for the SPADE dataset. See [data/README.md](data/README.md) for more information.
   - `preprocessed/attack.csv`: Input data graph which is either generated from real-world log data, or is manually synthesized. See [data/README.md](data/README.md) for more information.
 
