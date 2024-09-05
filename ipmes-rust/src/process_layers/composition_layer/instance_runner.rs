@@ -90,10 +90,12 @@ impl<'p> InstanceRunner<'p> {
                 new_event,
             } => {
                 let old_filter = self.state_table[instance.state_id as usize].1;
+                // Clone existing instance and extend it with the new match
                 if let Some(new_instance) = instance.clone_extend(new_event, &old_filter) {
                     self.place_new_instance(new_instance, new_state_id);
                 }
             }
+            // `MoveInstance` is used when a full "frequency match" is formed
             InstanceAction::MoveInstance { new_state_id } => {
                 let new_instance = std::mem::replace(instance, MatchInstance::dead_default());
                 self.place_new_instance(new_instance, new_state_id);
