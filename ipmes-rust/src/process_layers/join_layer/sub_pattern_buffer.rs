@@ -153,17 +153,31 @@ impl<'p> SubPatternBuffer<'p> {
         }
 
         // generate order-relation
-        for eid1 in &sub_pattern_buffer1.edge_id_list {
-            for eid2 in &sub_pattern_buffer2.edge_id_list {
-                let distance_1_2 = pattern.order.get_distance(eid1, eid2);
-                let distance_2_1 = pattern.order.get_distance(eid2, eid1);
+        // for eid1 in &sub_pattern_buffer1.edge_id_list {
+        //     for eid2 in &sub_pattern_buffer2.edge_id_list {
+        //         let distance_1_2 = pattern.order.get_distance(eid1, eid2);
+        //         let distance_2_1 = pattern.order.get_distance(eid2, eid1);
 
-                // "2" is "1"'s parent
-                if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
-                    event_orders.push((*eid1, *eid2, SecondToFirst));
-                } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
-                    event_orders.push((*eid1, *eid2, FirstToSecond));
-                }
+        //         // "2" is "1"'s parent
+        //         if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
+        //             event_orders.push((*eid1, *eid2, SecondToFirst));
+        //         } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
+        //             event_orders.push((*eid1, *eid2, FirstToSecond));
+        //         }
+        //     }
+        // }
+
+        // generate order-relation (new)
+        // If the dependency of (src, tgt) exists, add the dependency into the list of order relations.
+        // Note that ``src'' always precedes ``tgt''.
+        // TODO: Remove ``FirstToSecond'' macro
+        for (src, tgt) in pattern.order.get_dependencies() {
+            if (sub_pattern_buffer1.edge_id_list.contains(&src)
+                && sub_pattern_buffer2.edge_id_list.contains(&tgt))
+                || (sub_pattern_buffer2.edge_id_list.contains(&src)
+                    && sub_pattern_buffer1.edge_id_list.contains(&tgt))
+            {
+                event_orders.push((src, tgt, FirstToSecond));
             }
         }
 
@@ -267,7 +281,7 @@ impl<'p> SubPatternBuffer<'p> {
 
         while let (Some(node1), Some(node2)) = (next1, next2) {
             if used_nodes[node1.1 as usize] || used_nodes[node2.1 as usize] {
-                debug!("different inputs match the same pattern");
+                debug!("different input nodes match the same pattern");
                 return None;
             }
 
@@ -281,7 +295,7 @@ impl<'p> SubPatternBuffer<'p> {
                 next2 = p2.next();
             } else {
                 if node1.1 != node2.1 {
-                    debug!("an input match to different pattern");
+                    debug!("an input node matches distinct patterns");
                     return None;
                 }
                 merged.push(*node1);

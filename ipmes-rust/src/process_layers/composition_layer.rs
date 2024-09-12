@@ -4,10 +4,12 @@ mod flow_runner;
 mod flow_tracer;
 mod instance_runner;
 mod instance_storage;
-mod match_instance;
+pub mod match_instance;
 mod pattern_info;
 mod state;
 mod state_table;
+
+pub use match_instance::{InputEntityId, PatternEntityId};
 
 use crate::input_event::InputEvent;
 use crate::pattern::{PatternEventType, SubPattern};

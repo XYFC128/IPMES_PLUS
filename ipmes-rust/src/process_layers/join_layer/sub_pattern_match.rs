@@ -6,6 +6,7 @@ use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
 use std::fmt::{Debug, Pointer};
+use crate::process_layers::composition_layer::match_instance::{InputEntityId, PatternEntityId};
 
 /// Matches of sub-patterns.
 #[derive(Clone)]
@@ -20,10 +21,10 @@ pub struct SubPatternMatch<'p> {
     /// Sorted array of `(input entity id, pattern entity id)`.
     ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
-    pub match_entities: Box<[(u64, u64)]>,
+    pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
 
     /// Sorted input event ids for event uniqueness determination.
-    pub event_ids: Box<[u64]>,
+    pub event_ids: Box<[InputEntityId]>,
 
     /// `event_id_map[matched_id] = input_event`
     ///

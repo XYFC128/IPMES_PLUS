@@ -2,6 +2,7 @@ use crate::pattern::parser::PatternParsingError;
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::NodeIndex;
 use petgraph::graph::{DefaultIx, Graph};
+use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -23,7 +24,25 @@ impl From<Graph<usize, ()>> for OrderRelation {
         }
     }
 }
+
 impl OrderRelation {
+    /// Return an iterator over the pair (source id, target id) of dependency edges, where the ids
+    /// are those of pattern edges'.
+    pub fn get_dependencies(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.graph
+            .edge_references()
+            .filter_map(|edge| {
+                let src = edge.source().index();
+                let tgt = edge.target().index();
+                
+                if src == 0 || tgt == 0 {
+                    None
+                } else {
+                    Some((src - 1, tgt - 1))
+                }
+            })
+    }
+
     /// Returns an iterator over the id of pattern edges that should appear **before** the given pattern
     /// edge.
     pub fn get_previous(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
