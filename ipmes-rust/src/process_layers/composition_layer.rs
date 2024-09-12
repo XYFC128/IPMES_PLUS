@@ -6,6 +6,7 @@ mod instance_runner;
 mod instance_storage;
 mod match_instance;
 mod pattern_info;
+mod reach_set;
 mod state;
 mod state_table;
 
