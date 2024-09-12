@@ -12,15 +12,12 @@ use std::io::Read;
 #[derive(Debug)]
 pub struct OrderRelation {
     pub graph: Graph<usize, ()>,
-    distances_table: HashMap<(NodeIndex, NodeIndex), i32>,
 }
 
 impl From<Graph<usize, ()>> for OrderRelation {
     fn from(value: Graph<usize, ()>) -> Self {
-        let distances_table = floyd_warshall(&value, |_| 1).ok().unwrap();
         Self {
             graph: value,
-            distances_table,
         }
     }
 }
@@ -133,13 +130,6 @@ impl OrderRelation {
         }
 
         Ok(orel_edges)
-    }
-
-    /// Return the distance from "eid1" to "eid2" (in DAG).
-    pub fn get_distance(&self, eid1: &usize, eid2: &usize) -> i32 {
-        let id1 = NodeIndex::<DefaultIx>::new(*eid1 + 1);
-        let id2 = NodeIndex::<DefaultIx>::new(*eid2 + 1);
-        *self.distances_table.get(&(id1, id2)).unwrap()
     }
 
     /// Validate the order relation. That is, check if there exist

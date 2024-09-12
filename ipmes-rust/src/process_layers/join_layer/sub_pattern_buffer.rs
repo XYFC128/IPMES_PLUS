@@ -150,7 +150,7 @@ impl<'p> SubPatternBuffer<'p> {
             {
                 shared_entities[i] = true;
             }
-        }
+        } 
 
         // generate order-relation
         // for eid1 in &sub_pattern_buffer1.edge_id_list {
