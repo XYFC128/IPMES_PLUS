@@ -44,17 +44,15 @@ def extract_fields(inp: str) -> list[str]:
 
     inp_obj = json.loads(inp)
     start_time, end_time = extract_timestamps(inp_obj['r'])
-    eid = inp_obj['r']['id']
-    start_id = inp_obj['m']['id']
-    end_id = inp_obj['n']['id']
-    event_sig = '{}#{}#{}'.format(
+    return [
+        start_time, end_time,
+        inp_obj['r']['id'],
         extract_edge_signature(inp_obj['r']),
+        inp_obj['m']['id'],
         extract_node_signature(inp_obj['m']),
-        extract_node_signature(inp_obj['n'])
-    )
-
-    return [start_time, end_time, event_sig, eid, start_id, end_id]
-
+        inp_obj['n']['id'],
+        extract_node_signature(inp_obj['n']),
+    ]
 
 if __name__ == '__main__':
     """
@@ -65,13 +63,15 @@ if __name__ == '__main__':
         python preprocess.py < 12hour_attack_08_18.json > output.csv
     
     The fields in the output csv:
-        start_time, end_time, event_sig, eid, start_id, end_id:
+        start_time, end_time, eid, event_sig, start_id, start_sig, end_id, end_sig:
         - start_time: the event start time
         - end_time:   the event end time
-        - event_sig:  event signature
         - eid:        edge id
+        - event_sig:  event signature
         - start_id:   id of the start node
+        - start_sig:  start node signature
         - end_id:     id of the end node
+        - end_sig:    end node signature
     """
 
     import fileinput
