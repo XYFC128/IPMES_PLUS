@@ -5,8 +5,8 @@ use std::cmp::min;
 use std::collections::HashSet;
 use std::fmt::Debug;
 
-type InputEntityId = u64;
-type PatternEntityId = u64;
+pub type InputEntityId = u64;
+pub type PatternEntityId = u64;
 
 fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>> {
     let mut new_event_ids = Vec::with_capacity(event_ids.len() + new_ids.len());

@@ -2,6 +2,7 @@ use crate::pattern::parser::PatternParsingError;
 use petgraph::algo::floyd_warshall;
 use petgraph::graph::NodeIndex;
 use petgraph::graph::{DefaultIx, Graph};
+use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -11,19 +12,34 @@ use std::io::Read;
 #[derive(Debug)]
 pub struct OrderRelation {
     pub graph: Graph<usize, ()>,
-    distances_table: HashMap<(NodeIndex, NodeIndex), i32>,
 }
 
 impl From<Graph<usize, ()>> for OrderRelation {
     fn from(value: Graph<usize, ()>) -> Self {
-        let distances_table = floyd_warshall(&value, |_| 1).ok().unwrap();
         Self {
             graph: value,
-            distances_table,
         }
     }
 }
+
 impl OrderRelation {
+    /// Return an iterator over the pair (source id, target id) of dependency edges, where the ids
+    /// are those of pattern edges'.
+    pub fn get_dependencies(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.graph
+            .edge_references()
+            .filter_map(|edge| {
+                let src = edge.source().index();
+                let tgt = edge.target().index();
+                
+                if src == 0 || tgt == 0 {
+                    None
+                } else {
+                    Some((src - 1, tgt - 1))
+                }
+            })
+    }
+
     /// Returns an iterator over the id of pattern edges that should appear **before** the given pattern
     /// edge.
     pub fn get_previous(&self, eid: usize) -> impl Iterator<Item = usize> + '_ {
@@ -114,13 +130,6 @@ impl OrderRelation {
         }
 
         Ok(orel_edges)
-    }
-
-    /// Return the distance from "eid1" to "eid2" (in DAG).
-    pub fn get_distance(&self, eid1: &usize, eid2: &usize) -> i32 {
-        let id1 = NodeIndex::<DefaultIx>::new(*eid1 + 1);
-        let id2 = NodeIndex::<DefaultIx>::new(*eid2 + 1);
-        *self.distances_table.get(&(id1, id2)).unwrap()
     }
 
     /// Validate the order relation. That is, check if there exist

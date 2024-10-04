@@ -6,6 +6,7 @@ use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
     FirstToSecond, SecondToFirst,
 };
 use crate::universal_match_event::UniversalMatchEvent;
+use env_logger::fmt::Timestamp;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
 
@@ -153,17 +154,31 @@ impl<'p> SubPatternBuffer<'p> {
         }
 
         // generate order-relation
-        for eid1 in &sub_pattern_buffer1.edge_id_list {
-            for eid2 in &sub_pattern_buffer2.edge_id_list {
-                let distance_1_2 = pattern.order.get_distance(eid1, eid2);
-                let distance_2_1 = pattern.order.get_distance(eid2, eid1);
+        // for eid1 in &sub_pattern_buffer1.edge_id_list {
+        //     for eid2 in &sub_pattern_buffer2.edge_id_list {
+        //         let distance_1_2 = pattern.order.get_distance(eid1, eid2);
+        //         let distance_2_1 = pattern.order.get_distance(eid2, eid1);
 
-                // "2" is "1"'s parent
-                if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
-                    event_orders.push((*eid1, *eid2, SecondToFirst));
-                } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
-                    event_orders.push((*eid1, *eid2, FirstToSecond));
-                }
+        //         // "2" is "1"'s parent
+        //         if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
+        //             event_orders.push((*eid1, *eid2, SecondToFirst));
+        //         } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
+        //             event_orders.push((*eid1, *eid2, FirstToSecond));
+        //         }
+        //     }
+        // }
+
+        // generate order-relation (new)
+        // If the dependency of (src, tgt) exists, add the dependency into the list of order relations.
+        // Note that ``src'' always precedes ``tgt''.
+        // TODO: Remove ``FirstToSecond'' macro
+        for (src, tgt) in pattern.order.get_dependencies() {
+            if (sub_pattern_buffer1.edge_id_list.contains(&src)
+                && sub_pattern_buffer2.edge_id_list.contains(&tgt))
+                || (sub_pattern_buffer2.edge_id_list.contains(&src)
+                    && sub_pattern_buffer1.edge_id_list.contains(&tgt))
+            {
+                event_orders.push((src, tgt, FirstToSecond));
             }
         }
 
@@ -198,16 +213,14 @@ impl<'p> SubPatternBuffer<'p> {
         }
     }
 
-    /// Try to merge two match events and check event uniqueness.
-    pub fn try_merge_match_events(
+    fn merge_match_events(
         &self,
         a: &[MatchEvent<'p>],
         b: &[MatchEvent<'p>],
-    ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
-        // `timestamps[pattern_event_id] = the timestamp of the corresponding input event.`
-        let mut timestamps = vec![0u64; self.max_num_events];
-        let mut merged = Vec::with_capacity(a.len() + b.len());
-
+        dry_run: bool,
+        timestamps: &mut Vec<u64>,
+        merged: &mut Vec<MatchEvent<'p>>
+    ) -> bool {
         let mut p1 = a.iter();
         let mut p2 = b.iter();
         let mut next1 = p1.next();
@@ -215,23 +228,33 @@ impl<'p> SubPatternBuffer<'p> {
 
         while let (Some(edge1), Some(edge2)) = (next1, next2) {
             if edge1.input_event.event_id < edge2.input_event.event_id {
-                merged.push(edge1.clone());
-                timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                if !dry_run {
+                    merged.push(edge1.clone());
+                    timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                }
                 next1 = p1.next();
             } else if edge1.input_event.event_id > edge2.input_event.event_id {
-                merged.push(edge2.clone());
-                timestamps[edge2.matched.id] = edge2.input_event.timestamp;
+                if !dry_run {
+                    merged.push(edge2.clone());
+                    timestamps[edge2.matched.id] = edge2.input_event.timestamp;
+                }
                 next2 = p2.next();
             } else {
                 if edge1.matched.id != edge2.matched.id {
                     debug!("pattern edge not shared!");
-                    return None;
+                    return false;
                 }
-                merged.push(edge1.clone());
-                timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                if !dry_run {
+                    merged.push(edge1.clone());
+                    timestamps[edge1.matched.id] = edge1.input_event.timestamp;
+                }
                 next1 = p1.next();
                 next2 = p2.next();
             }
+        }
+
+        if dry_run {
+            return true;
         }
 
         if next1.is_none() {
@@ -244,6 +267,28 @@ impl<'p> SubPatternBuffer<'p> {
             merged.push(edge.clone());
             next1 = p1.next();
         }
+        
+        true
+    }
+
+    /// Try to merge two match events and check event uniqueness.
+    pub fn try_merge_match_events(
+        &self,
+        a: &[MatchEvent<'p>],
+        b: &[MatchEvent<'p>],
+    ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
+        // `timestamps[pattern_event_id] = the timestamp of the corresponding input event.`
+        let mut timestamps = vec![];
+        let mut merged = vec![];
+
+        if !self.merge_match_events(a, b, true, &mut timestamps, &mut merged) {
+            return None
+        }
+
+        timestamps = vec![0u64; self.max_num_events];
+        merged = Vec::with_capacity(a.len() + b.len());
+
+        self.merge_match_events(a, b, false, &mut timestamps, &mut merged);
 
         Some((merged, timestamps))
     }
@@ -267,7 +312,7 @@ impl<'p> SubPatternBuffer<'p> {
 
         while let (Some(node1), Some(node2)) = (next1, next2) {
             if used_nodes[node1.1 as usize] || used_nodes[node2.1 as usize] {
-                debug!("different inputs match the same pattern");
+                debug!("different input nodes match the same pattern");
                 return None;
             }
 
@@ -281,7 +326,7 @@ impl<'p> SubPatternBuffer<'p> {
                 next2 = p2.next();
             } else {
                 if node1.1 != node2.1 {
-                    debug!("an input match to different pattern");
+                    debug!("an input node matches distinct patterns");
                     return None;
                 }
                 merged.push(*node1);
