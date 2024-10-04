@@ -128,26 +128,7 @@ fn parse_events(
             .as_u64()
             .ok_or(PatternParsingError::KeyError("ID"))? as usize;
 
-        let event_type = event["Type"].as_str().unwrap_or("Default");
-        let event_type = match event_type {
-            "Default" => PatternEventType::Default,
-            "Frequency" => {
-                let freq = event["Frequency"]
-                    .as_u64()
-                    .ok_or(PatternParsingError::KeyError("Frequency"))?
-                    as u32;
-                if freq <= 1 {
-                    return Err(PatternParsingError::InvalidFrequency(freq));
-                }
-                PatternEventType::Frequency(freq)
-            }
-            "Flow" => PatternEventType::Flow,
-            _ => {
-                return Err(PatternParsingError::UnknownEventType(
-                    event_type.to_string(),
-                ))
-            }
-        };
+        let event_type = parse_event_type(event)?;
 
         let signature = event["Signature"].as_str().unwrap_or_default().to_string();
         if event_type == PatternEventType::Flow && !signature.is_empty() {
@@ -180,6 +161,36 @@ fn parse_events(
     }
 
     Ok(events)
+}
+
+fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsingError> {
+    let event_type = event_json["Type"].as_str();
+    let event_type = match event_type {
+        None => {
+            if let Some(freq) = event_json["Frequency"].as_u64() {
+                PatternEventType::Frequency(freq as u32)
+            } else {
+                PatternEventType::Default
+            }
+        }
+        Some("Default") => PatternEventType::Default,
+        Some("Frequency") => {
+            let freq = event_json["Frequency"]
+                .as_u64()
+                .ok_or(PatternParsingError::KeyError("Frequency"))? as u32;
+            if freq <= 1 {
+                return Err(PatternParsingError::InvalidFrequency(freq));
+            }
+            PatternEventType::Frequency(freq)
+        }
+        Some("Flow") => PatternEventType::Flow,
+        Some(unknow_type) => {
+            return Err(PatternParsingError::UnknownEventType(
+                unknow_type.to_string(),
+            ))
+        }
+    };
+    Ok(event_type)
 }
 
 fn parse_order_relation(events: &[Value]) -> Result<OrderRelation, PatternParsingError> {
@@ -315,5 +326,31 @@ mod tests {
         assert!(itertools::equal(pattern.order.get_roots(), [0]));
         assert!(itertools::equal(pattern.order.get_next(0), [1]));
         assert!(pattern.order.get_next(1).next().is_none());
+    }
+
+    #[test]
+    fn test_parse_event_type() {
+        assert_eq!(
+            parse_event_type(&json!({})).unwrap(),
+            PatternEventType::Default
+        );
+        assert_eq!(
+            parse_event_type(&json!({"Frequency": 10})).unwrap(),
+            PatternEventType::Frequency(10)
+        );
+        assert_eq!(
+            parse_event_type(&json!({"Type": "Default", "Frequency": 10})).unwrap(),
+            PatternEventType::Default
+        );
+        assert_eq!(
+            parse_event_type(&json!({"Type": "Flow", "Frequency": 10})).unwrap(),
+            PatternEventType::Flow
+        );
+        assert!(
+            parse_event_type(&json!({"Type": "Dummy"})).is_err()
+        );
+        assert!(
+            parse_event_type(&json!({"Type": "Frequency"})).is_err()
+        );
     }
 }
