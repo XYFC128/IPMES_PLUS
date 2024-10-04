@@ -24,7 +24,11 @@ def extract_edge_signature(edge_obj: dict) -> str:
 
 
 def extract_timestamps(edge_obj: dict) -> tuple[str, str]:
-    return edge_obj['properties']['earliest'], edge_obj['properties']['lastest']
+    prop: dict = edge_obj['properties']
+    if 'earliest' in prop:
+        return prop['earliest'], prop['lastest']
+    else:
+        return prop['seen time'], prop['seen time']
 
 
 def extract_fields(inp: str) -> list[str]:
