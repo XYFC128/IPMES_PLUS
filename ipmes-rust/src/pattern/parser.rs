@@ -168,6 +168,9 @@ fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsi
     let event_type = match event_type {
         None => {
             if let Some(freq) = event_json["Frequency"].as_u64() {
+                if freq == 0 {
+                    return Err(PatternParsingError::InvalidFrequency(freq as u32));
+                }
                 PatternEventType::Frequency(freq as u32)
             } else {
                 PatternEventType::Default
@@ -178,7 +181,7 @@ fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsi
             let freq = event_json["Frequency"]
                 .as_u64()
                 .ok_or(PatternParsingError::KeyError("Frequency"))? as u32;
-            if freq <= 1 {
+            if freq == 0 {
                 return Err(PatternParsingError::InvalidFrequency(freq));
             }
             PatternEventType::Frequency(freq)
@@ -353,5 +356,6 @@ mod tests {
         );
         assert!(parse_event_type(&json!({"Type": "Dummy"})).is_err());
         assert!(parse_event_type(&json!({"Type": "Frequency"})).is_err());
+        assert!(parse_event_type(&json!({"Frequency": 0})).is_err());
     }
 }
