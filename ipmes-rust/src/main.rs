@@ -31,7 +31,8 @@ fn main() {
     info!("Command line arguments: {:?}", args);
     let window_size = args.window_size * 1000;
 
-    let pattern = Pattern::parse(&args.pattern_file).expect("Failed to parse pattern");
+    let mut pattern = Pattern::parse(&args.pattern_file).expect("Failed to parse pattern");
+    pattern.optimize();
     info!("Pattern Edges: {:#?}", pattern.events);
 
     let decomposition = decompose(&pattern);

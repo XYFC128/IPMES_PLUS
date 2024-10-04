@@ -88,4 +88,16 @@ impl Pattern {
             order,
         }
     }
+
+    /// Optimize the pattern. Currently implemented optimizations:
+    /// - Turn frequency 1 event to default event
+    pub fn optimize(&mut self) {
+        for event in &mut self.events {
+            if let PatternEventType::Frequency(freq) = event.event_type {
+                if freq == 1 {
+                    event.event_type = PatternEventType::Default;
+                }
+            }
+        }
+    }
 }
