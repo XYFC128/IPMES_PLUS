@@ -28,7 +28,7 @@ def extract_timestamps(edge_obj: dict) -> tuple[str, str]:
     if 'earliest' in prop:
         return prop['earliest'], prop['lastest']
     else:
-        return prop['seen time'], prop['seen time']
+        return prop['time'], prop['time']
 
 
 def extract_fields(inp: str) -> list[str]:
