@@ -168,6 +168,9 @@ fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsi
     let event_type = match event_type {
         None => {
             if let Some(freq) = event_json["Frequency"].as_u64() {
+                if freq == 0 {
+                    return Err(PatternParsingError::InvalidFrequency(freq as u32));
+                }
                 PatternEventType::Frequency(freq as u32)
             } else {
                 PatternEventType::Default
@@ -178,12 +181,17 @@ fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsi
             let freq = event_json["Frequency"]
                 .as_u64()
                 .ok_or(PatternParsingError::KeyError("Frequency"))? as u32;
-            if freq <= 1 {
+            if freq == 0 {
                 return Err(PatternParsingError::InvalidFrequency(freq));
             }
             PatternEventType::Frequency(freq)
         }
-        Some("Flow") => PatternEventType::Flow,
+        Some("Flow") => {
+            if event_json["Frequency"].is_u64() {
+                warn!("Frequency in flow event is unsupported for now, so this has no effect");
+            }
+            PatternEventType::Flow
+        }
         Some(unknow_type) => {
             return Err(PatternParsingError::UnknownEventType(
                 unknow_type.to_string(),
@@ -346,11 +354,8 @@ mod tests {
             parse_event_type(&json!({"Type": "Flow", "Frequency": 10})).unwrap(),
             PatternEventType::Flow
         );
-        assert!(
-            parse_event_type(&json!({"Type": "Dummy"})).is_err()
-        );
-        assert!(
-            parse_event_type(&json!({"Type": "Frequency"})).is_err()
-        );
+        assert!(parse_event_type(&json!({"Type": "Dummy"})).is_err());
+        assert!(parse_event_type(&json!({"Type": "Frequency"})).is_err());
+        assert!(parse_event_type(&json!({"Frequency": 0})).is_err());
     }
 }
