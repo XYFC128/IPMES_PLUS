@@ -6,6 +6,7 @@ data/*
 !data/patterns
 !data/darpa_patterns
 !data/universal_patterns
+!data/freq_patterns
 
 ipmes-java/
 
