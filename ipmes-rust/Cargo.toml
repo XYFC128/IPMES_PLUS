@@ -20,6 +20,9 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.106"
 thiserror = "1.0.48"
 windows = { version = "0.52.0", features = ["System_Diagnostics"] }
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+test-log = "0.2.16"
 
 [profile.release]
 debug = 1
@@ -27,6 +30,10 @@ debug = 1
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }
 
+#[[bench]]
+#name = "my_benchmark"
+#harness = false
+
 [[bench]]
-name = "my_benchmark"
+name = "join_layer_benchmark"
 harness = false

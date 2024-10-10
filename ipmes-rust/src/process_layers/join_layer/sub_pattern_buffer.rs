@@ -153,21 +153,6 @@ impl<'p> SubPatternBuffer<'p> {
             }
         }
 
-        // generate order-relation
-        // for eid1 in &sub_pattern_buffer1.edge_id_list {
-        //     for eid2 in &sub_pattern_buffer2.edge_id_list {
-        //         let distance_1_2 = pattern.order.get_distance(eid1, eid2);
-        //         let distance_2_1 = pattern.order.get_distance(eid2, eid1);
-
-        //         // "2" is "1"'s parent
-        //         if distance_1_2 == i32::MAX && distance_2_1 != i32::MAX {
-        //             event_orders.push((*eid1, *eid2, SecondToFirst));
-        //         } else if distance_1_2 != i32::MAX && distance_2_1 == i32::MAX {
-        //             event_orders.push((*eid1, *eid2, FirstToSecond));
-        //         }
-        //     }
-        // }
-
         // generate order-relation (new)
         // If the dependency of (src, tgt) exists, add the dependency into the list of order relations.
         // Note that ``src'' always precedes ``tgt''.
@@ -271,27 +256,28 @@ impl<'p> SubPatternBuffer<'p> {
         true
     }
 
+    // This function is actually not used!? (replaced by `SUbpatternMatch::try_merge_event_ids`?)
     /// Try to merge two match events and check event uniqueness.
-    pub fn try_merge_match_events(
-        &self,
-        a: &[MatchEvent<'p>],
-        b: &[MatchEvent<'p>],
-    ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
-        // `timestamps[pattern_event_id] = the timestamp of the corresponding input event.`
-        let mut timestamps = vec![];
-        let mut merged = vec![];
+    // pub fn try_merge_match_events(
+    //     &self,
+    //     a: &[MatchEvent<'p>],
+    //     b: &[MatchEvent<'p>],
+    // ) -> Option<(Vec<MatchEvent<'p>>, Vec<u64>)> {
+    //     // `timestamps[pattern_event_id] = the timestamp of the corresponding input event.`
+    //     let mut timestamps = vec![];
+    //     let mut merged = vec![];
 
-        if !self.merge_match_events(a, b, true, &mut timestamps, &mut merged) {
-            return None
-        }
+    //     if !self.merge_match_events(a, b, true, &mut timestamps, &mut merged) {
+    //         return None
+    //     }
 
-        timestamps = vec![0u64; self.max_num_events];
-        merged = Vec::with_capacity(a.len() + b.len());
+    //     timestamps = vec![0u64; self.max_num_events];
+    //     merged = Vec::with_capacity(a.len() + b.len());
 
-        self.merge_match_events(a, b, false, &mut timestamps, &mut merged);
+    //     self.merge_match_events(a, b, false, &mut timestamps, &mut merged);
 
-        Some((merged, timestamps))
-    }
+    //     Some((merged, timestamps))
+    // }
 
     /// Try to merge match entities, and handle "shared entities" and "entity uniqueness".
     ///
@@ -354,6 +340,7 @@ impl<'p> SubPatternBuffer<'p> {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -573,3 +560,4 @@ mod tests {
             && edge1.input_event.event_id == edge2.input_event.event_id
     }
 }
+*/
