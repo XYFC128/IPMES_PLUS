@@ -227,7 +227,7 @@ impl FlowTracer {
                             let diff = new_sets[new_key].iter();
                             updates.extend(diff);
                         }
-                        updates.remove(id); // avoid root appearing in updated nodes
+                        updates.remove(id); // avoid root appearing in updated_nodes
                         id2key.insert(*id, new_key);
                     }
                 } else {
@@ -236,7 +236,8 @@ impl FlowTracer {
                         time,
                         is_match(*first),
                     ));
-                    set.refresh_node(*first, time);
+                    set.refresh_node(*first, time); // refresh the root to prevent it from
+                                                    // appearing in updated_nodes
                     let new_key = new_sets.insert(set);
                     id2key.insert(*first, new_key);
                 }
@@ -263,7 +264,6 @@ impl FlowTracer {
                     last_union[*dst_key] = *src_key as i32;
                     if let Some((src_set, dst_set)) = new_sets.get2_mut(*src_key, *dst_key) {
                         let diff = dst_set.unioned_by(src_set, time_bound);
-                        dst_set.refresh_node(dst_id, time);
                         updated_nodes.entry(dst_id).or_default().extend(diff);
                     }
                 }
