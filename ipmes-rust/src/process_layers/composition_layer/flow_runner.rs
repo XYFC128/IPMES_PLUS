@@ -3,7 +3,7 @@ use super::instance_storage::{InstanceStorage, StorageRequest};
 use super::pattern_info::FlowPattern;
 use super::state_table::StateTable;
 use crate::input_event::InputEvent;
-use crate::pattern::{PatternEntity, PatternEvent, PatternEventType, SubPattern};
+use crate::pattern::{PatternEntity, PatternEventType, SubPattern};
 use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
 use regex::{Error, RegexSet, SetMatches};
@@ -16,10 +16,11 @@ struct NodeMatchResult {
 }
 
 pub struct FlowRunner {
-    flow_tracer: FlowTracer<u64>,
+    flow_tracer: FlowTracer,
 
-    /// the modified destination nodes after last call to set_batch
-    modified: HashSet<u64>,
+    /// The new flows resulting from the current batch.
+    /// Stored in the format: `dst_id` -> {`src_id`, ...}
+    new_flows: HashMap<u64, HashSet<u64>>,
 
     node_regexes: RegexSet,
 
@@ -71,7 +72,7 @@ impl FlowRunner {
         Ok((
             Self {
                 flow_tracer,
-                modified: HashSet::new(),
+                new_flows: HashMap::new(),
                 node_regexes,
                 node_match_results: HashMap::new(),
                 window_size,
@@ -92,19 +93,25 @@ impl FlowRunner {
             self.update_node_match(event.object_id, event.get_object_signature());
         }
 
+        let is_match = |id| {
+            self.node_match_results
+                .get(&id)
+                .is_some_and(|r| r.set_matches.matched_any())
+        };
+
         if batch.len() == 1 {
             let event = &batch[0];
-            let is_orphan = !self.node_matched_any(event.subject_id);
-            self.flow_tracer.add_arc(event.subject_id, event.object_id, time, event.event_id, is_orphan);
-            self.modified.clear();
-            self.modified.insert(event.object_id);
+            let updates =
+                self.flow_tracer
+                    .add_arc(event.subject_id, event.object_id, time, is_match);
+            self.new_flows.clear();
+            self.new_flows
+                .insert(event.object_id, HashSet::from_iter(updates));
         } else {
-            let orphans = self.build_orphan_set(batch);
-            let is_orphan = |id| orphans.contains(&id);
             let iter = batch
                 .iter()
-                .map(|event| (event.subject_id, event.object_id, event.event_id));
-            self.modified = self.flow_tracer.add_batch(iter, time, is_orphan);
+                .map(|event| (event.subject_id, event.object_id));
+            self.new_flows = self.flow_tracer.add_batch(iter, time, is_match);
         }
 
         self.cur_time = time;
@@ -113,29 +120,9 @@ impl FlowRunner {
             self.cur_window_id = window_id;
             let window_bound = time.saturating_sub(self.window_size);
             self.flow_tracer.del_outdated(window_bound);
-            self.node_match_results.retain(|_, r| r.update_time >= window_bound);
+            self.node_match_results
+                .retain(|_, r| r.update_time >= window_bound);
         }
-    }
-
-    /// Builds a set containning orphan nodes.
-    ///
-    /// An orphan is a node that doesn't match any signature and not reachable by
-    /// any arc in this batch.
-    fn build_orphan_set(&self, batch: &[Rc<InputEvent>]) -> HashSet<u64> {
-        let mut orphan_set = HashSet::new();
-        for event in batch {
-            orphan_set.insert(event.subject_id);
-        }
-        for event in batch {
-            orphan_set.remove(&event.object_id);
-        }
-        orphan_set.retain(|id| !self.node_matched_any(*id));
-
-        orphan_set
-    }
-
-    fn node_matched_any(&self, id: u64) -> bool {
-        self.node_match_results.get(&id).is_some_and(|r| r.set_matches.matched_any())
     }
 
     fn update_node_match(&mut self, node_id: u64, signature: &str) {
@@ -165,17 +152,25 @@ impl FlowRunner {
         let window_bound = self.cur_time.saturating_sub(self.window_size);
 
         let mut new_instances = vec![];
-        for dst in &self.modified {
+        for (dst, new_sources) in &self.new_flows {
             if !self.is_node_match(*dst, info.dst_sig_idx) {
                 continue;
             }
 
             let match_idx = info.match_idx;
-            let reach_set = self.flow_tracer.get_reachset(*dst).unwrap();
-            for src in reach_set.get_updated_nodes() {
+            for src in new_sources {
                 if !self.is_node_match(*src, info.src_sig_idx) {
                     continue;
                 }
+
+                let flow = UniversalMatchEvent {
+                    matched: info.pattern,
+                    start_time: self.flow_tracer.get_updated_time(*src, *dst).unwrap(),
+                    end_time: self.cur_time,
+                    subject_id: *src,
+                    object_id: *dst,
+                    event_ids: Box::new([]),
+                };
 
                 let request = StorageRequest {
                     match_idx,
@@ -183,10 +178,6 @@ impl FlowRunner {
                     object_id: *dst,
                     shared_node_info: info.shared_node_info,
                 };
-
-                let flow = self
-                    .get_flow(*src, *dst, info.pattern)
-                    .expect("(src, dst) forms a valid flow");
                 for instance in storage.query_with_windowing(&request, window_bound) {
                     if let Some(mut new_instance) =
                         instance.clone_extend_flow(flow.clone(), info.shared_node_info)
@@ -198,28 +189,5 @@ impl FlowRunner {
             }
         }
         storage.store_new_instances(new_instances.into_iter(), state_table);
-    }
-
-    pub fn get_flow<'p>(
-        &self,
-        src: u64,
-        dst: u64,
-        matched: &'p PatternEvent,
-    ) -> Option<UniversalMatchEvent<'p>> {
-        let mut path = Vec::new();
-        self.flow_tracer.visit_path(src, dst, |eid| path.push(eid));
-        if path.is_empty() {
-            return None;
-        }
-
-        let start_time = self.flow_tracer.get_update_time(src, dst).unwrap();
-        Some(UniversalMatchEvent {
-            matched,
-            start_time,
-            end_time: self.cur_time,
-            subject_id: src,
-            object_id: dst,
-            event_ids: path.into_boxed_slice(),
-        })
     }
 }

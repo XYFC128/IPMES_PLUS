@@ -192,7 +192,7 @@ impl FlowTracer {
     /// - `is_matach`: a function returns whether the given node matches any signature
     ///
     /// Returns a mapping from a node id to the set of its new reachable sources.
-    fn add_batch(
+    pub fn add_batch(
         &mut self,
         batch: impl IntoIterator<Item = (u64, u64)>,
         time: u64,
@@ -286,6 +286,10 @@ impl FlowTracer {
         }
 
         updated_nodes
+    }
+
+    pub fn get_updated_time(&self, src: u64, dst: u64) -> Option<u64> {
+        self.reach_sets.get(&dst).and_then(|s| s.get_update_time_of(src))
     }
 
     pub fn del_outdated(&mut self, time_bound: u64) {
