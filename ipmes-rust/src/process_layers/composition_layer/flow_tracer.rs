@@ -149,7 +149,13 @@ impl FlowTracer {
     /// - `is_matach`: a function returns whether the given node matches any signature
     ///
     /// Returns the updated nodes of dst set.
-    pub fn add_arc(&mut self, src: u64, dst: u64, time: u64, is_match: impl Fn(u64) -> bool) -> Vec<u64> {
+    pub fn add_arc(
+        &mut self,
+        src: u64,
+        dst: u64,
+        time: u64,
+        is_match: impl Fn(u64) -> bool,
+    ) -> Vec<u64> {
         if src == dst {
             return vec![];
         }
@@ -158,7 +164,10 @@ impl FlowTracer {
         let dst_match = is_match(dst);
 
         let time_bound = time.saturating_sub(self.window_size);
-        let mut dst_set = self.reach_sets.remove(&dst).unwrap_or(ReachSet::new(dst, time, dst_match));
+        let mut dst_set = self
+            .reach_sets
+            .remove(&dst)
+            .unwrap_or(ReachSet::new(dst, time, dst_match));
         dst_set.refresh_node(dst, time);
 
         let diff = if let Some(src_set) = self.reach_sets.get_mut(&src) {
@@ -170,7 +179,7 @@ impl FlowTracer {
         } else {
             vec![]
         };
-        
+
         self.reach_sets.insert(dst, dst_set);
         diff
     }
@@ -210,13 +219,15 @@ impl FlowTracer {
                         }
                     }
                     for id in scc {
+                        let updates = updated_nodes.entry(*id).or_default();
                         if let Some(old_set) = self.reach_sets.get(id) {
                             let diff = new_sets[new_key].difference(old_set);
-                            updated_nodes.entry(*id).or_default().extend(diff);
+                            updates.extend(diff);
                         } else {
                             let diff = new_sets[new_key].iter();
-                            updated_nodes.entry(*id).or_default().extend(diff);
+                            updates.extend(diff);
                         }
+                        updates.remove(id); // avoid root appearing in updated nodes
                         id2key.insert(*id, new_key);
                     }
                 } else {
@@ -240,15 +251,17 @@ impl FlowTracer {
                 let src_key = id2key.get(src_id).unwrap();
                 for dst_id in batch_graph.neighbors_directed(*src_id, Direction::Outgoing) {
                     let dst_key = id2key.get(&dst_id).unwrap();
-                    // this will not be true if `src_key` == `dst_key`
-                    if let Some((src_set, dst_set)) = new_sets.get2_mut(*src_key, *dst_key) {
-                        // prevent unioning the same pair of sets multiple times
-                        if last_union[*dst_key] == *src_key as i32 {
-                            continue;
-                        } else {
-                            last_union[*dst_key] = *src_key as i32;
-                        }
 
+                    // prevent unioning with itself or unioning the same pair of sets multiple
+                    // times
+                    let union_same_set = *src_key == *dst_key;
+                    let already_unioned = last_union[*dst_key] == *src_key as i32;
+                    if union_same_set || already_unioned {
+                        continue;
+                    }
+
+                    last_union[*dst_key] = *src_key as i32;
+                    if let Some((src_set, dst_set)) = new_sets.get2_mut(*src_key, *dst_key) {
                         let diff = dst_set.unioned_by(src_set, time_bound);
                         dst_set.refresh_node(dst_id, time);
                         updated_nodes.entry(dst_id).or_default().extend(diff);
@@ -257,7 +270,7 @@ impl FlowTracer {
             }
         }
 
-        // Put the new sets back. 
+        // Put the new sets back.
         // Clone the ReachSet to the nodes in the same SCC. This is required as they must be
         // updated seperately later on.
         for scc in &sccs {
@@ -288,20 +301,10 @@ mod tests {
     use super::*;
     use itertools::sorted;
 
-    #[test]
-    fn test_petgraph() {
-        use petgraph::algo::tarjan_scc;
-        use petgraph::graphmap::DiGraphMap;
-
-        let g = DiGraphMap::<i32, ()>::from_edges([(1, 2), (2, 3), (3, 4), (4, 2)]);
-        let scc = tarjan_scc(&g);
-        println!("{:#?}", scc);
-    }
-
     fn set_eq<A, B, V>(a: A, b: B) -> bool
     where
-        A: IntoIterator<Item=V>,
-        B: IntoIterator<Item=V>,
+        A: IntoIterator<Item = V>,
+        B: IntoIterator<Item = V>,
         V: Ord,
     {
         sorted(a).eq(sorted(b))
@@ -335,8 +338,8 @@ mod tests {
     }
 
     fn map<I, K, V>(iter: I) -> HashMap<K, V>
-    where 
-        I: IntoIterator<Item=(K, V)>,
+    where
+        I: IntoIterator<Item = (K, V)>,
         K: std::hash::Hash + Eq,
     {
         let mut res = HashMap::new();
@@ -347,8 +350,8 @@ mod tests {
     }
 
     fn set<I, V>(iter: I) -> HashSet<V>
-    where 
-        I: IntoIterator<Item=V>,
+    where
+        I: IntoIterator<Item = V>,
         V: std::hash::Hash + Eq,
     {
         let mut res = HashSet::new();
@@ -380,11 +383,26 @@ mod tests {
         let is_match = |_| true;
         assert!(set_eq(t.add_arc(1, 2, 0, is_match), [1]));
         let res = t.add_batch([(3, 1), (2, 3)], 1, is_match);
-        let ans = map([
-            (1, set([2, 3])),
-            (3, set([1, 2])),
-        ]);
+        let ans = map([(1, set([2, 3])), (3, set([1, 2]))]);
         assert_eq!(res, ans);
+    }
+
+    #[test]
+    fn test_scc() {
+        let mut t = FlowTracer::new(10);
+        let is_match = |_| true;
+        assert!(set_eq(t.add_arc(1, 2, 0, is_match), [1]));
+        assert_eq!(
+            t.add_batch([(2, 3), (3, 4), (4, 2), (3, 5)], 1, is_match),
+            map([
+                (2, set([3, 4])),
+                (3, set([1, 2, 4])),
+                (4, set([1, 2, 3])),
+                (5, set([1, 2, 3, 4])),
+            ])
+        );
+        assert!(set_eq(t.add_arc(6, 2, 2, is_match), [6]));
+        assert!(set_eq(t.add_arc(3, 7, 2, is_match), [1, 2, 3, 4]));
     }
 
     #[test]
@@ -395,11 +413,7 @@ mod tests {
         assert!(set_eq(t.add_arc(3, 1, 1, is_match), [3]));
         assert_eq!(
             t.add_batch([(2, 3), (4, 2), (5, 1)], 2, is_match),
-            map([
-                (1, set([5])),
-                (2, set([4])),
-                (3, set([1, 2, 4])),
-            ])
+            map([(1, set([5])), (2, set([4])), (3, set([1, 2, 4])),])
         );
         assert!(set_eq(t.add_arc(1, 2, 3, is_match), [1, 3, 5]));
     }
