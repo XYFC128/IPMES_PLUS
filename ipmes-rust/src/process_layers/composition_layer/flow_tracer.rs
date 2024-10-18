@@ -12,6 +12,12 @@ use slab::Slab;
 pub struct ReachSet {
     /// Map node_id -> update_tim
     node_update_time: HashMap<u64, u64>,
+
+    /// The lower bound of the oldest update time in this set.
+    oldest_time_hint: u64,
+
+    /// The upper bound of the latest update time in this set.
+    latest_time: u64,
 }
 
 impl ReachSet {
@@ -21,7 +27,11 @@ impl ReachSet {
             node_update_time.insert(id, time);
         }
 
-        Self { node_update_time }
+        Self {
+            node_update_time,
+            oldest_time_hint: time,
+            latest_time: time,
+        }
     }
 
     /// Merge multiple sets to a single set.
@@ -31,8 +41,18 @@ impl ReachSet {
         V: Borrow<Self>,
     {
         let mut node_update_time = HashMap::<u64, u64>::new();
+        let mut oldest_time_hint = u64::MAX;
+        let mut latest_time = 0;
         for set in sets {
-            for (id, time) in &set.borrow().node_update_time {
+            let set = set.borrow();
+
+            if set.latest_time < time_bound {
+                continue;
+            }
+
+            latest_time = std::cmp::max(latest_time, set.latest_time);
+
+            for (id, time) in &set.node_update_time {
                 if *time < time_bound {
                     continue;
                 } else if let Some(prev_time) = node_update_time.get_mut(id) {
@@ -42,15 +62,23 @@ impl ReachSet {
                 } else {
                     node_update_time.insert(*id, *time);
                 }
+                oldest_time_hint = std::cmp::min(oldest_time_hint, *time);
             }
         }
 
-        Self { node_update_time }
+        Self {
+            node_update_time,
+            oldest_time_hint,
+            latest_time,
+        }
     }
 
     /// Update the time of the given `id` if it is in this set. Otherwise, do nothing.
     pub fn refresh_node(&mut self, id: u64, time: u64) {
-        self.node_update_time.entry(id).and_modify(|t| *t = time);
+        if let Some(t) = self.node_update_time.get_mut(&id) {
+            *t = time;
+            self.latest_time = time;
+        }
     }
 
     /// The root node `u` of `other` can connect to the root node `v` of this set. This operation
@@ -93,10 +121,12 @@ impl ReachSet {
         } else if let Some(our_update_time) = self.node_update_time.get_mut(&id) {
             if *our_update_time < update_time {
                 *our_update_time = update_time;
+                self.latest_time = std::cmp::max(self.latest_time, update_time);
                 return true;
             }
         } else {
             self.node_update_time.insert(id, update_time);
+            self.latest_time = std::cmp::max(self.latest_time, update_time);
             return true;
         }
         false
@@ -117,7 +147,23 @@ impl ReachSet {
     }
 
     pub fn del_outdated(&mut self, time_bound: u64) {
-        self.node_update_time.retain(|_, t| *t >= time_bound);
+        if self.oldest_time_hint >= time_bound {
+            return;
+        } else if self.latest_time < time_bound {
+            self.node_update_time.clear();
+            return;
+        }
+
+        let mut oldest_time = u64::MAX;
+        self.node_update_time.retain(|_, t| {
+            if *t >= time_bound {
+                oldest_time = std::cmp::min(oldest_time, *t);
+                true
+            } else {
+                false
+            }
+        });
+        self.oldest_time_hint = oldest_time;
     }
 }
 
@@ -289,7 +335,9 @@ impl FlowTracer {
     }
 
     pub fn get_updated_time(&self, src: u64, dst: u64) -> Option<u64> {
-        self.reach_sets.get(&dst).and_then(|s| s.get_update_time_of(src))
+        self.reach_sets
+            .get(&dst)
+            .and_then(|s| s.get_update_time_of(src))
     }
 
     pub fn del_outdated(&mut self, time_bound: u64) {
