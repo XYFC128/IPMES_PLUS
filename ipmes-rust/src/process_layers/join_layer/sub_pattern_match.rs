@@ -80,7 +80,34 @@ where
     merged.into_boxed_slice()
 }
 
-fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
+fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> bool {
+    let mut p1 = id_list1.iter();
+    let mut p2 = id_list2.iter();
+    let mut next1 = p1.next();
+    let mut next2 = p2.next();
+
+    while let (Some(id1), Some(id2)) = (next1, next2) {
+        match id1.cmp(id2) {
+            Ordering::Less => {
+                next1 = p1.next();
+            }
+            Ordering::Equal => {
+                debug!("event id duplicates: {}", id1);
+                return false;
+            }
+            Ordering::Greater => {
+                next2 = p2.next();
+            }
+        }
+    }
+    true
+}
+
+fn merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
+    if !try_merge_event_ids(id_list1, id_list2) {
+        return None;
+    }
+
     let mut merged = Vec::with_capacity(id_list1.len() + id_list2.len());
     let mut p1 = id_list1.iter();
     let mut p2 = id_list2.iter();
@@ -117,16 +144,103 @@ fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>>
     Some(merged.into_boxed_slice())
 }
 
-fn check_edge_uniqueness(match_events: &[MatchEvent]) -> bool {
-    let mut prev_id = u64::MAX;
-    for edge in match_events {
-        if edge.input_event.event_id == prev_id {
+
+pub fn try_merge_entities(
+    a: &[(u64, u64)],
+    b: &[(u64, u64)],
+    max_num_entities: usize
+) -> bool {
+    let mut used_entities = vec![false; max_num_entities];
+
+    let mut p1 = a.iter();
+    let mut p2 = b.iter();
+
+    let mut next1 = p1.next();
+    let mut next2 = p2.next();
+
+    while let (Some(node1), Some(node2)) = (next1, next2) {
+        if used_entities[node1.1 as usize] || used_entities[node2.1 as usize] {
+            debug!("different input nodes match the same pattern");
             return false;
         }
-        prev_id = edge.input_event.event_id;
+
+        if node1.0 < node2.0 {
+            used_entities[node1.1 as usize] = true;
+            next1 = p1.next();
+        } else if node1.0 > node2.0 {
+            used_entities[node2.1 as usize] = true;
+            next2 = p2.next();
+        } else {
+            if node1.1 != node2.1 {
+                debug!("an input node matches distinct patterns");
+                return false;
+            }
+            used_entities[node1.1 as usize] = true;
+            next1 = p1.next();
+            next2 = p2.next();
+        }
     }
+
+    if next1.is_none() {
+        p1 = p2;
+        next1 = next2;
+    }
+
+    while let Some(node) = next1 {
+        if used_entities[node.1 as usize] {
+            return false;
+        }
+        used_entities[node.1 as usize] = true;
+        next1 = p1.next();
+    }
+
     true
 }
+
+pub fn merge_entities(
+    a: &[(u64, u64)],
+    b: &[(u64, u64)],
+    max_num_entities: usize,
+) -> Option<Box<[(u64, u64)]>> {
+    if !try_merge_entities(a, b, max_num_entities) {
+        return None;
+    }
+
+    let mut merged = Vec::with_capacity(a.len() + b.len());
+
+    let mut p1 = a.iter();
+    let mut p2 = b.iter();
+
+    let mut next1 = p1.next();
+    let mut next2 = p2.next();
+
+    while let (Some(node1), Some(node2)) = (next1, next2) {
+        if node1.0 < node2.0 {
+            merged.push(*node1);
+            next1 = p1.next();
+        } else if node1.0 > node2.0 {
+            merged.push(*node2);
+            next2 = p2.next();
+        } else {
+            merged.push(*node1);
+            next1 = p1.next();
+            next2 = p2.next();
+        }
+    }
+
+    if next1.is_none() {
+        p1 = p2;
+        next1 = next2;
+    }
+
+    while let Some(node) = next1 {
+        merged.push(*node);
+        next1 = p1.next();
+    }
+
+    Some(merged.into_boxed_slice())
+}
+
 
 impl<'p> SubPatternMatch<'p> {
     pub fn build(
@@ -162,7 +276,6 @@ impl<'p> SubPatternMatch<'p> {
         })
     }
 
-    // todo: check correctness
     pub fn merge_matches(
         sub_pattern_buffer: &SubPatternBuffer<'p>,
         sub_pattern_match1: &Self,
@@ -176,7 +289,7 @@ impl<'p> SubPatternMatch<'p> {
         debug!("event uniqueness checking...");
 
         let event_ids =
-            try_merge_event_ids(&sub_pattern_match1.event_ids, &sub_pattern_match2.event_ids)?;
+            merge_event_ids(&sub_pattern_match1.event_ids, &sub_pattern_match2.event_ids)?;
         let match_event_map = merge_match_event_map(
             &sub_pattern_match1.match_event_map,
             &sub_pattern_match2.match_event_map,
@@ -195,9 +308,10 @@ impl<'p> SubPatternMatch<'p> {
         debug!("shared node and node uniqueness checking");
 
         // handle "shared node" and "node uniqueness"
-        let match_entities = sub_pattern_buffer.try_merge_entities(
+        let match_entities = merge_entities(
             &sub_pattern_match1.match_entities,
             &sub_pattern_match2.match_entities,
+            sub_pattern_buffer.max_num_entities,
         )?;
 
         Some(SubPatternMatch {
@@ -246,80 +360,9 @@ impl PartialOrd<Self> for EarliestFirst<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::pattern::SubPattern;
+
     use super::*;
-    use crate::input_event::InputEvent;
-    use crate::pattern::{PatternEntity, PatternEvent, PatternEventType};
-    use std::rc::Rc;
-
-    fn dummy_input_event(event_id: u64) -> Rc<InputEvent> {
-        Rc::new(InputEvent::new(0, event_id, "", 0, "", 0, ""))
-    }
-
-    #[test]
-    fn test_check_edge_uniqueness_1() {
-        let pattern_edge = PatternEvent {
-            id: 0,
-            event_type: PatternEventType::Default,
-            signature: "".to_string(),
-            subject: PatternEntity {
-                id: 0,
-                signature: "".to_string(),
-            },
-            object: PatternEntity {
-                id: 0,
-                signature: "".to_string(),
-            },
-        };
-        let match_edges = vec![
-            MatchEvent {
-                input_event: dummy_input_event(1),
-                matched: &pattern_edge,
-            },
-            MatchEvent {
-                input_event: dummy_input_event(2),
-                matched: &pattern_edge,
-            },
-            MatchEvent {
-                input_event: dummy_input_event(2),
-                matched: &pattern_edge,
-            },
-        ];
-
-        assert!(!check_edge_uniqueness(&match_edges));
-    }
-
-    #[test]
-    fn test_check_edge_uniqueness_2() {
-        let pattern_edge = PatternEvent {
-            id: 0,
-            event_type: PatternEventType::Default,
-            signature: "".to_string(),
-            subject: PatternEntity {
-                id: 0,
-                signature: "".to_string(),
-            },
-            object: PatternEntity {
-                id: 0,
-                signature: "".to_string(),
-            },
-        };
-        let match_edges = vec![
-            MatchEvent {
-                input_event: dummy_input_event(1),
-                matched: &pattern_edge,
-            },
-            MatchEvent {
-                input_event: dummy_input_event(2),
-                matched: &pattern_edge,
-            },
-            MatchEvent {
-                input_event: dummy_input_event(3),
-                matched: &pattern_edge,
-            },
-        ];
-
-        assert!(check_edge_uniqueness(&match_edges));
-    }
 
     #[test]
     fn test_merge_edge_id_map_1() {
@@ -348,7 +391,7 @@ mod tests {
         let id_list1 = [1, 3, 5];
         let id_list2 = [2, 4];
         assert_eq!(
-            *try_merge_event_ids(&id_list1, &id_list2).unwrap(),
+            *merge_event_ids(&id_list1, &id_list2).unwrap(),
             [1, 2, 3, 4, 5]
         );
     }
@@ -357,14 +400,95 @@ mod tests {
     fn test_merge_event_id_dup_id() {
         let id_list1 = [1, 3, 5];
         let id_list2 = [3, 4];
-        assert_eq!(try_merge_event_ids(&id_list1, &id_list2), None);
+        assert_eq!(merge_event_ids(&id_list1, &id_list2), None);
     }
 
     #[test]
     fn test_merge_event_id_edgecases() {
-        assert_eq!(*try_merge_event_ids(&[1], &[2]).unwrap(), [1, 2]);
-        assert_eq!(*try_merge_event_ids(&[2], &[1]).unwrap(), [1, 2]);
-        assert_eq!(*try_merge_event_ids(&[1], &[]).unwrap(), [1]);
-        assert!(try_merge_event_ids(&[], &[]).unwrap().is_empty(),);
+        assert_eq!(*merge_event_ids(&[1], &[2]).unwrap(), [1, 2]);
+        assert_eq!(*merge_event_ids(&[2], &[1]).unwrap(), [1, 2]);
+        assert_eq!(*merge_event_ids(&[1], &[]).unwrap(), [1]);
+        assert!(merge_event_ids(&[], &[]).unwrap().is_empty(),);
+    }
+
+    #[test]
+    /// shared node not shared between input nodes: Fail
+    fn test_merge_entities1() {
+        let max_node_id = 100;
+        let tmp_sub_pattern = SubPattern {
+            id: 0,
+            events: vec![],
+        };
+        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+
+        let a = vec![(2, 19), (7, 20), (11, 9)];
+
+        let b = vec![(0, 17), (2, 22), (9, 11)];
+
+        let ans = None;
+
+        let merged = merge_entities(&a, &b, sub_pattern_buffer.max_num_entities);
+        assert_eq!(merged, ans);
+    }
+
+    #[test]
+    /// input node not unique: Fail
+    fn test_merge_entities2() {
+        let max_node_id = 100;
+        let tmp_sub_pattern = SubPattern {
+            id: 0,
+            events: vec![],
+        };
+        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+
+        let a = vec![(2, 19), (7, 20), (11, 9)];
+
+        let b = vec![(0, 17), (25, 20)];
+        let ans = None;
+
+        let merged = merge_entities(&a, &b, sub_pattern_buffer.max_num_entities);
+        assert_eq!(merged, ans);
+    }
+
+    #[test]
+    /// Pass ("a" finished first)
+    fn test_merge_entities3() {
+        let max_node_id = 100;
+        let tmp_sub_pattern = SubPattern {
+            id: 0,
+            events: vec![],
+        };
+        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+
+        let a = vec![(2, 19), (7, 20), (11, 9)];
+
+        let b = vec![(0, 17), (25, 27)];
+        let ans = [(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
+
+        let merged = merge_entities(&a, &b, sub_pattern_buffer.max_num_entities);
+
+        assert_ne!(merged, None);
+        assert!(merged.unwrap().iter().eq(&ans));
+    }
+
+    #[test]
+    /// Pass ("a" finished first)
+    fn test_merge_entities4() {
+        let max_node_id = 100;
+        let tmp_sub_pattern = SubPattern {
+            id: 0,
+            events: vec![],
+        };
+        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+
+        let b = vec![(2, 19), (7, 20), (11, 9)];
+
+        let a = vec![(0, 17), (25, 27)];
+        let ans = [(0, 17), (2, 19), (7, 20), (11, 9), (25, 27)];
+
+        let merged = merge_entities(&a, &b, sub_pattern_buffer.max_num_entities);
+
+        assert_ne!(merged, None);
+        assert!(merged.unwrap().iter().eq(&ans));
     }
 }
