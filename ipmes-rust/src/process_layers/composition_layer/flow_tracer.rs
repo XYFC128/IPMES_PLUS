@@ -6,8 +6,8 @@ use petgraph::graphmap::DiGraphMap;
 use petgraph::Direction;
 use slab::Slab;
 
-/// It maintains the nodes that can reach `v` for some node `v` in the graph. `E` is the type of
-/// associated data on the arcs.
+/// A set of nodes. It keeps track of the time of each nodes in the set, and supports querying the
+/// updated nodes after union with another set.
 #[derive(Clone)]
 pub struct ReachSet {
     /// Map node_id -> update_tim
@@ -35,6 +35,13 @@ impl ReachSet {
     }
 
     /// Merge multiple sets to a single set.
+    ///
+    /// Parameters:
+    /// - `sets`: an iterator of sets
+    /// - `time_bound`: during the merging process, it will ignore the nodes that is older than the
+    ///   `time_bound`.
+    ///
+    /// Returns the newly merged set.
     pub fn merge<I, V>(sets: I, time_bound: u64) -> Self
     where
         I: IntoIterator<Item = V>,
@@ -81,13 +88,9 @@ impl ReachSet {
         }
     }
 
-    /// The root node `u` of `other` can connect to the root node `v` of this set. This operation
-    /// correspond to set union operation. Given that `u` can reach `v`, all nodes that can reach
-    /// `u` can reach `v` too, thus union the ReachSet of `u` to `v`.
+    /// Union this set with another set. Returns a `Vec` of node ids that is updated in this set.
     ///
-    /// The union operation will ignore the nodes in `other` that are updated before `timebound`.
-    ///
-    /// The `edge_data` is the data associated with the arc `u -> v`.
+    /// The nodes in `other` set which are older than `time_bound` will be ignored.
     pub fn unioned_by(&mut self, other: &Self, time_bound: u64) -> Vec<u64> {
         let mut updated_nodes = Vec::new();
 
@@ -100,6 +103,9 @@ impl ReachSet {
         updated_nodes
     }
 
+    /// Calculate the difference of this set and `other`. Returns a `Vec` of node which is
+    /// 1. only in this set or
+    /// 2. in both sets but the one in this set is newer
     pub fn difference(&self, other: &Self) -> Vec<u64> {
         let mut diff = vec![];
         for (id, time) in &self.node_update_time {
@@ -115,6 +121,11 @@ impl ReachSet {
         diff
     }
 
+    /// If this set contains a node of `id` and its time is older than `update_time`, set
+    /// its time to `upate_time`. Otherwise, insert a new node into this set with it's time
+    /// set to `update_time`.
+    ///
+    /// Returns `true` if this set is modified. Otherwise, `false` is returned.
     pub fn update_or_insert(&mut self, id: u64, update_time: u64, time_bound: u64) -> bool {
         if update_time < time_bound {
             return false;
@@ -138,14 +149,17 @@ impl ReachSet {
         self.node_update_time.get(&src).copied()
     }
 
+    /// Returns an iterator of the id of nodes in this set
     pub fn iter(&self) -> impl IntoIterator<Item = u64> + '_ {
         self.node_update_time.keys().copied()
     }
 
+    /// Returns `ture` if this set is empty
     pub fn is_empty(&self) -> bool {
         self.node_update_time.is_empty()
     }
 
+    /// Remove nodes that is older than the `time_bound`.
     pub fn del_outdated(&mut self, time_bound: u64) {
         if self.oldest_time_hint >= time_bound {
             return;
@@ -167,11 +181,9 @@ impl ReachSet {
     }
 }
 
-/// Incrementally trace the flow. [`E`] is the type of the data associated with the arcs in the
-/// graph. The current implementation requires `E` to be cheaply cloneable. If `E` doesn't meet
-/// the requirement, wrap it with `Rc` or `Arc`.
+/// Incrementally trace the flows in a streaming graph.
 ///
-/// The flow is a path on a directed graph where the timestamp of each arc on the path is newer
+/// A flow is a path on a directed graph where the timestamp of each arc on the path is newer
 /// than that of its previous arc.
 pub struct FlowTracer {
     reach_sets: HashMap<u64, ReachSet>,
@@ -237,7 +249,7 @@ impl FlowTracer {
     /// - `time`: current time, all arcs in the batch has this timestamp
     /// - `is_matach`: a function returns whether the given node matches any signature
     ///
-    /// Returns a mapping from a node id to the set of its new reachable sources.
+    /// Returns a mapping from a node id to the a of its new reachable sources.
     pub fn add_batch(
         &mut self,
         batch: impl IntoIterator<Item = (u64, u64)>,
@@ -334,12 +346,15 @@ impl FlowTracer {
         updated_nodes
     }
 
+    /// Get the time when the flow from `src` to `dst` is started. Returns `None` if there is no
+    /// such flow.
     pub fn get_updated_time(&self, src: u64, dst: u64) -> Option<u64> {
         self.reach_sets
             .get(&dst)
             .and_then(|s| s.get_update_time_of(src))
     }
 
+    /// Remove the oudated internal states that is older than `time_bound`
     pub fn del_outdated(&mut self, time_bound: u64) {
         self.reach_sets.retain(|_, set| {
             set.del_outdated(time_bound);
