@@ -1,19 +1,16 @@
 use std::vec;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use ipmes_rust::{
     pattern::{decompose, parser::parse_json, SubPattern},
-    pattern_match,
     process_layers::{
-        composition_layer::{match_instance, MatchInstance},
+        composition_layer::MatchInstance,
         JoinLayer,
     },
     universal_match_event::UniversalMatchEvent,
 };
 use itertools::{enumerate, Itertools};
 use log::debug;
-use rand::{seq::SliceRandom, SeedableRng}; // 0.6.5
-use rand_chacha::{ChaCha20Rng, ChaChaRng};
 use serde_json::Value;
 
 fn gen_match_instance_from_subpattern<'p>(sub_pattern: &SubPattern<'p>, set_time: u64) -> MatchInstance<'p> {
@@ -99,8 +96,6 @@ fn run_join_layer() {
         Note that the above figures are for a single iteration. There are 100 iterations, and thus all numbers should
         be multiplied by 100.
 
-        其實 100 次 iteration 沒什麼意義，只是把數據等比例放大而已
-
     */
     let mut match_instances = vec![];
     // Mind that the end-of-loop "0" and "1" instances may be joined with beginning-of-loop "[0, 1]" instances,
@@ -116,19 +111,8 @@ fn run_join_layer() {
         for j in 0..5 {
             match_instances.append(&mut gen_match_instances(&sub_patterns, &[1], (9*i+j+4)*windows_size + 3 + 2*j));
             match_instances.append(&mut gen_match_instances(&sub_patterns, &[0], (9*i+j+4)*windows_size + 4 + 2*j));
-            // match_instances.append(&mut gen_match_instances(&sub_patterns, &[2, 3], (9*i+j+4)*windows_size + 3 + 2*j));
-            // match_instances.append(&mut gen_match_instances(&sub_patterns, &[2, 3], (9*i+j+4)*windows_size + 4 + 2*j));
         }
     }
-
-
-    // // Randomly shuffle match_instances
-    // let seed = 123456;
-    // let mut rng = ChaChaRng::seed_from_u64(seed);
-    // if !fixed {  
-    //     rng = ChaChaRng::from_entropy();
-    // }
-    // match_instances.shuffle(&mut rng);
 
     join_layer.run_isolated_join_layer(&mut match_instances);
 }

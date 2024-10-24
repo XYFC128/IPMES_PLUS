@@ -1,11 +1,10 @@
-use crate::match_event::MatchEvent;
 use crate::process_layers::composition_layer;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
-use std::fmt::{Debug, Pointer};
+use std::fmt::Debug;
 use crate::process_layers::composition_layer::match_instance::{InputEntityId, PatternEntityId};
 
 /// Matches of sub-patterns.

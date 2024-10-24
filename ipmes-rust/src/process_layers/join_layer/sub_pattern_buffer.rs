@@ -1,22 +1,11 @@
 use super::sub_pattern_match::EarliestFirst;
-use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern::SubPattern;
-use crate::process_layers::join_layer::sub_pattern_buffer::TimeOrder::{
-    FirstToSecond, SecondToFirst,
-};
 use crate::universal_match_event::UniversalMatchEvent;
-use env_logger::fmt::Timestamp;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
 
 use super::{get_parent_id, get_sibling_id};
-
-#[derive(Clone, Debug, PartialEq)]
-enum TimeOrder {
-    FirstToSecond,
-    SecondToFirst,
-}
 
 /// A structure that holds order relations between sibling buffers.
 #[derive(Clone, Debug)]
@@ -30,10 +19,10 @@ pub struct Relation {
     /// (The "overall structure" has guaranteed nodes be shared properly, when performing "SubPatternMatch::try_merge_nodes()".)
     shared_entities: Vec<bool>,
 
-    /// `event_orders: (pattern_id1, pattern_id2, TimeOrder)`
+    /// `event_orders: (pattern_id1, pattern_id2)`
     ///
     /// `pattern_id1` (`pattern_id2`, respectively) is the id of some left  (right, respectively) buffer on `JoinLayer::sub_pattern_buffers`, where the two buffers are siblings.
-    event_orders: Vec<(usize, usize, TimeOrder)>,
+    event_orders: Vec<(usize, usize)>,
 }
 
 impl Relation {
@@ -46,10 +35,10 @@ impl Relation {
 
     /// Check whether order relations are violated between two pattern matches.
     pub fn check_order_relation(&self, match_event_map: &[Option<UniversalMatchEvent>]) -> bool {
-        for (idx1, idx2, time_order) in &self.event_orders {
+        for (idx1, idx2) in &self.event_orders {
             if let (Some(event1), Some(event2)) = (&match_event_map[*idx1], &match_event_map[*idx2])
             {
-                if !Self::satisfy_order(event1, event2, time_order) {
+                if !Self::satisfy_order(event1, event2) {
                     return false;
                 }
             } else {
@@ -64,12 +53,8 @@ impl Relation {
     fn satisfy_order(
         event1: &UniversalMatchEvent,
         event2: &UniversalMatchEvent,
-        time_order: &TimeOrder,
     ) -> bool {
-        match time_order {
-            FirstToSecond => event1.end_time <= event2.start_time,
-            SecondToFirst => event2.end_time <= event1.start_time,
-        }
+        event1.end_time <= event2.start_time
     }
 
     pub fn is_entity_shared(&self, id: usize) -> bool {
@@ -156,14 +141,13 @@ impl<'p> SubPatternBuffer<'p> {
         // generate order-relation (new)
         // If the dependency of (src, tgt) exists, add the dependency into the list of order relations.
         // Note that ``src'' always precedes ``tgt''.
-        // TODO: Remove ``FirstToSecond'' macro
         for (src, tgt) in pattern.order.get_dependencies() {
             if (sub_pattern_buffer1.edge_id_list.contains(&src)
                 && sub_pattern_buffer2.edge_id_list.contains(&tgt))
                 || (sub_pattern_buffer2.edge_id_list.contains(&src)
                     && sub_pattern_buffer1.edge_id_list.contains(&tgt))
             {
-                event_orders.push((src, tgt, FirstToSecond));
+                event_orders.push((src, tgt));
             }
         }
 

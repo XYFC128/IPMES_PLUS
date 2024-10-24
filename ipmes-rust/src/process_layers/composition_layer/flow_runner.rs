@@ -5,7 +5,7 @@ use super::state_table::StateTable;
 use crate::input_event::InputEvent;
 use crate::pattern::{PatternEntity, PatternEventType, SubPattern};
 use crate::universal_match_event::UniversalMatchEvent;
-use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
+use ahash::{HashMap, HashMapExt, HashSet};
 use regex::{Error, RegexSet, SetMatches};
 use std::collections::hash_map::Entry;
 use std::rc::Rc;

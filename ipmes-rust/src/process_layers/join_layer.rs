@@ -1,7 +1,6 @@
 mod sub_pattern_buffer;
 mod sub_pattern_match;
 
-use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern::SubPattern;
 use crate::pattern_match::PatternMatch;
@@ -267,24 +266,6 @@ impl<'p, P> JoinLayer<'p, P> {
     }
 }
 
-/// Node id format conversion.
-fn convert_entity_id_map(entity_id_map: &mut Vec<(u64, u64)>, node_ids: &[Option<u64>]) {
-    for (i, node_id) in node_ids.iter().enumerate() {
-        if let Some(matched_id) = node_id {
-            entity_id_map.push((*matched_id, i as u64));
-        }
-    }
-
-    entity_id_map.sort();
-}
-
-/// Convert a vector of events into a vector of event ids indexed by match event id.
-fn create_event_id_map(event_id_map: &mut [Option<u64>], events: &Vec<MatchEvent>) {
-    for edge in events {
-        event_id_map[edge.matched.id] = Some(edge.input_event.event_id);
-    }
-}
-
 /// Get the corresponding buffer id of a sub-pattern match.
 fn get_buffer_id(sub_pattern_id: usize, buffer_len: usize) -> usize {
     sub_pattern_id + buffer_len / 2
@@ -360,9 +341,8 @@ pub mod tests {
     use crate::pattern::decompose;
     use crate::{
         pattern::{parser::parse_json, SubPattern},
-        pattern_match,
         process_layers::{
-            composition_layer::{match_instance, MatchInstance},
+            composition_layer::MatchInstance,
             JoinLayer,
         },
         universal_match_event::UniversalMatchEvent,
