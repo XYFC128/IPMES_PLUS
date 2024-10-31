@@ -1,29 +1,54 @@
-use std::vec;
+use std::{rc::Rc, vec};
+use ipmes_rust::match_event::{MatchEvent, RawEvents};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use ipmes_rust::{
-    pattern::{decompose, parser::parse_json, SubPattern},
-    process_layers::{
+    input_event::InputEvent, pattern::{decompose, parser::parse_json, SubPattern}, process_layers::{
         composition_layer::MatchInstance,
         JoinLayer,
-    },
-    universal_match_event::UniversalMatchEvent,
+    }, universal_match_event::UniversalMatchEvent
 };
 use itertools::{enumerate, Itertools};
 use log::debug;
 use serde_json::Value;
 
-fn gen_match_instance_from_subpattern<'p>(sub_pattern: &SubPattern<'p>, set_time: u64) -> MatchInstance<'p> {
+fn gen_match_instance_from_subpattern<'p>(
+    sub_pattern: &SubPattern<'p>,
+    set_time: u64,
+) -> MatchInstance {
     let mut match_events = vec![];
     let mut match_entities = vec![];
     for match_event in &sub_pattern.events {
-        match_events.push(UniversalMatchEvent {
-            matched: *match_event,
-            start_time: set_time,
-            end_time: set_time,
-            subject_id: match_event.subject.id as u64,
-            object_id: match_event.object.id as u64,
-            event_ids: vec![match_event.id as u64].into_boxed_slice(),
+        // match_events.push(UniversalMatchEvent {
+        //     matched: *match_event,
+        //     start_time: set_time,
+        //     end_time: set_time,
+        //     subject_id: match_event.subject.id as u64,
+        //     object_id: match_event.object.id as u64,
+        //     event_ids: vec![match_event.id as u64].into_boxed_slice(),
+        // });
+
+        let input_event = InputEvent::new(
+            set_time,
+            match_event.id as u64,
+            &match_event.signature,
+            match_event.subject.id as u64,
+            &match_event.subject.signature,
+            match_event.object.id as u64,
+            &match_event.object.signature,
+        );
+
+        match_events.push(MatchEvent {
+            // matched: *match_event,
+            // start_time: set_time,
+            // end_time: set_time,
+            match_id: match_event.id as u32,
+            input_subject_id: match_event.subject.id as u64,
+            input_object_id: match_event.object.id as u64,
+            pattern_subject_id: match_event.subject.id as u64,
+            pattern_object_id: match_event.object.id as u64,
+            // event_ids: vec![match_event.id as u64].into_boxed_slice(),
+            raw_events: RawEvents::Single(Rc::new(input_event)),
         });
 
         // We prescribe that the input event id is identical to the pattern event id.
@@ -35,8 +60,9 @@ fn gen_match_instance_from_subpattern<'p>(sub_pattern: &SubPattern<'p>, set_time
 
     let event_ids = match_events
         .iter()
-        .flat_map(|x| x.event_ids.iter())
-        .cloned()
+        // .flat_map(|x| x.event_ids.iter())
+        .flat_map(|x| x.raw_events.get_ids())
+        // .cloned()
         .sorted()
         .collect_vec();
 
@@ -50,7 +76,12 @@ fn gen_match_instance_from_subpattern<'p>(sub_pattern: &SubPattern<'p>, set_time
     }
 }
 
-fn gen_match_instances<'p>(sub_patterns: &Vec<SubPattern<'p>>, has_id: &[usize], set_time: u64) -> Vec<(u32, MatchInstance<'p>)> {
+fn gen_match_instances<'p>(
+    sub_patterns: &Vec<SubPattern<'p>>,
+    has_id: &[usize],
+    set_time: u64,
+) -> Vec<(u32, MatchInstance)> {
+// ) -> Vec<(u32, MatchInstance<'p>)> {
     let mut match_instances = vec![];
     for (id, sub_pattern) in enumerate(sub_patterns) {
         if has_id.binary_search(&id).is_err() {
