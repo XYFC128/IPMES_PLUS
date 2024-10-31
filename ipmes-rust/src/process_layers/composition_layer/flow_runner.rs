@@ -3,6 +3,7 @@ use super::instance_storage::{InstanceStorage, StorageRequest};
 use super::pattern_info::FlowPattern;
 use super::state_table::StateTable;
 use crate::input_event::InputEvent;
+use crate::match_event::{MatchEvent, RawEvents};
 use crate::pattern::{PatternEntity, PatternEventType, SubPattern};
 use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt, HashSet};
@@ -146,7 +147,8 @@ impl FlowRunner {
     pub fn run<'p>(
         &self,
         info: &FlowPattern<'p>,
-        storage: &mut InstanceStorage<'p>,
+        storage: &mut InstanceStorage,
+        // storage: &mut InstanceStorage<'p>,
         state_table: &StateTable,
     ) {
         let window_bound = self.cur_time.saturating_sub(self.window_size);
@@ -163,13 +165,20 @@ impl FlowRunner {
                     continue;
                 }
 
-                let flow = UniversalMatchEvent {
-                    matched: info.pattern,
-                    start_time: self.flow_tracer.get_updated_time(*src, *dst).unwrap(),
-                    end_time: self.cur_time,
+                // let flow = UniversalMatchEvent {
+                //     matched: info.pattern,
+                //     start_time: self.flow_tracer.get_updated_time(*src, *dst).unwrap(),
+                //     end_time: self.cur_time,
+                //     subject_id: *src,
+                //     object_id: *dst,
+                //     event_ids: Box::new([]),
+                // };
+                
+                let flow = MatchEvent {
+                    match_id: info.pattern.id as u32,
                     subject_id: *src,
                     object_id: *dst,
-                    event_ids: Box::new([]),
+                    raw_events: RawEvents::Flow(self.flow_tracer.get_updated_time(*src, *dst).unwrap(), self.cur_time)
                 };
 
                 let request = StorageRequest {

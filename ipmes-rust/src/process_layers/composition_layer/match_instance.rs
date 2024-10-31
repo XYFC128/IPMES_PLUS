@@ -1,12 +1,17 @@
 use super::pattern_info::SharedNodeInfo;
+use crate::input_event::InputEvent;
+use crate::match_event::MatchEvent;
 use crate::universal_match_event::UniversalMatchEvent;
 use itertools::Itertools;
+use regex::Match;
 use std::cmp::min;
 use std::collections::HashSet;
 use std::fmt::Debug;
+use std::rc::Rc;
 
 pub type InputEntityId = u64;
 pub type PatternEntityId = u64;
+pub type InputEventId = u64;
 
 fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>> {
     let mut new_event_ids = Vec::with_capacity(event_ids.len() + new_ids.len());
@@ -24,7 +29,8 @@ fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>
 
 fn dup_extend_entities_by_event(
     match_entities: &[(InputEntityId, PatternEntityId)],
-    event: &UniversalMatchEvent,
+    event: &MatchEvent,
+    // event: &UniversalMatchEvent,
     shared_node_info: SharedNodeInfo,
 ) -> Option<Box<[(InputEntityId, PatternEntityId)]>> {
     use SharedNodeInfo::*;
@@ -32,25 +38,25 @@ fn dup_extend_entities_by_event(
         None => {
             if event.subject_id < event.object_id {
                 Some(Box::new([
-                    (event.subject_id, event.matched.subject.id as u64),
-                    (event.object_id, event.matched.object.id as u64),
+                    (event.subject_id, event.subject_id),
+                    (event.object_id, event.object_id),
                 ]))
             } else {
                 Some(Box::new([
-                    (event.object_id, event.matched.object.id as u64),
-                    (event.subject_id, event.matched.subject.id as u64),
+                    (event.object_id, event.object_id),
+                    (event.subject_id, event.subject_id),
                 ]))
             }
         }
         Subject => dup_extend_entities_list(
             match_entities,
             event.object_id,
-            event.matched.object.id as u64,
+            event.object_id,
         ),
         Object => dup_extend_entities_list(
             match_entities,
             event.subject_id,
-            event.matched.subject.id as u64,
+            event.subject_id,
         ),
         Both => Some(Box::from(match_entities)),
     }
@@ -88,19 +94,22 @@ fn dup_extend_entities_list(
 
 #[derive(Clone)]
 #[cfg_attr(test, derive(Default))]
-pub struct MatchInstance<'p> {
+// pub struct MatchInstance<'p> {
+pub struct MatchInstance {
     pub start_time: u64,
-    pub match_events: Box<[UniversalMatchEvent<'p>]>,
+    pub match_events: Box<[MatchEvent]>,
+    // pub match_events: Box<[UniversalMatchEvent<'p>]>,
 
     /// Sorted array of `(input entity id, pattern entity id)`.
     ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
     pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
-    pub event_ids: Box<[InputEntityId]>,
+    pub event_ids: Box<[InputEventId]>,
     pub state_id: u32,
 }
 
-impl<'p> MatchInstance<'p> {
+// impl<'p> MatchInstance<'p> {
+impl MatchInstance {
     pub fn dead_default() -> Self {
         Self {
             start_time: 0,
@@ -116,13 +125,16 @@ impl<'p> MatchInstance<'p> {
     /// added entities.
     pub fn clone_extend(
         &self,
-        new_event: UniversalMatchEvent<'p>,
+        new_event: MatchEvent,
+        // new_event: UniversalMatchEvent<'p>,
         shared_node_info: SharedNodeInfo,
     ) -> Option<Self> {
-        let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.event_ids)?;
+        // @TODO: Perhaps we need not extend ids explicitly?
+        let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.raw_events.get_ids().collect_vec())?;
+        // let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.event_ids)?;
         let match_entities =
             dup_extend_entities_by_event(&self.match_entities, &new_event, shared_node_info)?;
-        let start_time = min(self.start_time, new_event.start_time);
+        let start_time = min(self.start_time, new_event.raw_events.get_interval().0);
 
         let mut new_match_events = Vec::with_capacity(self.match_events.len() + 1);
         new_match_events.extend_from_slice(&self.match_events);
@@ -142,13 +154,14 @@ impl<'p> MatchInstance<'p> {
     /// flow event will not be considered for uniqueness checking for later events.
     pub fn clone_extend_flow(
         &self,
-        new_event: UniversalMatchEvent<'p>,
+        // new_event: UniversalMatchEvent<'p>,
+        new_event: MatchEvent,
         shared_node_info: SharedNodeInfo,
     ) -> Option<Self> {
         let event_ids = self.event_ids.clone();
         let match_entities =
             dup_extend_entities_by_event(&self.match_entities, &new_event, shared_node_info)?;
-        let start_time = min(self.start_time, new_event.start_time);
+        let start_time = min(self.start_time, new_event.raw_events.get_interval().0);
 
         let mut new_match_events = Vec::with_capacity(self.match_events.len() + 1);
         new_match_events.extend_from_slice(&self.match_events);
@@ -191,27 +204,33 @@ impl<'p> MatchInstance<'p> {
     }
 }
 
-impl<'p> Debug for MatchInstance<'p> {
+// impl<'p> Debug for MatchInstance<'p> {
+impl<'p> Debug for MatchInstance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MatchInstance")
             .field("start_time", &self.start_time)
-            .field("match_events", &self.match_events)
+            // .field("match_events", &self.match_events)
             .field("match_entities", &self.match_entities)
             .field("state_id", &self.state_id)
             .finish()
     }
 }
 
-pub struct FreqInstance<'p> {
-    pub instance: MatchInstance<'p>,
+// pub struct FreqInstance<'p> {
+pub struct FreqInstance {
+    // pub instance: MatchInstance<'p>,
+    pub instance: MatchInstance,
     pub start_time: u64,
     pub remain_freq: u32,
     pub cur_set: HashSet<u64>,
-    pub new_events: Vec<u64>,
+    // pub new_events: Vec<u64>,
+    pub new_events: Vec<Rc<InputEvent>>,
 }
 
-impl<'p> FreqInstance<'p> {
-    pub fn new(instance: MatchInstance<'p>, frequency: u32, time: u64) -> Self {
+// impl<'p> FreqInstance<'p> {
+impl FreqInstance {
+    // pub fn new(instance: MatchInstance<'p>, frequency: u32, time: u64) -> Self {
+    pub fn new(instance: MatchInstance, frequency: u32, time: u64) -> Self {
         let cur_set = HashSet::from_iter(instance.event_ids.iter().copied());
         Self {
             instance,
@@ -225,10 +244,13 @@ impl<'p> FreqInstance<'p> {
     /// Adds an event id into the frequency tracing set
     ///
     /// Returns `ture` if the event_id was not previously in the set
-    pub fn add_event(&mut self, event_id: u64) -> bool {
-        if self.cur_set.insert(event_id) {
+    // pub fn add_event(&mut self, event_id: u64) -> bool {
+    // pub fn add_event(&mut self, event_id: u64) -> bool {
+    pub fn add_event(&mut self, event: &Rc<InputEvent>) -> bool {
+        if self.cur_set.insert(event.event_id) {
             self.remain_freq -= 1;
-            self.new_events.push(event_id);
+            // self.new_events.push(event_id);
+            self.new_events.push(event.clone());
             true
         } else {
             false

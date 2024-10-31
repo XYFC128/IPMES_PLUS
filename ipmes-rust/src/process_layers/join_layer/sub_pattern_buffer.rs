@@ -1,9 +1,11 @@
 use super::sub_pattern_match::EarliestFirst;
+use crate::match_event::MatchEvent;
 use crate::pattern::Pattern;
 use crate::pattern::SubPattern;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::collections::{BinaryHeap, HashSet};
+use std::rc::Rc;
 
 use super::{get_parent_id, get_sibling_id};
 
@@ -34,7 +36,8 @@ impl Relation {
     }
 
     /// Check whether order relations are violated between two pattern matches.
-    pub fn check_order_relation(&self, match_event_map: &[Option<UniversalMatchEvent>]) -> bool {
+    // pub fn check_order_relation(&self, match_event_map: &[Option<UniversalMatchEvent>]) -> bool {
+    pub fn check_order_relation(&self, match_event_map: &[Option<Rc<MatchEvent>>]) -> bool {
         for (idx1, idx2) in &self.event_orders {
             if let (Some(event1), Some(event2)) = (&match_event_map[*idx1], &match_event_map[*idx2])
             {
@@ -51,10 +54,13 @@ impl Relation {
     }
 
     fn satisfy_order(
-        event1: &UniversalMatchEvent,
-        event2: &UniversalMatchEvent,
+        // event1: &UniversalMatchEvent,
+        // event2: &UniversalMatchEvent,
+        event1: &MatchEvent,
+        event2: &MatchEvent,
     ) -> bool {
-        event1.end_time <= event2.start_time
+        // event1.end_time <= event2.start_time
+        event1.raw_events.get_interval().1 <= event2.raw_events.get_interval().0
     }
 
     pub fn is_entity_shared(&self, id: usize) -> bool {
@@ -70,7 +76,9 @@ impl Default for Relation {
 
 /// A Buffer that holds sub-pattern matches that correspond to a certain sub-pattern.
 #[derive(Clone, Debug)]
-pub struct SubPatternBuffer<'p> {
+// pub struct SubPatternBuffer<'p> {
+// pub struct SubPatternBuffer<'p> {
+pub struct SubPatternBuffer {
     /// Buffer id.
     pub id: usize,
     /// Mainly for debugging.
@@ -80,9 +88,11 @@ pub struct SubPatternBuffer<'p> {
     /// Ids of pattern events (edges) contained in this sub-pattern.
     edge_id_list: HashSet<usize>,
     /// A buffer that holds sub-pattern matches.
-    pub(crate) buffer: BinaryHeap<EarliestFirst<'p>>,
+    pub(crate) buffer: BinaryHeap<EarliestFirst>,
+    // pub(crate) buffer: BinaryHeap<EarliestFirst<'p>>,
     /// A buffer that holds newly came sub-pattern matches.
-    pub(crate) new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
+    pub(crate) new_match_buffer: BinaryHeap<EarliestFirst>,
+    // pub(crate) new_match_buffer: BinaryHeap<EarliestFirst<'p>>,
     /// The order relations between the sub-pattern this buffer corresponds to and the one its sibling buffer corresponds to.
     pub relation: Relation,
     /// Number of entities in the overall pattern.
@@ -91,7 +101,8 @@ pub struct SubPatternBuffer<'p> {
     pub max_num_events: usize,
 }
 
-impl<'p> SubPatternBuffer<'p> {
+// impl<'p> SubPatternBuffer<'p> {
+impl<'p> SubPatternBuffer {
     pub fn new(
         id: usize,
         sibling_id: usize,

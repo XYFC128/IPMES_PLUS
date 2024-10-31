@@ -17,15 +17,20 @@ use crate::match_event::RawEvents::{Flow, Multiple, Single};
 
 #[derive(Clone)]
 pub struct MatchEvent {
-    match_id: u32,
-    subject_id: u64,
-    object_id: u64,
-    raw_events: RawEvents,
+    /// The pattern event id that `self.raw_events` are matched to.
+    pub match_id: u32,
+    /// The subject id of the **input event** (`raw_events`)
+    pub subject_id: u64,
+    /// The object id of the **input event** (`raw_events`)
+    pub object_id: u64,
+    /// Input events
+    pub raw_events: RawEvents,
 }
 
 #[derive(Clone)]
-enum RawEvents {
+pub enum RawEvents {
     Single(Rc<InputEvent>),
+    /// Correspond to `Frequency` match type
     Multiple(Box<[Rc<InputEvent>]>),
     Flow(u64, u64), // start_time, end_time
 }

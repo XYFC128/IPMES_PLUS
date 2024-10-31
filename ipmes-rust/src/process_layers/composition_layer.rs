@@ -30,7 +30,8 @@ pub struct CompositionLayer<'p, P> {
     window_size: u64,
     cur_time: u64,
     pattern_infos: Vec<PatternInfo<'p>>,
-    storage: InstanceStorage<'p>,
+    storage: InstanceStorage,
+    // storage: InstanceStorage<'p>,
     runner: InstanceRunner,
     flow_runner: FlowRunner,
     state_table: StateTable,
@@ -157,7 +158,7 @@ impl<'p, P> Iterator for CompositionLayer<'p, P>
 where
     P: Iterator<Item = Box<[Rc<InputEvent>]>>,
 {
-    type Item = (u32, MatchInstance<'p>);
+    type Item = (u32, MatchInstance);
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.storage.output_instances.is_empty() {
@@ -178,8 +179,11 @@ mod tests {
     use core::panic;
     use std::rc::Rc;
 
+    use itertools::Itertools;
+
     use super::*;
     use crate::input_event::InputEvent;
+    use crate::match_event::MatchEvent;
     use crate::pattern::{Pattern, PatternEventType};
     use crate::universal_match_event::UniversalMatchEvent;
 
@@ -231,7 +235,8 @@ mod tests {
             let ids: Vec<u64> = instance
                 .match_events
                 .iter()
-                .map(|x| x.event_ids[0])
+                .map(|x| x.raw_events.get_ids().collect_vec()[0])
+                // .map(|x| x.event_ids[0])
                 .collect();
             assert_eq!(ids, *expect_ids, "match_events");
         } else {
@@ -332,17 +337,31 @@ mod tests {
         assert!(layer.next().is_none());
     }
 
+    // fn verify_event(
+    //     match_event: &UniversalMatchEvent,
+    //     time_pair: (u64, u64),
+    //     entity_id_pair: (u64, u64),
+    //     event_ids: &[u64],
+    // ) {
+    //     assert_eq!(match_event.start_time, time_pair.0);
+    //     assert_eq!(match_event.end_time, time_pair.1);
+    //     assert_eq!(match_event.subject_id, entity_id_pair.0);
+    //     assert_eq!(match_event.object_id, entity_id_pair.1);
+    //     assert_eq!(*match_event.event_ids, *event_ids)
+    // }
+
     fn verify_event(
-        match_event: &UniversalMatchEvent,
+        match_event: &MatchEvent,
         time_pair: (u64, u64),
         entity_id_pair: (u64, u64),
         event_ids: &[u64],
     ) {
-        assert_eq!(match_event.start_time, time_pair.0);
-        assert_eq!(match_event.end_time, time_pair.1);
+        let (start_time, end_time) = match_event.raw_events.get_interval();
+        assert_eq!(start_time, time_pair.0);
+        assert_eq!(end_time, time_pair.1);
         assert_eq!(match_event.subject_id, entity_id_pair.0);
         assert_eq!(match_event.object_id, entity_id_pair.1);
-        assert_eq!(*match_event.event_ids, *event_ids)
+        assert_eq!(*match_event.raw_events.get_ids().collect_vec(), *event_ids)
     }
 
     #[test]
