@@ -2,7 +2,6 @@ use crate::match_event::MatchEvent;
 use crate::process_layers::composition_layer;
 use crate::process_layers::join_layer::SubPatternBuffer;
 use crate::universal_match_event::UniversalMatchEvent;
-use itertools::Itertools;
 use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
@@ -34,8 +33,6 @@ pub struct SubPatternMatch {
     /// `event_id_map.len()` == number of event in the "whole pattern".
     ///
     /// > Note: The terms **matched event** and pattern event are used interchangeably.
-    // pub match_event_map: Box<[Option<UniversalMatchEvent<'p>>]>,
-    // pub match_event_map: Box<[Option<MatchEvent>]>,
     pub match_event_map: Box<[Option<Rc<MatchEvent>>]>,
 }
 
@@ -74,7 +71,6 @@ impl<'p> Debug for SubPatternMatch {
 }
 
 /// > Note: Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
-// fn merge_match_event_map<T>(event_map1: &[Option<T>], event_map2: &[Option<T>]) -> Box<[Option<T>]>
 fn merge_match_event_map<T>(event_map1: &[Option<Rc<T>>], event_map2: &[Option<Rc<T>>]) -> Box<[Option<Rc<T>>]>
 where
     T: Clone,
@@ -255,12 +251,10 @@ pub fn merge_entities(
 }
 
 
-// impl<'p> SubPatternMatch<'p> {
 impl<'p> SubPatternMatch {
     pub fn build(
         sub_pattern_id: u32,
         match_instance: composition_layer::MatchInstance,
-        // match_instance: composition_layer::MatchInstance<'p>,
         num_pattern_event: usize,
     ) -> Option<Self> {
         let latest_time = match_instance.match_events.last()?.raw_events.get_interval().1;
@@ -274,14 +268,11 @@ impl<'p> SubPatternMatch {
         let mut event_ids: Vec<u64> = match_events
             .iter()
             .flat_map(|e| e.raw_events.get_ids())
-            // .flat_map(|e| e.event_ids.iter().cloned())
             .collect();
         event_ids.sort_unstable();
 
         let mut match_event_map = vec![None; num_pattern_event];
-        // for event in match_events.into_iter() {
         for event in match_events.into_iter() {
-            // let pat_id = event.matched.id;
             let pat_id = event.match_id as usize;
             match_event_map[pat_id] = Some(Rc::new(event));
         }
@@ -297,7 +288,6 @@ impl<'p> SubPatternMatch {
     }
 
     pub fn merge_matches(
-        // sub_pattern_buffer: &SubPatternBuffer<'p>,
         sub_pattern_buffer: &SubPatternBuffer,
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
@@ -357,27 +347,22 @@ impl<'p> SubPatternMatch {
 ///
 /// *Earliest* refers to `SubPatternMatch.earliest_time`.
 #[derive(Clone, Debug)]
-// pub struct EarliestFirst<'p>(pub SubPatternMatch<'p>);
 pub struct EarliestFirst(pub SubPatternMatch);
 
-// impl Eq for EarliestFirst<'_> {}
 impl Eq for EarliestFirst {}
 
-// impl PartialEq<Self> for EarliestFirst<'_> {
 impl PartialEq<Self> for EarliestFirst {
     fn eq(&self, other: &Self) -> bool {
         self.0.earliest_time.eq(&other.0.earliest_time)
     }
 }
 
-// impl Ord for EarliestFirst<'_> {
 impl Ord for EarliestFirst {
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.earliest_time.cmp(&other.0.earliest_time).reverse()
     }
 }
 
-// impl PartialOrd<Self> for EarliestFirst<'_> {
 impl PartialOrd<Self> for EarliestFirst {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))

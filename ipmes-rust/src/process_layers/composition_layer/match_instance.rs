@@ -3,7 +3,6 @@ use crate::input_event::InputEvent;
 use crate::match_event::MatchEvent;
 use crate::universal_match_event::UniversalMatchEvent;
 use itertools::Itertools;
-use regex::Match;
 use std::cmp::min;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -30,7 +29,6 @@ fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>
 fn dup_extend_entities_by_event(
     match_entities: &[(InputEntityId, PatternEntityId)],
     event: &MatchEvent,
-    // event: &UniversalMatchEvent,
     shared_node_info: SharedNodeInfo,
 ) -> Option<Box<[(InputEntityId, PatternEntityId)]>> {
     use SharedNodeInfo::*;
@@ -94,11 +92,9 @@ fn dup_extend_entities_list(
 
 #[derive(Clone)]
 #[cfg_attr(test, derive(Default))]
-// pub struct MatchInstance<'p> {
 pub struct MatchInstance {
     pub start_time: u64,
     pub match_events: Box<[MatchEvent]>,
-    // pub match_events: Box<[UniversalMatchEvent<'p>]>,
 
     /// Sorted array of `(input entity id, pattern entity id)`.
     ///
@@ -108,7 +104,6 @@ pub struct MatchInstance {
     pub state_id: u32,
 }
 
-// impl<'p> MatchInstance<'p> {
 impl MatchInstance {
     pub fn dead_default() -> Self {
         Self {
@@ -126,12 +121,10 @@ impl MatchInstance {
     pub fn clone_extend(
         &self,
         new_event: MatchEvent,
-        // new_event: UniversalMatchEvent<'p>,
         shared_node_info: SharedNodeInfo,
     ) -> Option<Self> {
         // @TODO: Perhaps we need not extend ids explicitly?
         let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.raw_events.get_ids().collect_vec())?;
-        // let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.event_ids)?;
         let match_entities =
             dup_extend_entities_by_event(&self.match_entities, &new_event, shared_node_info)?;
         let start_time = min(self.start_time, new_event.raw_events.get_interval().0);
@@ -204,7 +197,6 @@ impl MatchInstance {
     }
 }
 
-// impl<'p> Debug for MatchInstance<'p> {
 impl<'p> Debug for MatchInstance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MatchInstance")
@@ -216,18 +208,14 @@ impl<'p> Debug for MatchInstance {
     }
 }
 
-// pub struct FreqInstance<'p> {
 pub struct FreqInstance {
-    // pub instance: MatchInstance<'p>,
     pub instance: MatchInstance,
     pub start_time: u64,
     pub remain_freq: u32,
     pub cur_set: HashSet<u64>,
-    // pub new_events: Vec<u64>,
     pub new_events: Vec<Rc<InputEvent>>,
 }
 
-// impl<'p> FreqInstance<'p> {
 impl FreqInstance {
     // pub fn new(instance: MatchInstance<'p>, frequency: u32, time: u64) -> Self {
     pub fn new(instance: MatchInstance, frequency: u32, time: u64) -> Self {

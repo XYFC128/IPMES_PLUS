@@ -164,15 +164,6 @@ impl FlowRunner {
                 if !self.is_node_match(*src, info.src_sig_idx) {
                     continue;
                 }
-
-                // let flow = UniversalMatchEvent {
-                //     matched: info.pattern,
-                //     start_time: self.flow_tracer.get_updated_time(*src, *dst).unwrap(),
-                //     end_time: self.cur_time,
-                //     subject_id: *src,
-                //     object_id: *dst,
-                //     event_ids: Box::new([]),
-                // };
                 
                 let flow = MatchEvent {
                     match_id: info.pattern.id as u32,

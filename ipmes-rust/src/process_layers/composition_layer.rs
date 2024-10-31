@@ -236,7 +236,6 @@ mod tests {
                 .match_events
                 .iter()
                 .map(|x| x.raw_events.get_ids().collect_vec()[0])
-                // .map(|x| x.event_ids[0])
                 .collect();
             assert_eq!(ids, *expect_ids, "match_events");
         } else {
@@ -336,19 +335,6 @@ mod tests {
 
         assert!(layer.next().is_none());
     }
-
-    // fn verify_event(
-    //     match_event: &UniversalMatchEvent,
-    //     time_pair: (u64, u64),
-    //     entity_id_pair: (u64, u64),
-    //     event_ids: &[u64],
-    // ) {
-    //     assert_eq!(match_event.start_time, time_pair.0);
-    //     assert_eq!(match_event.end_time, time_pair.1);
-    //     assert_eq!(match_event.subject_id, entity_id_pair.0);
-    //     assert_eq!(match_event.object_id, entity_id_pair.1);
-    //     assert_eq!(*match_event.event_ids, *event_ids)
-    // }
 
     fn verify_event(
         match_event: &MatchEvent,

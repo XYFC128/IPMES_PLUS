@@ -120,9 +120,7 @@ impl<'p, P> JoinLayer<'p, P> {
                 .flatten()
                 .enumerate()
             {
-                // for id in event.event_ids.iter() {
-                //     matched_events.push((idx, *id));
-                // }
+
                 matched_events.extend(event.raw_events.get_ids().map(|id| (idx, id)));
 
                 let (start_time, end_time) = event.raw_events.get_interval();
@@ -176,7 +174,6 @@ impl<'p, P> JoinLayer<'p, P> {
         &mut self,
         my_id: usize,
         sibling_id: usize,
-        // ) -> BinaryHeap<EarliestFirst<'p>> {
     ) -> BinaryHeap<EarliestFirst> {
         debug!(
             "join with sibling: (my_id, sibling_id) = ({}, {})",
@@ -422,7 +419,6 @@ pub mod tests {
                 input_object_id: match_event.object.id as u64,
                 pattern_subject_id: match_event.subject.id as u64,
                 pattern_object_id: match_event.object.id as u64,
-                // event_ids: vec![match_event.id as u64].into_boxed_slice(),
                 raw_events: RawEvents::Single(Rc::new(input_event)),
             });
 
@@ -435,9 +431,7 @@ pub mod tests {
 
         let event_ids = match_events
             .iter()
-            // .flat_map(|x| x.event_ids.iter())
             .flat_map(|x| x.raw_events.get_ids())
-            // .cloned()
             .sorted()
             .collect_vec();
 
@@ -456,7 +450,6 @@ pub mod tests {
         has_id: &[usize],
         set_time: u64,
     ) -> Vec<(u32, MatchInstance)> {
-    // ) -> Vec<(u32, MatchInstance<'p>)> {
         let mut match_instances = vec![];
         for (id, sub_pattern) in enumerate(sub_patterns) {
             if has_id.binary_search(&id).is_err() {
@@ -553,14 +546,6 @@ pub mod tests {
                 // match_instances.append(&mut gen_match_instances(&sub_patterns, &[2, 3], (9*i+j+4)*windows_size + 4 + 2*j));
             }
         }
-
-        // // Randomly shuffle match_instances
-        // let seed = 123456;
-        // let mut rng = ChaChaRng::seed_from_u64(seed);
-        // if !fixed {
-        //     rng = ChaChaRng::from_entropy();
-        // }
-        // match_instances.shuffle(&mut rng);
 
         join_layer.run_isolated_join_layer(&mut match_instances);
     }

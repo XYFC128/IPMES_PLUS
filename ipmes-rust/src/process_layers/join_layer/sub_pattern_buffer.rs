@@ -36,7 +36,6 @@ impl Relation {
     }
 
     /// Check whether order relations are violated between two pattern matches.
-    // pub fn check_order_relation(&self, match_event_map: &[Option<UniversalMatchEvent>]) -> bool {
     pub fn check_order_relation(&self, match_event_map: &[Option<Rc<MatchEvent>>]) -> bool {
         for (idx1, idx2) in &self.event_orders {
             if let (Some(event1), Some(event2)) = (&match_event_map[*idx1], &match_event_map[*idx2])
@@ -54,8 +53,7 @@ impl Relation {
     }
 
     fn satisfy_order(
-        // event1: &UniversalMatchEvent,
-        // event2: &UniversalMatchEvent,
+
         event1: &MatchEvent,
         event2: &MatchEvent,
     ) -> bool {
