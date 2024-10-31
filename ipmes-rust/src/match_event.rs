@@ -20,9 +20,13 @@ pub struct MatchEvent {
     /// The pattern event id that `self.raw_events` are matched to.
     pub match_id: u32,
     /// The subject id of the **input event** (`raw_events`)
-    pub subject_id: u64,
+    pub input_subject_id: u64,
     /// The object id of the **input event** (`raw_events`)
-    pub object_id: u64,
+    pub input_object_id: u64,
+    /// The subject id of the matched pattern event
+    pub pattern_subject_id: u64,
+    /// The object id of the matched pattern event
+    pub pattern_object_id: u64,
     /// Input events
     pub raw_events: RawEvents,
 }

@@ -99,8 +99,10 @@ impl InstanceRunner {
                     match_id: info.pattern.id as u32,
                     // start_time: event.timestamp,
                     // end_time: event.timestamp,
-                    subject_id: event.subject_id,
-                    object_id: event.object_id,
+                    input_subject_id: event.subject_id,
+                    input_object_id: event.object_id,
+                    pattern_subject_id: info.pattern.subject.id as u64,
+                    pattern_object_id: info.pattern.object.id as u64,
                     // event_ids: vec![event.event_id].into_boxed_slice(),
                     raw_events: RawEvents::Single(event.clone())
                 };
@@ -155,7 +157,7 @@ impl InstanceRunner {
             for instance in storage.query_freq_instances(&request, window_bound) {
                 // if instance.add_event(event.event_id) && instance.is_full() {
                 if instance.add_event(event) && instance.is_full() {
-                    let event_ids = std::mem::take(&mut instance.new_events);
+                    // let event_ids = std::mem::take(&mut instance.new_events);
                     // let new_event = UniversalMatchEvent {
                     //     matched: info.pattern,
                     //     start_time: instance.start_time,
@@ -171,8 +173,10 @@ impl InstanceRunner {
                         match_id: info.pattern.id as u32,
                         // start_time: instance.start_time,
                         // end_time: self.cur_time,
-                        subject_id: event.subject_id,
-                        object_id: event.object_id,
+                        input_subject_id: event.subject_id,
+                        input_object_id: event.object_id,
+                        pattern_subject_id: info.pattern.subject.id as u64,
+                        pattern_object_id: info.pattern.object.id as u64,
                         raw_events: RawEvents::Multiple(raw_events.into_boxed_slice())
                     };
 

@@ -359,8 +359,8 @@ mod tests {
         let (start_time, end_time) = match_event.raw_events.get_interval();
         assert_eq!(start_time, time_pair.0);
         assert_eq!(end_time, time_pair.1);
-        assert_eq!(match_event.subject_id, entity_id_pair.0);
-        assert_eq!(match_event.object_id, entity_id_pair.1);
+        assert_eq!(match_event.input_subject_id, entity_id_pair.0);
+        assert_eq!(match_event.input_object_id, entity_id_pair.1);
         assert_eq!(*match_event.raw_events.get_ids().collect_vec(), *event_ids)
     }
 

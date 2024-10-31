@@ -36,27 +36,27 @@ fn dup_extend_entities_by_event(
     use SharedNodeInfo::*;
     match shared_node_info {
         None => {
-            if event.subject_id < event.object_id {
+            if event.input_subject_id < event.input_object_id {
                 Some(Box::new([
-                    (event.subject_id, event.subject_id),
-                    (event.object_id, event.object_id),
+                    (event.input_subject_id, event.pattern_subject_id),
+                    (event.input_object_id, event.pattern_object_id),
                 ]))
             } else {
                 Some(Box::new([
-                    (event.object_id, event.object_id),
-                    (event.subject_id, event.subject_id),
+                    (event.input_object_id, event.pattern_object_id),
+                    (event.input_subject_id, event.pattern_subject_id),
                 ]))
             }
         }
         Subject => dup_extend_entities_list(
             match_entities,
-            event.object_id,
-            event.object_id,
+            event.input_object_id,
+            event.pattern_object_id,
         ),
         Object => dup_extend_entities_list(
             match_entities,
-            event.subject_id,
-            event.subject_id,
+            event.input_subject_id,
+            event.pattern_subject_id,
         ),
         Both => Some(Box::from(match_entities)),
     }

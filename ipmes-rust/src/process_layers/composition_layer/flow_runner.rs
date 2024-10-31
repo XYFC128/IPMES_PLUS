@@ -176,8 +176,10 @@ impl FlowRunner {
                 
                 let flow = MatchEvent {
                     match_id: info.pattern.id as u32,
-                    subject_id: *src,
-                    object_id: *dst,
+                    input_subject_id: *src,
+                    input_object_id: *dst,
+                    pattern_subject_id: info.pattern.subject.id as u64,
+                    pattern_object_id: info.pattern.object.id as u64,
                     raw_events: RawEvents::Flow(self.flow_tracer.get_updated_time(*src, *dst).unwrap(), self.cur_time)
                 };
 

@@ -418,8 +418,10 @@ pub mod tests {
                 // start_time: set_time,
                 // end_time: set_time,
                 match_id: match_event.id as u32,
-                subject_id: match_event.subject.id as u64,
-                object_id: match_event.object.id as u64,
+                input_subject_id: match_event.subject.id as u64,
+                input_object_id: match_event.object.id as u64,
+                pattern_subject_id: match_event.subject.id as u64,
+                pattern_object_id: match_event.object.id as u64,
                 // event_ids: vec![match_event.id as u64].into_boxed_slice(),
                 raw_events: RawEvents::Single(Rc::new(input_event)),
             });

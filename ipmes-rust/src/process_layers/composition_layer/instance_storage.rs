@@ -241,7 +241,7 @@ impl InstanceStorage {
 
     fn extract_filter(instance: &MatchInstance, filter_info: &FilterInfo) -> Option<Filter> {
         // let endpoints_extractor = |event: &UniversalMatchEvent| (event.subject_id, event.object_id);
-        let endpoints_extractor = |event: &MatchEvent| (event.subject_id, event.object_id);
+        let endpoints_extractor = |event: &MatchEvent| (event.input_subject_id, event.input_object_id);
         let filter = match filter_info {
             FilterInfo::None => return None,
             FilterInfo::MatchIdxOnly { match_idx } => Filter::MatchIdxOnly {
