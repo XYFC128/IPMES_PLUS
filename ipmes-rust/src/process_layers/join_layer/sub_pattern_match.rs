@@ -430,7 +430,7 @@ mod tests {
             id: 0,
             events: vec![],
         };
-        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+        let sub_pattern_buffer = SubPatternBuffer::new(0, &tmp_sub_pattern, max_node_id, 0);
 
         let a = vec![(2, 19), (7, 20), (11, 9)];
 
@@ -450,7 +450,7 @@ mod tests {
             id: 0,
             events: vec![],
         };
-        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+        let sub_pattern_buffer = SubPatternBuffer::new(0, &tmp_sub_pattern, max_node_id, 0);
 
         let a = vec![(2, 19), (7, 20), (11, 9)];
 
@@ -469,7 +469,7 @@ mod tests {
             id: 0,
             events: vec![],
         };
-        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+        let sub_pattern_buffer = SubPatternBuffer::new(0, &tmp_sub_pattern, max_node_id, 0);
 
         let a = vec![(2, 19), (7, 20), (11, 9)];
 
@@ -490,7 +490,7 @@ mod tests {
             id: 0,
             events: vec![],
         };
-        let sub_pattern_buffer = SubPatternBuffer::new(0, 0, &tmp_sub_pattern, max_node_id, 0);
+        let sub_pattern_buffer = SubPatternBuffer::new(0, &tmp_sub_pattern, max_node_id, 0);
 
         let b = vec![(2, 19), (7, 20), (11, 9)];
 

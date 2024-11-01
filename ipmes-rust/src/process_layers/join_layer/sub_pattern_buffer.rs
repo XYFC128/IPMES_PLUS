@@ -7,7 +7,7 @@ use log::debug;
 use std::collections::{BinaryHeap, HashSet};
 use std::rc::Rc;
 
-use super::{get_parent_id, get_sibling_id};
+// use super::{get_parent_id, get_sibling_id};
 
 /// A structure that holds order relations between sibling buffers.
 #[derive(Clone, Debug)]
@@ -79,10 +79,8 @@ impl Default for Relation {
 pub struct SubPatternBuffer {
     /// Buffer id.
     pub id: usize,
-    /// Mainly for debugging.
-    sibling_id: usize,
     /// Ids of pattern entities (nodes) contained in this sub-pattern.
-    node_id_list: HashSet<usize>,
+    pub (super) node_id_list: HashSet<usize>,
     /// Ids of pattern events (edges) contained in this sub-pattern.
     edge_id_list: HashSet<usize>,
     /// A buffer that holds sub-pattern matches.
@@ -99,11 +97,9 @@ pub struct SubPatternBuffer {
     pub max_num_events: usize,
 }
 
-// impl<'p> SubPatternBuffer<'p> {
 impl<'p> SubPatternBuffer {
     pub fn new(
         id: usize,
-        sibling_id: usize,
         sub_pattern: &SubPattern,
         max_num_entities: usize,
         max_num_events: usize,
@@ -117,7 +113,6 @@ impl<'p> SubPatternBuffer {
         }
         Self {
             id,
-            sibling_id,
             node_id_list,
             edge_id_list,
             buffer: BinaryHeap::new(),
@@ -133,7 +128,6 @@ impl<'p> SubPatternBuffer {
         pattern: &Pattern,
         sub_pattern_buffer1: &SubPatternBuffer,
         sub_pattern_buffer2: &SubPatternBuffer,
-        // distances_table: &HashMap<(NodeIndex, NodeIndex), i32>,
     ) -> Relation {
         let mut shared_entities = vec![false; pattern.entities.len()];
         let mut event_orders = Vec::new();
@@ -166,21 +160,19 @@ impl<'p> SubPatternBuffer {
         }
     }
 
-    /// Merge two sub-pattern buffers.
+    /// Merge two sub-pattern buffers into a new one.
     pub fn merge_buffers(
         sub_pattern_buffer1: &SubPatternBuffer,
         sub_pattern_buffer2: &SubPatternBuffer,
+        new_buffer_id: usize,
     ) -> Self {
         let mut node_id_list = sub_pattern_buffer1.node_id_list.clone();
         let mut edge_id_list = sub_pattern_buffer1.edge_id_list.clone();
         node_id_list.extend(&sub_pattern_buffer2.node_id_list);
         edge_id_list.extend(&sub_pattern_buffer2.edge_id_list);
 
-        let id = get_parent_id(sub_pattern_buffer1.id);
-
         Self {
-            id,
-            sibling_id: get_sibling_id(id),
+            id: new_buffer_id,
             node_id_list,
             edge_id_list,
             buffer: BinaryHeap::new(),
