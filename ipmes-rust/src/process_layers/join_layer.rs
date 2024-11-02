@@ -1,17 +1,15 @@
 mod sub_pattern_buffer;
 mod sub_pattern_match;
 
-use crate::pattern::sub_pattern;
 use crate::pattern::Pattern;
 use crate::pattern::SubPattern;
 use crate::pattern_match::PatternMatch;
-use itertools::Itertools;
 use log::debug;
 use std::cmp::max;
 use std::cmp::min;
 use std::cmp::Reverse;
 use std::collections::HashSet;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 use std::vec;
 pub use sub_pattern_buffer::SubPatternBuffer;
 use sub_pattern_match::EarliestFirst;
@@ -31,7 +29,6 @@ pub struct JoinLayer<'p, P> {
     /// Binary-tree-structured buffers that store sub-pattern matches.
     ///
     /// A sub-pattern match in a parent node is joined from sub-patterns in its two children buffers.
-    // sub_pattern_buffers: Vec<SubPatternBuffer<'p>>,
     sub_pattern_buffers: Vec<SubPatternBuffer>,
 
     /// See `clear_expired()`.
@@ -40,11 +37,15 @@ pub struct JoinLayer<'p, P> {
     /// Complete pattern matches.
     full_match: Vec<PatternMatch>,
 
+    /// The sibling buffer of buffer `x` is `sibling_id_map[x]`.
     sibling_id_map: Vec<usize>,
+    /// The parent buffer of buffer `x` is `parent_id_map[x]`.
     parent_id_map: Vec<usize>,
 }
 
 impl<'p, P> JoinLayer<'p, P> {
+    /// Given two existing sub-pattern buffers, group them as a pair, generate relations between
+    /// them, and merge them to create their parent buffer.
     fn create_buffer_pair(
         buffer_id1: usize,
         buffer_id2: usize,
@@ -58,7 +59,7 @@ impl<'p, P> JoinLayer<'p, P> {
             &sub_pattern_buffers[buffer_id2],
         );
 
-        // update
+        // update relations
         sub_pattern_buffers[buffer_id1].relation = relations.clone();
         sub_pattern_buffers[buffer_id2].relation = relations;
 
@@ -68,6 +69,9 @@ impl<'p, P> JoinLayer<'p, P> {
             new_buffer_id,
         ));
     }
+
+    /// Mainly construct the tree-structure of sub-pattern buffers.
+    /// Note that all sub-pattern buffers have shared-node relation with their corresponding sibling.
     pub fn new(
         prev_layer: P,
         pattern: &'p Pattern,
@@ -79,22 +83,24 @@ impl<'p, P> JoinLayer<'p, P> {
         let mut sibling_id_map = vec![0usize; buffer_len];
         let mut parent_id_map = vec![0usize; buffer_len];
 
+        // Initial buffers for decomposed sub-patterns.
         for (i, sub_pattern) in sub_patterns.iter().enumerate() {
             let buffer_id = i;
-            sub_pattern_buffers.push(
-                SubPatternBuffer::new(
-                    buffer_id,
-                    sub_pattern,
-                    pattern.entities.len(),
-                    pattern.events.len(),
-                ),
-            );
+            sub_pattern_buffers.push(SubPatternBuffer::new(
+                buffer_id,
+                sub_pattern,
+                pattern.entities.len(),
+                pattern.events.len(),
+            ));
         }
 
         let mut union_find = UnionFind::new(buffer_len);
 
-        let mut joined = vec![false; buffer_len];
+        // Indicate whether a sub-pattern buffer has been processed or not.
+        let mut merged = vec![false; buffer_len];
 
+        // For `(h, i, j)` in `min_heap`, buffers `i` and `j` have shared-node relation (can be merged).
+        // If they are merged, the resulting buffer height would be `h`.
         let mut min_heap = BinaryHeap::new();
         let shared_node_lists = Self::gen_shared_node_lists(sub_patterns);
         for (i, list) in shared_node_lists.iter().enumerate() {
@@ -107,13 +113,14 @@ impl<'p, P> JoinLayer<'p, P> {
             }
         }
 
+        // Each time pop the can-be-merged buffer pair with minimal resulting height.
         while let Some(Reverse((height, i, j))) = min_heap.pop() {
-            if joined[i] || joined[j] {
+            if merged[i] || merged[j] {
                 continue;
             }
 
-            joined[i] = true;
-            joined[j] = true;
+            merged[i] = true;
+            merged[j] = true;
 
             let new_buffer_id = sub_pattern_buffers.len();
             Self::create_buffer_pair(i, j, new_buffer_id, pattern, &mut sub_pattern_buffers);
@@ -122,19 +129,24 @@ impl<'p, P> JoinLayer<'p, P> {
             parent_id_map[i] = new_buffer_id;
             parent_id_map[j] = new_buffer_id;
 
-            debug!("buffer {} and buffer {} are merged into buffer {}", i, j, new_buffer_id);
+            debug!(
+                "buffer {} and buffer {} are merged into buffer {}",
+                i, j, new_buffer_id
+            );
 
             union_find.merge(i, j, new_buffer_id);
 
+
             let mut visited = HashSet::new();
             visited.insert(new_buffer_id);
+
+            // Find all buffers that has shared-node relation with the newly created buffer, for futher merger.
             for k in 0..sub_patterns.len() {
                 let cur_root = union_find.get_root(k);
                 if visited.contains(&cur_root) {
                     continue;
                 }
 
-                // there might be duplicate `cur_root`
                 for id in &shared_node_lists[k] {
                     // has shared node relation
                     if union_find.get_root(*id) == new_buffer_id {
@@ -159,6 +171,7 @@ impl<'p, P> JoinLayer<'p, P> {
         }
     }
 
+    /// For each sub-pattern, calculate the sub-patterns that have shared-node relation with itself.
     fn gen_shared_node_lists(sub_patterns: &[SubPattern<'p>]) -> Vec<Vec<usize>> {
         let mut shared_node_lists = vec![Vec::new(); sub_patterns.len()];
         for (i, sub_pattern1) in sub_patterns.iter().enumerate() {
@@ -171,12 +184,12 @@ impl<'p, P> JoinLayer<'p, P> {
                 if j <= i {
                     continue;
                 }
+
                 let entity_ids2: HashSet<usize> = sub_pattern2
                     .events
                     .iter()
                     .flat_map(|e| [e.subject.id, e.object.id])
                     .collect();
-                // let entity_ids2 = sub_pattern2.events.iter().flat_map(|e| [e.subject.id, e.object.id]).sorted().unique().collect_vec();
 
                 if Self::has_shared_node(&entity_ids1, &entity_ids2) {
                     shared_node_lists[i].push(j);
@@ -187,11 +200,12 @@ impl<'p, P> JoinLayer<'p, P> {
         shared_node_lists
     }
 
+    /// Check whether two entity (node) lists have any shared element.
     fn has_shared_node(entity_ids1: &HashSet<usize>, entity_ids2: &HashSet<usize>) -> bool {
         return entity_ids1.intersection(&entity_ids2).next() != None;
     }
 
-    /// Convert "SubPatternMatch" to "PatternMatch".
+    /// Convert `SubPatternMatch to `PatternMatch`.
     fn pattern_match_conversion(buffer: &mut BinaryHeap<EarliestFirst>) -> Vec<PatternMatch> {
         let mut pattern_matches = Vec::with_capacity(buffer.len());
 
@@ -406,18 +420,26 @@ where
     }
 }
 
+/// Union-find tree, a.k.a disjoint set
 struct UnionFind {
+    /// Store the root (representative element) of a union-find tree (disjoint set).
+    /// For element `id`, if `roots[id] < 0`, them `id` is the root of the tree it belongs to.
+    /// Otherwise, `roots[id]` is the parent of `id` (but not necessary the root).
+    /// 
+    /// A disjoint set corresponds to a sub-pattern buffer in the Join layer.
+    /// Note that for `roots[id] < 0`, the value `abs(roots[id])` corresponds to the 
+    /// *height of the buffer* in the sub-pattern buffer tree structure.
     roots: Vec<i64>,
 }
 
 impl UnionFind {
     fn new(size: usize) -> Self {
         Self {
-            // roots: (0..size).collect_vec()
             roots: vec![-1; size], // height
         }
     }
 
+    /// Return the root element for `id`.
     fn get_root(&mut self, id: usize) -> usize {
         if self.roots[id] < 0 {
             id
@@ -427,10 +449,12 @@ impl UnionFind {
         }
     }
 
+    /// Return the buffer height that `id` belongs to.
     fn get_height(&self, id: usize) -> u32 {
         -self.roots[id] as u32
     }
 
+    /// Merge two union-find trees, and create a node (corresponds to a new buffer) as the new root.
     fn merge(&mut self, id1: usize, id2: usize, new_root: usize) {
         let root1 = self.get_root(id1);
         let root2 = self.get_root(id2);
@@ -438,6 +462,7 @@ impl UnionFind {
             return;
         }
 
+        // A new node (corresponds to a new buffer)
         self.roots[new_root] = min(self.roots[root1], self.roots[root2]) - 1;
         self.roots[root1] = new_root as i64;
         self.roots[root2] = new_root as i64;
@@ -481,7 +506,10 @@ pub mod tests {
         let sub_patterns = decompose(&pattern);
         let join_layer = JoinLayer::new((), &pattern, &sub_patterns, window_size);
 
-        debug!("sub_pattern_buffer len: {}", join_layer.sub_pattern_buffers.len());
+        debug!(
+            "sub_pattern_buffer len: {}",
+            join_layer.sub_pattern_buffers.len()
+        );
         debug!("num of sub_pattern: {}", sub_patterns.len());
         debug!("sibling id map len: {}", join_layer.sibling_id_map.len());
 
@@ -489,7 +517,13 @@ pub mod tests {
             let sibling_id = join_layer.get_sibling_id(sub_pattern_buffer.id);
             let sibling_buffer = &join_layer.sub_pattern_buffers[sibling_id];
 
-            assert_ne!(sub_pattern_buffer.node_id_list.intersection(&sibling_buffer.node_id_list).next(), None);
+            assert_ne!(
+                sub_pattern_buffer
+                    .node_id_list
+                    .intersection(&sibling_buffer.node_id_list)
+                    .next(),
+                None
+            );
         }
     }
 
@@ -508,7 +542,6 @@ pub mod tests {
         let mut match_events = vec![];
         let mut match_entities = vec![];
         for match_event in &sub_pattern.events {
-
             let input_event = InputEvent::new(
                 set_time,
                 match_event.id as u64,
