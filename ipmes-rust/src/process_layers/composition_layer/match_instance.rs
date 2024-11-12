@@ -123,7 +123,7 @@ impl MatchInstance {
         new_event: MatchEvent,
         shared_node_info: SharedNodeInfo,
     ) -> Option<Self> {
-        // @TODO: Perhaps we need not extend ids explicitly?
+        // TODO: Perhaps we need not extend ids explicitly?
         let event_ids = dup_extend_event_ids(&self.event_ids, &new_event.raw_events.get_ids().collect_vec())?;
         let match_entities =
             dup_extend_entities_by_event(&self.match_entities, &new_event, shared_node_info)?;
@@ -217,7 +217,6 @@ pub struct FreqInstance {
 }
 
 impl FreqInstance {
-    // pub fn new(instance: MatchInstance<'p>, frequency: u32, time: u64) -> Self {
     pub fn new(instance: MatchInstance, frequency: u32, time: u64) -> Self {
         let cur_set = HashSet::from_iter(instance.event_ids.iter().copied());
         Self {
@@ -229,11 +228,9 @@ impl FreqInstance {
         }
     }
 
-    /// Adds an event id into the frequency tracing set
+    /// Adds an event into the frequency tracing set
     ///
-    /// Returns `ture` if the event_id was not previously in the set
-    // pub fn add_event(&mut self, event_id: u64) -> bool {
-    // pub fn add_event(&mut self, event_id: u64) -> bool {
+    /// Returns `ture` if the event was not previously in the set; otherwise, `false` is returned.
     pub fn add_event(&mut self, event: &Rc<InputEvent>) -> bool {
         if self.cur_set.insert(event.event_id) {
             self.remain_freq -= 1;

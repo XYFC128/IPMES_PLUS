@@ -8,7 +8,14 @@ use log::debug;
 use std::slice::Iter;
 
 pub struct StateTable {
+    /// This table is for (1) pattern events (2) subpatterns.
+    /// The entries in this table specifies states and the corresponding filter information, 
+    /// by the given event type. (It is similar when the entry corresponds to a subpattern.)
     pub table: Vec<(StateInfo, FilterInfo)>,
+
+    /// `shared_node_info[i]` stores the information regarding the `i`-th pattern event's 
+    /// shared-node status with the preceeding events. The index `i` is dependent to the
+    /// pattern decomposition, which is called the *match index* of some pattern event.
     pub shared_node_info: Vec<SharedNodeInfo>,
 }
 
@@ -18,11 +25,16 @@ impl StateTable {
         let mut shared_node_info = vec![];
         let mut match_idx = 0;
         for sub_pattern in decomposition {
+            // Map entity id to its encoding.
             let mut entity_table = HashMap::new();
 
             for (event_idx, pattern) in sub_pattern.events.iter().enumerate() {
+                // The encoding of the entity shared with the subject of the current pattern event.
+                // See `EntityEncode`.
                 let shared_subject = entity_table.get(&pattern.subject.id).cloned();
                 let shared_object = entity_table.get(&pattern.object.id).cloned();
+
+                // Information regarding whether the current pattern event's shared-node status with the preceeding events.
                 let filter_info = match (shared_subject, shared_object) {
                     (None, None) => FilterInfo::MatchIdxOnly { match_idx },
                     (None, Some(object)) => FilterInfo::Object { match_idx, object },
@@ -94,6 +106,7 @@ impl StateTable {
         &self.table[state_id as usize].1
     }
 
+    /// Return the shared-node information of the pattern event with match index `match_idx`.
     pub fn get_shared_node_info(&self, match_idx: usize) -> SharedNodeInfo {
         self.shared_node_info[match_idx]
     }

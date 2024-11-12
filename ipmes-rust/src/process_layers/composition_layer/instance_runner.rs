@@ -6,17 +6,19 @@ use super::{InstanceStorage, MatchInstance};
 use crate::input_event::InputEvent;
 use crate::match_event::{MatchEvent, RawEvents};
 use crate::pattern::{PatternEvent, PatternEventType, SubPattern};
-use crate::universal_match_event::UniversalMatchEvent;
 use regex::{Error, RegexSet, SetMatches};
 use std::rc::Rc;
 
 pub struct InstanceRunner {
     window_size: u64,
+    /// A set of all event and entity signatures of a given pattern.
     event_regexes: RegexSet,
     cur_time: u64,
     cur_batch: Vec<(Rc<InputEvent>, SetMatches)>,
 }
 
+/// Construct a regex pattern (signature) from a pattern event. The construction is identical to 
+/// that of input events. See `InputEvent.get_signatures()`.
 fn construct_regex_pattern(pattern: &PatternEvent, escape_regex: bool) -> String {
     let regex_pattern = format!(
         "{}\0{}\0{}",
@@ -55,6 +57,7 @@ impl InstanceRunner {
         })
     }
 
+    /// Match the input batch of events against all pattern events (in terms of signatures). 
     pub fn set_batch(&mut self, batch: &[Rc<InputEvent>], time: u64) {
         self.cur_time = time;
         self.cur_batch.clear();
@@ -66,6 +69,7 @@ impl InstanceRunner {
         }
     }
 
+    /// Execute the composition logic for default-typed pattern event
     pub fn run<'p>(
         &mut self,
         info: &SinglePattern<'p>,
@@ -106,6 +110,7 @@ impl InstanceRunner {
         storage.store_new_instances(new_instances.into_iter(), state_table);
     }
 
+    /// Execute the composition logic for frequency-typed pattern event
     pub fn run_freq<'p>(
         &self,
         info: &FreqPattern<'p>,
@@ -135,7 +140,6 @@ impl InstanceRunner {
                 let filter = (info.match_idx, event.subject_id, event.object_id);
                 let mut agg_instance =
                     FreqInstance::new(instance.clone(), info.frequency, self.cur_time);
-                // agg_instance.add_event(event.event_id);
                 agg_instance.add_event(event);
                 agg_instance.instance.state_id = state_table.get_next_state(instance.state_id);
                 new_freq_instances.push((filter, agg_instance));

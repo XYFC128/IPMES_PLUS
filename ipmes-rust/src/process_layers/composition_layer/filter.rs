@@ -1,5 +1,6 @@
 use super::entity_encode::EntityEncode;
 
+/// Information for shared-node relation, with ordinary entity ids.
 #[derive(Clone, Copy, Debug)]
 pub enum Filter {
     MatchIdxOnly {
@@ -20,6 +21,7 @@ pub enum Filter {
     },
 }
 
+/// Information for shared-node relation, with entities encoded as `EntityEncode`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FilterInfo {
     None,

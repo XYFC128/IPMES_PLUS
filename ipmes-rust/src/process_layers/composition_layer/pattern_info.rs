@@ -1,6 +1,13 @@
 use super::filter::FilterInfo;
 use crate::pattern::PatternEvent;
 
+/// Specify the shared-node information for two events.
+/// 
+/// Enum types:
+/// - `None`: No shared node.
+/// - `Subject`: Only subject is shared.
+/// - `Object`: Only object is shared.
+/// - `Both`: Both nodes are shared.
 #[derive(Debug, Clone, Copy)]
 pub enum SharedNodeInfo {
     None,

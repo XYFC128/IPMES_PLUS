@@ -5,7 +5,6 @@ use super::state_table::StateTable;
 use crate::input_event::InputEvent;
 use crate::match_event::{MatchEvent, RawEvents};
 use crate::pattern::{PatternEntity, PatternEventType, SubPattern};
-use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt, HashSet};
 use regex::{Error, RegexSet, SetMatches};
 use std::collections::hash_map::Entry;
@@ -148,7 +147,6 @@ impl FlowRunner {
         &self,
         info: &FlowPattern<'p>,
         storage: &mut InstanceStorage,
-        // storage: &mut InstanceStorage<'p>,
         state_table: &StateTable,
     ) {
         let window_bound = self.cur_time.saturating_sub(self.window_size);

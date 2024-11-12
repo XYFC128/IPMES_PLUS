@@ -29,6 +29,7 @@ pub struct CompositionLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
     cur_time: u64,
+    /// Stores information for all pattern events.
     pattern_infos: Vec<PatternInfo<'p>>,
     storage: InstanceStorage,
     // storage: InstanceStorage<'p>,
@@ -62,7 +63,7 @@ impl<'p, P> CompositionLayer<'p, P> {
         })
     }
 
-    /// build pattern_infos
+    /// Build `pattern_info`.
     ///
     /// Arguments:
     /// - `decomposition`: the decomposition of the pattern
@@ -73,6 +74,7 @@ impl<'p, P> CompositionLayer<'p, P> {
         sig_indices: &HashMap<usize, usize>,
         state_table: &StateTable,
     ) -> Vec<PatternInfo<'p>> {
+        // A counter for pattern events.
         let mut match_idx = 0usize;
         let mut signature_idx = 0usize;
         let mut pattern_infos = vec![];
@@ -121,7 +123,9 @@ impl<'p, P> CompositionLayer<'p, P> {
         pattern_infos
     }
 
+    /// Add the input batch into composition stage, and update the current time.
     pub fn add_batch(&mut self, batch: &[Rc<InputEvent>]) {
+        // All events in a batch have the same timestamp.
         let time = if let Some(first) = batch.first() {
             first.timestamp
         } else {
@@ -135,6 +139,7 @@ impl<'p, P> CompositionLayer<'p, P> {
         // TODO: Consider active windowing
     }
 
+    /// Update the internal composition states with newly matched events.
     pub fn advance(&mut self) {
         for info in &self.pattern_infos {
             match info {
@@ -185,7 +190,6 @@ mod tests {
     use crate::input_event::InputEvent;
     use crate::match_event::MatchEvent;
     use crate::pattern::{Pattern, PatternEventType};
-    use crate::universal_match_event::UniversalMatchEvent;
 
     /// Creates a pattern consists of 3 event and 4 entities. They form a path from v0 to v3.
     ///

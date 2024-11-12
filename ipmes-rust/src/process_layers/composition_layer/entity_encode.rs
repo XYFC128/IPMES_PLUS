@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 
-/// Encodes the information about how to get the entity_id from a list of events
-///
-/// The information includes:
+/// Encodes the information about how to get the entity_id from a list of events.
+/// 
+/// For a given entity, the encoded information includes:
 /// - The index of the event in the list.
 /// - Whether the entity is the subject or the object of the event.
 ///
-/// Suppose the target is the subject of the *i*-th event, the encoding works as follows:
+/// Suppose the target entity is the subject of the *i*-th event, the encoding works as follows:
 /// - The information is stored in a 32 bits integer
 /// - The high 31 bits `[31:1]` represent `i`
 /// - The lowest bit: 0 indicates the subject, 1 indicates the object
