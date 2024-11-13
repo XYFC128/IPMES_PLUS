@@ -33,11 +33,6 @@ pub struct ParseLayer {
     event_count: u32,
 }
 
-enum RecordParseResult {
-    Single(InputEvent),
-    Dual(InputEvent, InputEvent),
-}
-
 impl ParseLayer {
     pub fn new(reader: csv::Reader<File>) -> Self {
         Self {
@@ -59,9 +54,9 @@ impl ParseLayer {
         false
     }
 
-    fn parse_record(&self) -> Option<RecordParseResult> {
+    fn parse_record(&mut self) -> Option<()> {
         let timestamp1 = parse_timestamp(self.record.get(0)?)?;
-        let timestamp2 = parse_timestamp(self.record.get(1)?)?;
+        // field[1]: timestamp2
         let event_id = self.record.get(2)?.parse::<u64>().ok()?;
         let event_sig = self.record.get(3)?;
         let subject_id = self.record.get(4)?.parse::<u64>().ok()?;
@@ -69,29 +64,9 @@ impl ParseLayer {
         let object_id = self.record.get(6)?.parse::<u64>().ok()?;
         let object_sig = self.record.get(7)?;
 
-        if timestamp1 != timestamp2 {
-            Some(RecordParseResult::Dual(
-                InputEvent::new(
-                    timestamp1,
-                    event_id,
-                    event_sig,
-                    subject_id,
-                    subject_sig,
-                    object_id,
-                    object_sig,
-                ),
-                InputEvent::new(
-                    timestamp2,
-                    event_id,
-                    event_sig,
-                    subject_id,
-                    subject_sig,
-                    object_id,
-                    object_sig,
-                ),
-            ))
-        } else {
-            Some(RecordParseResult::Single(InputEvent::new(
+        self.boundary_time = timestamp1;
+        self.buffer.push(OrderedEvent::new(
+            InputEvent::new(
                 timestamp1,
                 event_id,
                 event_sig,
@@ -99,8 +74,29 @@ impl ParseLayer {
                 subject_sig,
                 object_id,
                 object_sig,
-            )))
+            ),
+            self.event_count,
+        ));
+        self.event_count += 1;
+
+        if let Some(timestamp2) = self.record.get(1).and_then(parse_timestamp) {
+            if timestamp2 != timestamp1 {
+                self.buffer.push(OrderedEvent::new(
+                    InputEvent::new(
+                        timestamp2,
+                        event_id,
+                        event_sig,
+                        subject_id,
+                        subject_sig,
+                        object_id,
+                        object_sig,
+                    ),
+                    self.event_count,
+                ));
+                self.event_count += 1;
+            }
         }
+        Some(())
     }
 
     fn nothing_to_send(&self) -> bool {
@@ -136,27 +132,11 @@ impl Iterator for ParseLayer {
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.nothing_to_send() {
-            if self.read_next_record() {
-                match self.parse_record() {
-                    Some(RecordParseResult::Single(input)) => {
-                        self.boundary_time = input.timestamp;
-                        self.buffer.push(OrderedEvent::new(input, self.event_count));
-                        self.event_count += 1;
-                    }
-                    Some(RecordParseResult::Dual(input1, input2)) => {
-                        self.boundary_time = input1.timestamp;
-                        self.buffer
-                            .push(OrderedEvent::new(input1, self.event_count));
-                        self.buffer
-                            .push(OrderedEvent::new(input2, self.event_count + 1));
-                        self.event_count += 2;
-                    }
-                    None => {}
-                }
-            } else {
+            if !self.read_next_record() {
                 self.boundary_time = u64::MAX;
                 break;
             }
+            self.parse_record();
         }
         self.get_batch()
     }
