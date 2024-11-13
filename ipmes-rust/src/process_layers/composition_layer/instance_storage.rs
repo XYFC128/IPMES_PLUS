@@ -4,6 +4,7 @@ use super::match_instance::{FreqInstance, MatchInstance};
 use super::pattern_info::SharedNodeInfo;
 use super::state::StateInfo;
 use super::state_table::StateTable;
+use crate::match_event::MatchEvent;
 use crate::universal_match_event::UniversalMatchEvent;
 use ahash::{HashMap, HashMapExt};
 use std::borrow::Borrow;
@@ -51,22 +52,22 @@ impl<'a, T> Iterator for StorageResponseMut<'a, T> {
 
 impl<'a, T> ExactSizeIterator for StorageResponseMut<'a, T> {}
 
-pub struct InstanceStorage<'p> {
+pub struct InstanceStorage {
     /// The match instances that can go to next state once an input event matches the specified
     /// match order, no shared entity is required. This only happens on the first event of a
     /// sub-pattern. Since sub-patterns are disjoint and each match order correspond to only one
     /// pattern event, there will be at most one such match instance for each match order.
-    pub simple_instances: HashMap<usize, MatchInstance<'p>>,
-    pub subject_instances: HashMap<(usize, u64), Vec<MatchInstance<'p>>>,
-    pub object_instances: HashMap<(usize, u64), Vec<MatchInstance<'p>>>,
-    pub endpoints_instances: HashMap<(usize, u64, u64), Vec<MatchInstance<'p>>>,
+    pub simple_instances: HashMap<usize, MatchInstance>,
+    pub subject_instances: HashMap<(usize, u64), Vec<MatchInstance>>,
+    pub object_instances: HashMap<(usize, u64), Vec<MatchInstance>>,
+    pub endpoints_instances: HashMap<(usize, u64, u64), Vec<MatchInstance>>,
 
-    pub freq_instance: HashMap<(usize, u64, u64), Vec<FreqInstance<'p>>>,
+    pub freq_instance: HashMap<(usize, u64, u64), Vec<FreqInstance>>,
 
-    pub output_instances: Vec<(u32, MatchInstance<'p>)>,
+    pub output_instances: Vec<(u32, MatchInstance)>,
 }
 
-impl<'p> InstanceStorage<'p> {
+impl InstanceStorage {
     pub fn init_from_state_table(state_table: &StateTable) -> Self {
         let filter_infos = state_table.table.iter().map(|(_, filter_info)| filter_info);
         let simple_instances = Self::init_simple_instances(filter_infos);
@@ -82,11 +83,11 @@ impl<'p> InstanceStorage<'p> {
 
     fn init_simple_instances<T>(
         filter_infos: impl Iterator<Item = T>,
-    ) -> HashMap<usize, MatchInstance<'p>>
+    ) -> HashMap<usize, MatchInstance>
     where
         T: Borrow<FilterInfo>,
     {
-        let mut simple_instances: HashMap<usize, MatchInstance<'p>> = HashMap::new();
+        let mut simple_instances: HashMap<usize, MatchInstance> = HashMap::new();
         for (state_id, filter_info) in filter_infos.enumerate() {
             let filter_info = filter_info.borrow();
             if let FilterInfo::MatchIdxOnly {
@@ -112,12 +113,12 @@ impl<'p> InstanceStorage<'p> {
         &'a mut self,
         request: &StorageRequest,
         window_bound: u64,
-    ) -> StorageResponseMut<'a, MatchInstance<'p>> {
+    ) -> StorageResponseMut<'a, MatchInstance> {
         let match_idx = request.match_idx;
         let subject_id = request.subject_id;
         let object_id = request.object_id;
 
-        let is_valid = |inst: &MatchInstance<'p>| inst.start_time >= window_bound;
+        let is_valid = |inst: &MatchInstance| inst.start_time >= window_bound;
 
         match request.shared_node_info {
             SharedNodeInfo::None => {
@@ -146,9 +147,9 @@ impl<'p> InstanceStorage<'p> {
         &'a mut self,
         request: &StorageRequest,
         window_bound: u64,
-    ) -> StorageResponseMut<'a, FreqInstance<'p>> {
+    ) -> StorageResponseMut<'a, FreqInstance> {
         let is_valid =
-            |inst: &FreqInstance<'p>| !inst.is_full() && inst.instance.start_time >= window_bound;
+            |inst: &FreqInstance| !inst.is_full() && inst.instance.start_time >= window_bound;
         Self::apply_filter_mut(
             &mut self.freq_instance,
             (request.match_idx, request.subject_id, request.object_id),
@@ -174,7 +175,7 @@ impl<'p> InstanceStorage<'p> {
 
     pub fn store_new_instances(
         &mut self,
-        new_instances: impl Iterator<Item = MatchInstance<'p>>,
+        new_instances: impl Iterator<Item = MatchInstance>,
         state_table: &StateTable,
     ) {
         for new_instance in new_instances {
@@ -213,7 +214,7 @@ impl<'p> InstanceStorage<'p> {
 
     pub fn store_freq_instances(
         &mut self,
-        new_instances: impl Iterator<Item = ((usize, u64, u64), FreqInstance<'p>)>,
+        new_instances: impl Iterator<Item = ((usize, u64, u64), FreqInstance)>,
     ) {
         for (filter, instance) in new_instances {
             self.freq_instance.entry(filter).or_default().push(instance);
@@ -221,7 +222,7 @@ impl<'p> InstanceStorage<'p> {
     }
 
     fn extract_filter(instance: &MatchInstance, filter_info: &FilterInfo) -> Option<Filter> {
-        let endpoints_extractor = |event: &UniversalMatchEvent| (event.subject_id, event.object_id);
+        let endpoints_extractor = |event: &MatchEvent| (event.input_subject_id, event.input_object_id);
         let filter = match filter_info {
             FilterInfo::None => return None,
             FilterInfo::MatchIdxOnly { match_idx } => Filter::MatchIdxOnly {

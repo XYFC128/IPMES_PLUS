@@ -4,6 +4,7 @@ use super::pattern_info::{FreqPattern, SharedNodeInfo, SinglePattern};
 use super::state_table::StateTable;
 use super::{InstanceStorage, MatchInstance};
 use crate::input_event::InputEvent;
+use crate::match_event::{MatchEvent, RawEvents};
 use crate::pattern::{PatternEvent, PatternEventType, SubPattern};
 use crate::universal_match_event::UniversalMatchEvent;
 use regex::{Error, RegexSet, SetMatches};
@@ -68,7 +69,7 @@ impl InstanceRunner {
     pub fn run<'p>(
         &mut self,
         info: &SinglePattern<'p>,
-        storage: &mut InstanceStorage<'p>,
+        storage: &mut InstanceStorage,
         state_table: &StateTable,
     ) {
         let window_bound = self.cur_time.saturating_sub(self.window_size);
@@ -85,13 +86,14 @@ impl InstanceRunner {
                 shared_node_info: info.shared_node_info,
             };
             for instance in storage.query_with_windowing(&request, window_bound) {
-                let new_event = UniversalMatchEvent {
-                    matched: info.pattern,
-                    start_time: event.timestamp,
-                    end_time: event.timestamp,
-                    subject_id: event.subject_id,
-                    object_id: event.object_id,
-                    event_ids: vec![event.event_id].into_boxed_slice(),
+
+                let new_event = MatchEvent {
+                    match_id: info.pattern.id as u32,
+                    input_subject_id: event.subject_id,
+                    input_object_id: event.object_id,
+                    pattern_subject_id: info.pattern.subject.id as u64,
+                    pattern_object_id: info.pattern.object.id as u64,
+                    raw_events: RawEvents::Single(event.clone())
                 };
                 if let Some(mut new_instance) =
                     instance.clone_extend(new_event, info.shared_node_info)
@@ -107,7 +109,7 @@ impl InstanceRunner {
     pub fn run_freq<'p>(
         &self,
         info: &FreqPattern<'p>,
-        storage: &mut InstanceStorage<'p>,
+        storage: &mut InstanceStorage,
         state_table: &StateTable,
     ) {
         let window_bound = self.cur_time.saturating_sub(self.window_size);
@@ -133,22 +135,25 @@ impl InstanceRunner {
                 let filter = (info.match_idx, event.subject_id, event.object_id);
                 let mut agg_instance =
                     FreqInstance::new(instance.clone(), info.frequency, self.cur_time);
-                agg_instance.add_event(event.event_id);
+                // agg_instance.add_event(event.event_id);
+                agg_instance.add_event(event);
                 agg_instance.instance.state_id = state_table.get_next_state(instance.state_id);
                 new_freq_instances.push((filter, agg_instance));
             }
 
             let mut new_instances = vec![];
             for instance in storage.query_freq_instances(&request, window_bound) {
-                if instance.add_event(event.event_id) && instance.is_full() {
-                    let event_ids = std::mem::take(&mut instance.new_events);
-                    let new_event = UniversalMatchEvent {
-                        matched: info.pattern,
-                        start_time: instance.start_time,
-                        end_time: self.cur_time,
-                        subject_id: event.subject_id,
-                        object_id: event.object_id,
-                        event_ids: event_ids.into_boxed_slice(),
+                if instance.add_event(event) && instance.is_full() {
+
+                    let raw_events = std::mem::take(&mut instance.new_events);
+
+                    let new_event = MatchEvent {
+                        match_id: info.pattern.id as u32,
+                        input_subject_id: event.subject_id,
+                        input_object_id: event.object_id,
+                        pattern_subject_id: info.pattern.subject.id as u64,
+                        pattern_object_id: info.pattern.object.id as u64,
+                        raw_events: RawEvents::Multiple(raw_events.into_boxed_slice())
                     };
 
                     if let Some(mut new_instance) = instance
