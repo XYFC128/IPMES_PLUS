@@ -29,9 +29,10 @@ pub struct CompositionLayer<'p, P> {
     prev_layer: P,
     window_size: u64,
     cur_time: u64,
+    /// This is the pattern graph flatten into a vector, with additional information 
+    /// for processing.
     pattern_infos: Vec<PatternInfo<'p>>,
     storage: InstanceStorage,
-    // storage: InstanceStorage<'p>,
     runner: InstanceRunner,
     flow_runner: FlowRunner,
     state_table: StateTable,
@@ -134,8 +135,10 @@ impl<'p, P> CompositionLayer<'p, P> {
 
         // TODO: Consider active windowing
     }
-
+ 
+    /// Match the newly input events to all pattern events.
     pub fn advance(&mut self) {
+        // iterate over all pattern events
         for info in &self.pattern_infos {
             match info {
                 PatternInfo::Single(info) => {

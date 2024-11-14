@@ -148,7 +148,6 @@ impl FlowRunner {
         &self,
         info: &FlowPattern<'p>,
         storage: &mut InstanceStorage,
-        // storage: &mut InstanceStorage<'p>,
         state_table: &StateTable,
     ) {
         let window_bound = self.cur_time.saturating_sub(self.window_size);
@@ -165,6 +164,7 @@ impl FlowRunner {
                     continue;
                 }
                 
+                // a matched flow event (src --> ... --> dst)
                 let flow = MatchEvent {
                     match_id: info.pattern.id as u32,
                     input_subject_id: *src,

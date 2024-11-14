@@ -73,7 +73,7 @@ impl<'p> FlowMatcher<'p> {
 impl<'p> Matcher<'p> for FlowMatcher<'p> {
     fn get_match(&mut self, input: &Rc<InputEvent>) -> Option<(PartialMatchEvent<'p>, bool)> {
         if self.next_state == 0 {
-            // this is an new input event
+            // this is a new input event
             self.subject_match = self
                 .subject_signature
                 .is_match(input.get_subject_signature());
@@ -107,11 +107,13 @@ impl<'p> Matcher<'p> for FlowMatcher<'p> {
         // already visit all reachable sets in this matcher
 
         let not_root = !self.is_root.contains(&input.subject_id);
+        // a new flow source
         if self.subject_match && not_root {
             self.new_reachable_set(input);
         }
 
         self.next_state = 0;
+        // if a single event matches the flow
         if self.object_match && self.subject_match {
             Some((
                 PartialMatchEvent {

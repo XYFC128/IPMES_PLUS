@@ -121,6 +121,7 @@ impl InstanceStorage {
         let is_valid = |inst: &MatchInstance| inst.start_time >= window_bound;
 
         match request.shared_node_info {
+            // Get the (empty) instance for the beginning of a subpattern.
             SharedNodeInfo::None => {
                 StorageResponseMut::Single(self.simple_instances.get_mut(&match_idx))
             }
