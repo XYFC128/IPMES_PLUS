@@ -186,6 +186,8 @@ impl ReachSet {
 /// A flow is a path on a directed graph where the timestamp of each arc on the path is newer
 /// than that of its previous arc.
 pub struct FlowTracer {
+    /// `reach_sets.get(&src)` contains the set of nodes that can reach `src`
+    /// (rather than reachable from `src`). 
     reach_sets: HashMap<u64, ReachSet>,
     window_size: u64,
 }
@@ -204,7 +206,7 @@ impl FlowTracer {
     /// - `src`: the source node id
     /// - `dst`: the destination node id
     /// - `time`: the timestamp of the arc
-    /// - `is_matach`: a function returns whether the given node matches any signature
+    /// - `is_match`: a function returns whether the given node matches any signature
     ///
     /// Returns the updated nodes of dst set.
     pub fn add_arc(
@@ -227,8 +229,10 @@ impl FlowTracer {
             .remove(&dst)
             .unwrap_or(ReachSet::new(dst, time, dst_match));
         dst_set.refresh_node(dst, time);
-
+        
         let diff = if let Some(src_set) = self.reach_sets.get_mut(&src) {
+            // If `src` is already reachable from other nodes, then after adding 
+            // this arc, all those nodes can now reach `dst`.
             src_set.refresh_node(src, time);
             dst_set.unioned_by(src_set, time_bound)
         } else if src_match {
