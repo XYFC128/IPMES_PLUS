@@ -109,7 +109,7 @@ if __name__ == '__main__':
                 res = run(pattern, data_graph, 1800, args.pre_run, args.re_run)
                 if not res is None:
                     num_match, cpu_time, peak_mem = res
-                    run_result.append([f'DP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
+                    run_result.append([f'SP{i}', graph, num_match, cpu_time, peak_mem / 2**20])
 
     if not args.no_darpa:
         for i in range(1, 6):
