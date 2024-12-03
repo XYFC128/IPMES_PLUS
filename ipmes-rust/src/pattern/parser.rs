@@ -68,8 +68,8 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
     let entities_json = json_obj["Entities"]
         .as_array()
         .ok_or(PatternParsingError::KeyError("Entities"))?;
-    let entities = parse_entities(entities_json)?;
-    let entity_id2index = get_entity_id2index(&entities);
+    let mut entities = parse_entities(entities_json)?;
+    let entity_id2index = reassign_entity_id(&mut entities);
 
     let events_json = json_obj["Events"]
         .as_array()
@@ -105,10 +105,14 @@ fn parse_entities(entities_json: &[Value]) -> Result<Vec<PatternEntity>, Pattern
     Ok(entities)
 }
 
-fn get_entity_id2index(entities: &[PatternEntity]) -> HashMap<usize, usize> {
+/// Reassign id of entities to continuous sequence starting from 0.
+///
+/// Returns the mapping from original id to the new id.
+fn reassign_entity_id(entities: &mut [PatternEntity]) -> HashMap<usize, usize> {
     let mut id2index = HashMap::new();
-    for (index, entity) in entities.iter().enumerate() {
+    for (index, entity) in entities.iter_mut().enumerate() {
         id2index.insert(entity.id, index);
+        entity.id = index
     }
     id2index
 }
