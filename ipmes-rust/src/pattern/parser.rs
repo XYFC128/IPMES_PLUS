@@ -74,9 +74,10 @@ pub fn parse_json(json_obj: &Value) -> Result<Pattern, PatternParsingError> {
     let events_json = json_obj["Events"]
         .as_array()
         .ok_or(PatternParsingError::KeyError("Events"))?;
-    let events = parse_events(events_json, &entity_id2index, &entities)?;
+    let mut events = parse_events(events_json, &entity_id2index, &entities)?;
+    let event_id2index = reassign_event_id(&mut events);
 
-    let order = parse_order_relation(events_json)?;
+    let order = parse_order_relation(events_json, &event_id2index)?;
     if !order.is_valid() {
         return Err(PatternParsingError::DependencyCycle);
     }
@@ -109,6 +110,19 @@ fn get_entity_id2index(entities: &[PatternEntity]) -> HashMap<usize, usize> {
     let mut id2index = HashMap::new();
     for (index, entity) in entities.iter().enumerate() {
         id2index.insert(entity.id, index);
+    }
+    id2index
+}
+
+/// Reassign id of events to continuous sequence starting from 0.
+/// As this makes handling of events a lot easier.
+///
+/// Returns the mapping from original id to the new id.
+fn reassign_event_id(events: &mut [PatternEvent]) -> HashMap<usize, usize> {
+    let mut id2index = HashMap::new();
+    for (index, event) in events.iter_mut().enumerate() {
+        id2index.insert(event.id, index);
+        event.id = index;
     }
     id2index
 }
@@ -201,28 +215,30 @@ fn parse_event_type(event_json: &Value) -> Result<PatternEventType, PatternParsi
     Ok(event_type)
 }
 
-fn parse_order_relation(events: &[Value]) -> Result<OrderRelation, PatternParsingError> {
+fn parse_order_relation(events: &[Value], event_id2index: &HashMap<usize, usize>) -> Result<OrderRelation, PatternParsingError> {
     let mut orel_edges = Vec::new();
 
     for event in events {
         let my_id = event["ID"]
             .as_u64()
-            .ok_or(PatternParsingError::KeyError("ID"))? as u32;
+            .ok_or(PatternParsingError::KeyError("ID"))? as usize;
+        let my_idx = event_id2index[&my_id] as u32;
 
         if let Some(parents) = event["Parents"].as_array() {
             for parent in parents {
                 let parent_id = parent
                     .as_u64()
                     .ok_or(PatternParsingError::KeyError("Parents"))?
-                    as u32;
-                orel_edges.push((parent_id + 1, my_id + 1));
+                    as usize;
+                let parent_idx = event_id2index[&parent_id] as u32;
+                orel_edges.push((parent_idx + 1, my_idx + 1));
             }
 
             if parents.is_empty() {
-                orel_edges.push((0, my_id + 1));
+                orel_edges.push((0, my_idx + 1));
             }
         } else {
-            orel_edges.push((0, my_id + 1));
+            orel_edges.push((0, my_idx + 1));
         }
     }
 

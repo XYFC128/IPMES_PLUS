@@ -163,6 +163,7 @@ impl FlowRunner {
                     continue;
                 }
                 
+                // a matched flow event (src --> ... --> dst)
                 let flow = MatchEvent {
                     match_id: info.pattern.id as u32,
                     input_subject_id: *src,

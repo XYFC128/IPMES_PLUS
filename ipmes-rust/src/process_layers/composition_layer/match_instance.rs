@@ -147,7 +147,6 @@ impl MatchInstance {
     /// flow event will not be considered for uniqueness checking for later events.
     pub fn clone_extend_flow(
         &self,
-        // new_event: UniversalMatchEvent<'p>,
         new_event: MatchEvent,
         shared_node_info: SharedNodeInfo,
     ) -> Option<Self> {
