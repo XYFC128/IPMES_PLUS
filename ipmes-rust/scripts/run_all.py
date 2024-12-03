@@ -7,7 +7,7 @@ import re
 import pandas as pd 
 
 def run(pattern_file: str, data_graph: str, window_size: int, pre_run=0, re_run=1) -> t.Union[t.Tuple[int, float, int], None]:
-    run_cmd = ['./target/release/ipmes-rust', pattern_file, data_graph, '-w', str(window_size)]
+    run_cmd = ['./target/release/ipmes-rust', pattern_file, data_graph, '-w', str(window_size), '--silent']
     print('Running: `{}`'.format(' '.join(run_cmd)))
 
     for _ in range(pre_run):

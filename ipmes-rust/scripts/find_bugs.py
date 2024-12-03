@@ -80,8 +80,8 @@ def get_num_results_from_stdout(stdout: bytes) -> int:
     
     return int(match_result.group(1))
 
-def get_match_results_from_stderr(stderr: bytes):
-    lines = stderr.decode().split('\n')
+def get_match_results_from_stdout(stdout: bytes):
+    lines = stdout.decode().split('\n')
     ans_pattern = re.compile(r'Pattern Match: \[([0-9,\s]+)\]')
     match_results = []
     for line in lines:
@@ -189,11 +189,9 @@ if __name__ == '__main__':
 
     run_args = ['cargo', 'run', '--release', '--', f'../data/universal_patterns/{pattern}.json', os.path.join(data_folder, f'{data}.csv')]
     print(run_args)
-    os.environ['RUST_LOG'] = 'info'
     run = subprocess.run(run_args, capture_output=True)
-    os.environ['RUST_LOG'] = ''
 
-    match_results = get_match_results_from_stderr(run.stderr)
+    match_results = get_match_results_from_stdout(run.stdout)
     false_positive, true_negative = find_wrong_answers(answers, match_results)
 
     if len(false_positive) == 0 and len(true_negative) == 0:
