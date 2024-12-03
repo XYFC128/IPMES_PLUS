@@ -82,7 +82,7 @@ def get_num_results_from_stdout(stdout: bytes) -> int:
 
 def get_match_results_from_stdout(stdout: bytes):
     lines = stdout.decode().split('\n')
-    ans_pattern = re.compile(r'Pattern Match: \[([0-9,\s]+)\]')
+    ans_pattern = re.compile(r'Pattern Match: <[0-9\.]+, [0-9\.]+>\[([0-9,\s]+)\]')
     match_results = []
     for line in lines:
         found = ans_pattern.search(line)

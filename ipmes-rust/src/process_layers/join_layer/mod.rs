@@ -210,32 +210,12 @@ impl<'p, P> JoinLayer<'p, P> {
         let mut pattern_matches = Vec::with_capacity(buffer.len());
 
         for sub_pattern_match in buffer.drain() {
-            debug!("sub_pattern_match id: {}", sub_pattern_match.0.id);
-            let mut matched_events = Vec::with_capacity(sub_pattern_match.0.event_ids.len());
-            let mut earliest_time = u64::MAX;
-            let mut latest_time = u64::MIN;
-
-            for (idx, event) in sub_pattern_match
-                .0
-                .match_event_map
-                .iter()
-                .flatten()
-                .enumerate()
-            {
-                matched_events.extend(event.raw_events.get_ids().map(|id| (idx, id)));
-
-                let (start_time, end_time) = event.raw_events.get_interval();
-
-                earliest_time = u64::min(earliest_time, start_time);
-                latest_time = u64::max(latest_time, end_time);
-            }
-            matched_events.sort_unstable();
-
-            pattern_matches.push(PatternMatch {
-                matched_events: matched_events.into_boxed_slice(),
-                earliest_time,
-                latest_time,
-            });
+            pattern_matches.push(PatternMatch{
+                event_ids: sub_pattern_match.0.event_ids,
+                match_event_map: sub_pattern_match.0.match_event_map,
+                latest_time: sub_pattern_match.0.latest_time,
+                earliest_time: sub_pattern_match.0.earliest_time
+            })
         }
         pattern_matches
     }

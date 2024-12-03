@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use crate::match_event::RawEvents::{Flow, Multiple, Single};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MatchEvent {
     /// The pattern event id that `self.raw_events` are matched to.
     pub match_id: u32,
@@ -22,7 +22,7 @@ pub struct MatchEvent {
     pub raw_events: RawEvents,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RawEvents {
     Single(Rc<InputEvent>),
     /// Correspond to `Frequency` match type

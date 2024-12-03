@@ -1,5 +1,8 @@
 use crate::match_event::MatchEvent;
 use crate::process_layers::composition_layer;
+use crate::process_layers::composition_layer::match_instance::{
+    InputEntityId, InputEventId, PatternEntityId,
+};
 use crate::process_layers::join_layer::SubPatternBuffer;
 use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
@@ -7,23 +10,15 @@ use std::cmp::Ordering;
 use std::cmp::{max, min};
 use std::fmt::Debug;
 use std::rc::Rc;
-use crate::process_layers::composition_layer::match_instance::{InputEntityId, PatternEntityId, InputEventId};
 
 /// Matches of sub-patterns.
 #[derive(Clone)]
 // pub struct SubPatternMatch<'p> {
 pub struct SubPatternMatch {
-    /// The id of the matched sub-pattern.
-    pub id: usize,
     /// The timestamp of the last event (in `match_events`), which is also the latest timestamp; indicating "current time".
     pub latest_time: u64,
     /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
-
-    /// Sorted array of `(input entity id, pattern entity id)`.
-    ///
-    /// `match_entities.len()` == number of entities in this sub-pattern match.
-    pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
 
     /// Sorted input event ids for event uniqueness determination.
     pub event_ids: Box<[InputEventId]>,
@@ -34,6 +29,14 @@ pub struct SubPatternMatch {
     ///
     /// > Note: The terms **matched event** and pattern event are used interchangeably.
     pub match_event_map: Box<[Option<Rc<MatchEvent>>]>,
+
+    /// The id of the matched sub-pattern.
+    pub id: usize,
+    
+    /// Sorted array of `(input entity id, pattern entity id)`.
+    ///
+    /// `match_entities.len()` == number of entities in this sub-pattern match.
+    pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
 }
 
 // pub struct DebugMatchEventMap<'p, 't>(pub &'t [Option<UniversalMatchEvent<'p>>]);
@@ -71,7 +74,10 @@ impl<'p> Debug for SubPatternMatch {
 }
 
 /// > Note: Since pattern-edges in sub-patterns are disjoint, we need not check uniqueness.
-fn merge_match_event_map<T>(event_map1: &[Option<Rc<T>>], event_map2: &[Option<Rc<T>>]) -> Box<[Option<Rc<T>>]>
+fn merge_match_event_map<T>(
+    event_map1: &[Option<Rc<T>>],
+    event_map2: &[Option<Rc<T>>],
+) -> Box<[Option<Rc<T>>]>
 where
     T: Clone,
 {
@@ -153,12 +159,7 @@ fn merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
     Some(merged.into_boxed_slice())
 }
 
-
-pub fn try_merge_entities(
-    a: &[(u64, u64)],
-    b: &[(u64, u64)],
-    max_num_entities: usize
-) -> bool {
+pub fn try_merge_entities(a: &[(u64, u64)], b: &[(u64, u64)], max_num_entities: usize) -> bool {
     let mut used_entities = vec![false; max_num_entities];
 
     let mut p1 = a.iter();
@@ -250,19 +251,23 @@ pub fn merge_entities(
     Some(merged.into_boxed_slice())
 }
 
-
 impl<'p> SubPatternMatch {
     pub fn build(
         sub_pattern_id: u32,
         match_instance: composition_layer::MatchInstance,
         num_pattern_event: usize,
     ) -> Option<Self> {
-        let latest_time = match_instance.match_events.last()?.raw_events.get_interval().1;
+        let latest_time = match_instance
+            .match_events
+            .last()?
+            .raw_events
+            .get_interval()
+            .1;
         let earliest_time = match_instance.start_time;
 
         // let match_events = match_instance.match_events.into_vec();
         let match_events = match_instance.match_events.into_vec();
-        
+
         let match_entities = match_instance.match_entities.clone();
 
         let mut event_ids: Vec<u64> = match_events
