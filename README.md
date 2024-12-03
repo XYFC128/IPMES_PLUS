@@ -1,6 +1,8 @@
 # IPMES+
 
-**IPMES+** (**I**ncremental Behavioral **P**attern **M**atching Algorithm over the System Audit **E**vent **S**tream for APT Detection) is a system that performs incremental pattern matching over event streams.
+IPMES+ is the successor of the original [IPMES](https://github.com/littleponywork/IPMES), which was developed by [Ping-Ting Liu](https://github.com/XYFC128) and [Yi-Chun Liao](https://github.com/Datou0718/) in 2023. The original IPMES was published in IEEE/IFIP International Conference on Dependable Systems and Networks (DSN) 2024, titled **IPMES: A Tool for Incremental TTP Detection over the System Audit Event Stream (Tool)**.
+
+**IPMES+** is a system that performs incremental pattern matching over event streams.
 
 Given a **provenance graph** $G$ and a **behaviroal pattern** $EP$, IPMES streamingly outputs subgraphs of $G$ that matches $EP$.
 
@@ -55,3 +57,8 @@ Options:
 - `data/`: Example input data for the program
 - `docs/`: Documentations
 - `ipmes-rust`: Rust implementation of IPMES
+
+## Related Repositories
+
+- [littleponywork/IPMES](https://github.com/littleponywork/IPMES) - the polished source code for DSN 2024 paper
+- [Datou0718/IPMES](https://github.com/Datou0718/IPMES) - the original repository to hold IPMES source code.
