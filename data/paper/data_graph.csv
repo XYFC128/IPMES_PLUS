@@ -1,0 +1,6 @@
+5,5,1,recvmsg,1,Socket::ip::8.8.8.8,2,Process::name::bash
+7,7,2,fork,2,Process::name::bash,3,Process::name::vim
+7,7,3,read,4,File::path::/var/spool/cron/crontabs/root,3,Process::name::vim
+9,9,4,write,3,Process::name::vim,4,File::path::/var/spool/cron/crontabs/root
+11,11,5,read,4,File::path::/var/spool/cron/crontabs/root,3,Process::name::vim
+11,11,6,write,3,Process::name::vim,4,File::path::/var/spool/cron/crontabs/root
