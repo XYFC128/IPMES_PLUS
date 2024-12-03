@@ -1,6 +1,6 @@
-# IPMES
+# IPMES+
 
-**IPMES** (**I**ncremental Behavioral **P**attern **M**atching Algorithm over the System Audit **E**vent **S**tream for APT Detection) is a system that performs incremental pattern matching over event streams.
+**IPMES+** (**I**ncremental Behavioral **P**attern **M**atching Algorithm over the System Audit **E**vent **S**tream for APT Detection) is a system that performs incremental pattern matching over event streams.
 
 Given a **provenance graph** $G$ and a **behaviroal pattern** $EP$, IPMES streamingly outputs subgraphs of $G$ that matches $EP$.
 
