@@ -1,10 +1,9 @@
 use crate::match_event::MatchEvent;
 use crate::process_layers::composition_layer;
 use crate::process_layers::composition_layer::match_instance::{
-    InputEntityId, InputEventId, PatternEntityId,
+    InputEntityId, InputEventId, PatternEntityId, PatternEventId,
 };
 use crate::process_layers::join_layer::SubPatternBuffer;
-use crate::universal_match_event::UniversalMatchEvent;
 use log::debug;
 use std::cmp::Ordering;
 use std::cmp::{max, min};
@@ -20,8 +19,8 @@ pub struct SubPatternMatch {
     /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
 
-    /// Sorted input event ids for event uniqueness determination.
-    pub event_ids: Box<[InputEventId]>,
+    /// Sorted array of `(input event id, pattern event id)` for event uniqueness determination.
+    pub event_ids: Box<[(InputEventId, PatternEventId)]>,
 
     /// `event_id_map[matched_id] = input_event`
     ///
@@ -33,13 +32,12 @@ pub struct SubPatternMatch {
     /// The id of the matched sub-pattern.
     pub id: usize,
     
-    /// Sorted array of `(input entity id, pattern entity id)`.
+    /// Sorted array of `(input entity id, pattern entity id)` for entity uniqueness determination.
     ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
     pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
 }
 
-// pub struct DebugMatchEventMap<'p, 't>(pub &'t [Option<UniversalMatchEvent<'p>>]);
 pub struct DebugMatchEventMap<'t>(pub &'t [Option<MatchEvent>]);
 impl<'p, 't> Debug for DebugMatchEventMap<'t> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -55,7 +53,6 @@ impl<'p, 't> Debug for DebugMatchEventMap<'t> {
     }
 }
 
-// impl<'p> Debug for SubPatternMatch<'p> {
 impl<'p> Debug for SubPatternMatch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // f.debug_struct("SubPatternMatch")
@@ -95,7 +92,7 @@ where
     merged.into_boxed_slice()
 }
 
-fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> bool {
+fn try_merge_event_ids(id_list1: &[(u64, u32)], id_list2: &[(u64, u32)]) -> bool {
     let mut p1 = id_list1.iter();
     let mut p2 = id_list2.iter();
     let mut next1 = p1.next();
@@ -107,7 +104,7 @@ fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> bool {
                 next1 = p1.next();
             }
             Ordering::Equal => {
-                debug!("event id duplicates: {}", id1);
+                debug!("event id duplicates: {:?}", id1);
                 return false;
             }
             Ordering::Greater => {
@@ -118,7 +115,7 @@ fn try_merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> bool {
     true
 }
 
-fn merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
+fn merge_event_ids(id_list1: &[(u64, u32)], id_list2: &[(u64, u32)]) -> Option<Box<[(u64, u32)]>> {
     if !try_merge_event_ids(id_list1, id_list2) {
         return None;
     }
@@ -136,7 +133,7 @@ fn merge_event_ids(id_list1: &[u64], id_list2: &[u64]) -> Option<Box<[u64]>> {
                 next1 = p1.next();
             }
             Ordering::Equal => {
-                debug!("event id duplicates: {}", id1);
+                debug!("event id duplicates: {:?}", id1);
                 return None;
             }
             Ordering::Greater => {
@@ -270,9 +267,9 @@ impl<'p> SubPatternMatch {
 
         let match_entities = match_instance.match_entities.clone();
 
-        let mut event_ids: Vec<u64> = match_events
+        let mut event_ids: Vec<(u64, u32)> = match_events
             .iter()
-            .flat_map(|e| e.raw_events.get_ids())
+            .flat_map(|e| e.raw_events.get_ids().map(|id| (id, e.match_id)))
             .collect();
         event_ids.sort_unstable();
 
@@ -297,11 +294,6 @@ impl<'p> SubPatternMatch {
         sub_pattern_match1: &Self,
         sub_pattern_match2: &Self,
     ) -> Option<Self> {
-        // debug!(
-        //     "now try merging\n{:?} and\n{:?}",
-        //     sub_pattern_match1, sub_pattern_match2,
-        // );
-
         debug!("event uniqueness checking...");
 
         let event_ids =
@@ -381,49 +373,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_merge_edge_id_map_1() {
-        let edge_id_map1 = vec![None, Some(3), Some(2), None, None];
-        let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
-
-        // assert_eq!(
-        //     [Some(1), Some(3), Some(2), None, Some(7)],
-        //     *merge_match_event_map(&edge_id_map1, &edge_id_map2)
-        // );
-    }
-
-    #[test]
-    fn test_merge_edge_id_map_2() {
-        let edge_id_map1 = vec![None, Some(3), None, None, None];
-        let edge_id_map2 = vec![Some(1), None, None, None, Some(7)];
-
-        // assert_eq!(
-        //     [Some(1), Some(3), None, None, Some(7)],
-        //     *merge_match_event_map(&edge_id_map1, &edge_id_map2)
-        // );
-    }
-
-    #[test]
     fn test_merge_event_id_basecase() {
-        let id_list1 = [1, 3, 5];
-        let id_list2 = [2, 4];
+        let id_list1 = [(1, 0), (3, 0), (5, 0)];
+        let id_list2 = [(2, 0), (4, 0)];
         assert_eq!(
             *merge_event_ids(&id_list1, &id_list2).unwrap(),
-            [1, 2, 3, 4, 5]
+            [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0)]
         );
     }
 
     #[test]
     fn test_merge_event_id_dup_id() {
-        let id_list1 = [1, 3, 5];
-        let id_list2 = [3, 4];
+        let id_list1 = [(1, 0), (3, 0), (5, 0)];
+        let id_list2 = [(3, 0), (4, 0)];
         assert_eq!(merge_event_ids(&id_list1, &id_list2), None);
     }
 
     #[test]
     fn test_merge_event_id_edgecases() {
-        assert_eq!(*merge_event_ids(&[1], &[2]).unwrap(), [1, 2]);
-        assert_eq!(*merge_event_ids(&[2], &[1]).unwrap(), [1, 2]);
-        assert_eq!(*merge_event_ids(&[1], &[]).unwrap(), [1]);
+        assert_eq!(*merge_event_ids(&[(1, 0)], &[(2, 0)]).unwrap(), [(1, 0), (2, 0)]);
+        assert_eq!(*merge_event_ids(&[(2, 0)], &[(1, 0)]).unwrap(), [(1, 0), (2, 0)]);
+        assert_eq!(*merge_event_ids(&[(1, 0)], &[]).unwrap(), [(1, 0)]);
         assert!(merge_event_ids(&[], &[]).unwrap().is_empty(),);
     }
 

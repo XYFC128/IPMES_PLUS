@@ -11,6 +11,7 @@ use std::rc::Rc;
 pub type InputEntityId = u64;
 pub type PatternEntityId = u64;
 pub type InputEventId = u64;
+pub type PatternEventId = u32;
 
 fn dup_extend_event_ids(event_ids: &[u64], new_ids: &[u64]) -> Option<Box<[u64]>> {
     let mut new_event_ids = Vec::with_capacity(event_ids.len() + new_ids.len());

@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use nix::libc::write;
 use std::cmp::Ordering;
 use std::fmt::Formatter;
 use std::fmt::{self};
@@ -7,7 +6,7 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::match_event::{MatchEvent, RawEvents};
-use crate::process_layers::composition_layer::match_instance::InputEventId;
+use crate::process_layers::composition_layer::match_instance::{InputEventId, PatternEventId};
 
 /// Complete Pattern Match
 #[derive(Clone, Debug)]
@@ -17,7 +16,7 @@ pub struct PatternMatch {
     /// The timestamp of the earliest event; for determining expiry of this match.
     pub earliest_time: u64,
 
-    pub event_ids: Box<[InputEventId]>,
+    pub event_ids: Box<[(InputEventId, PatternEventId)]>,
     pub match_event_map: Box<[Option<Rc<MatchEvent>>]>,
 }
 
