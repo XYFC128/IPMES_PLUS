@@ -10,7 +10,7 @@ use slab::Slab;
 /// updated nodes after union with another set.
 #[derive(Clone)]
 pub struct ReachSet {
-    /// Map node_id -> update_tim
+    /// Map node_id -> update_time
     node_update_time: HashMap<u64, u64>,
 
     /// The lower bound of the oldest update time in this set.
@@ -127,6 +127,7 @@ impl ReachSet {
     ///
     /// Returns `true` if this set is modified. Otherwise, `false` is returned.
     pub fn update_or_insert(&mut self, id: u64, update_time: u64, time_bound: u64) -> bool {
+        // not in the same window 
         if update_time < time_bound {
             return false;
         } else if let Some(our_update_time) = self.node_update_time.get_mut(&id) {

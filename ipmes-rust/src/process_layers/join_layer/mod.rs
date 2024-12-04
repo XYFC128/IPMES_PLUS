@@ -8,8 +8,8 @@ use log::debug;
 use std::cmp::max;
 use std::cmp::min;
 use std::cmp::Reverse;
-use std::collections::HashSet;
 use std::collections::BinaryHeap;
+use std::collections::HashSet;
 use std::vec;
 pub use sub_pattern_buffer::SubPatternBuffer;
 use sub_pattern_match::EarliestFirst;
@@ -136,7 +136,6 @@ impl<'p, P> JoinLayer<'p, P> {
 
             union_find.merge(i, j, new_buffer_id);
 
-
             let mut visited = HashSet::new();
             visited.insert(new_buffer_id);
 
@@ -207,17 +206,10 @@ impl<'p, P> JoinLayer<'p, P> {
 
     /// Convert `SubPatternMatch to `PatternMatch`.
     fn pattern_match_conversion(buffer: &mut BinaryHeap<EarliestFirst>) -> Vec<PatternMatch> {
-        let mut pattern_matches = Vec::with_capacity(buffer.len());
-
-        for sub_pattern_match in buffer.drain() {
-            pattern_matches.push(PatternMatch{
-                event_ids: sub_pattern_match.0.event_ids,
-                match_event_map: sub_pattern_match.0.match_event_map,
-                latest_time: sub_pattern_match.0.latest_time,
-                earliest_time: sub_pattern_match.0.earliest_time
-            })
-        }
-        pattern_matches
+        buffer
+            .drain()
+            .map(|sub_pattern_match| sub_pattern_match.0.into())
+            .collect()
     }
 
     /// Add the sub-pattern matches in the root buffer to the final buffer.
@@ -405,9 +397,9 @@ struct UnionFind {
     /// Store the root (representative element) of a union-find tree (disjoint set).
     /// For element `id`, if `roots[id] < 0`, them `id` is the root of the tree it belongs to.
     /// Otherwise, `roots[id]` is the parent of `id` (but not necessary the root).
-    /// 
+    ///
     /// A disjoint set corresponds to a sub-pattern buffer in the Join layer.
-    /// Note that for `roots[id] < 0`, the value `abs(roots[id])` corresponds to the 
+    /// Note that for `roots[id] < 0`, the value `abs(roots[id])` corresponds to the
     /// *height of the buffer* in the sub-pattern buffer tree structure.
     roots: Vec<i64>,
 }

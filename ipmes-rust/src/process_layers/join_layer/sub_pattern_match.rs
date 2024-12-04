@@ -1,4 +1,6 @@
 use crate::match_event::MatchEvent;
+use crate::pattern::PatternEvent;
+use crate::pattern_match::PatternMatch;
 use crate::process_layers::composition_layer;
 use crate::process_layers::composition_layer::match_instance::{
     InputEntityId, InputEventId, PatternEntityId, PatternEventId,
@@ -36,6 +38,17 @@ pub struct SubPatternMatch {
     ///
     /// `match_entities.len()` == number of entities in this sub-pattern match.
     pub match_entities: Box<[(InputEntityId, PatternEntityId)]>,
+}
+
+impl Into<PatternMatch> for SubPatternMatch {
+    fn into(self) -> PatternMatch {
+        PatternMatch {
+            latest_time: self.latest_time,
+            earliest_time: self.earliest_time,
+            event_ids: self.event_ids,
+            match_event_map: self.match_event_map
+        }
+    }
 }
 
 pub struct DebugMatchEventMap<'t>(pub &'t [Option<MatchEvent>]);
