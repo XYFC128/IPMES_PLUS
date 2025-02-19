@@ -14,8 +14,8 @@ Given a **provenance graph** $G$ and a **behaviroal pattern** $EP$, IPMES stream
 ## Build from source
 
 ```bash
-git clone https://github.com/XYFC128/IPMES.git
-cd ipmes-rust/
+# clone this repository to IPMES_PLUS/
+cd IPMES_PLUS/ipmes-rust/
 cargo build --release
 ```
 
