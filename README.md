@@ -1,6 +1,6 @@
 # IPMES+
 
-IPMES+ is the successor of the original [IPMES](https://github.com/littleponywork/IPMES), which was developed by [Ping-Ting Liu](https://github.com/XYFC128) and [Yi-Chun Liao](https://github.com/Datou0718/) in 2023. The original IPMES was published in IEEE/IFIP International Conference on Dependable Systems and Networks (DSN) 2024, titled **IPMES: A Tool for Incremental TTP Detection over the System Audit Event Stream (Tool)**.
+IPMES+ is the successor of the original [IPMES](https://github.com/littleponywork/IPMES).
 
 **IPMES+** is a system that performs incremental pattern matching over event streams.
 
@@ -60,5 +60,5 @@ Options:
 
 ## Related Repositories
 
-- [littleponywork/IPMES](https://github.com/littleponywork/IPMES) - the polished source code for DSN 2024 paper
-- [Datou0718/IPMES](https://github.com/Datou0718/IPMES) - the original repository to hold IPMES source code.
+- [littleponywork/IPMES](https://github.com/littleponywork/IPMES) - the polished source code for IPMES papaer published in DSN 2024
+- [Datou0718/IPMES](https://github.com/Datou0718/IPMES) - the original repository of IPMES source code.
