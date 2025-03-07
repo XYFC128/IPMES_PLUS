@@ -1,0 +1,49 @@
+{
+  "Version": "0.2.0",
+  "UseRegex": true,
+  "Entities": [
+    {
+      "ID": 1,
+      "Signature": "Socket::ip::.*"
+    },
+    {
+      "ID": 2,
+      "Signature": "Process::name::.*"
+    },
+    {
+      "ID": 3,
+      "Signature": "File::path::/.*/crontabs/root"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 1,
+      "Type": "Flow",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": []
+    },
+    {
+      "ID": 2,
+      "Signature": "read",
+      "Type": "Frequency",
+      "Frequency": 2,
+      "SubjectID": 3,
+      "ObjectID": 2,
+      "Parents": [
+        1
+      ]
+    },
+    {
+      "ID": 3,
+      "Signature": "write",
+      "Type": "Frequency",
+      "Frequency": 2,
+      "SubjectID": 2,
+      "ObjectID": 3,
+      "Parents": [
+        1
+      ]
+    }
+  ]
+}

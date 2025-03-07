@@ -1,0 +1,5 @@
+1.0,1.0,1,open,1,Process::aaa,2,Artifact::file::/tmp/hello.txt
+1.0,1.0,2,read,2,Artifact::file::/tmp/hello.txt,1,Process::aaa
+1.0,1.0,3,write,1,Process::aaa,2,Artifact::file::/tmp/hello.txt
+1.0,1.0,4,read,2,Artifact::file::/tmp/hello.txt,1,Process::aaa
+1.0,1.0,5,write,1,Process::aaa,2,Artifact::file::/tmp/hello.txt

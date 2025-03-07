@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ahash = "0.8.11"
 clap = { version = "4.4.2", features = ["derive"] }
 cpu-time = "1.0.0"
 csv = "1.2.2"
@@ -17,7 +18,23 @@ petgraph = "0.6.4"
 regex = "1.10.0"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.106"
+slab = "0.4.9"
 thiserror = "1.0.48"
+windows = { version = "0.52.0", features = ["System_Diagnostics"] }
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+test-log = "0.2.16"
 
 [profile.release]
 debug = 1
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+#[[bench]]
+#name = "my_benchmark"
+#harness = false
+
+[[bench]]
+name = "join_layer_benchmark"
+harness = false

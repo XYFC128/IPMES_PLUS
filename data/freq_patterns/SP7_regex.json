@@ -1,0 +1,160 @@
+{
+  "Version": "0.2.0",
+  "UseRegex": true,
+  "Entities": [
+    {
+      "ID": 0,
+      "Signature": "Process::.*"
+    },
+    {
+      "ID": 1,
+      "Signature": "Artifact::file::.*"
+    },
+    {
+      "ID": 2,
+      "Signature": "Artifact::file::.*"
+    },
+    {
+      "ID": 3,
+      "Signature": "Process::.*"
+    },
+    {
+      "ID": 4,
+      "Signature": "Process::.*"
+    },
+    {
+      "ID": 5,
+      "Signature": "Process::sshpass"
+    },
+    {
+      "ID": 6,
+      "Signature": "Artifact::unnamed pipe::"
+    },
+    {
+      "ID": 7,
+      "Signature": "Process::awk"
+    },
+    {
+      "ID": 8,
+      "Signature": "Artifact::unnamed pipe::"
+    },
+    {
+      "ID": 9,
+      "Signature": "Process::ssh"
+    },
+    {
+      "ID": 10,
+      "Signature": "Artifact::network socket::.*:.*"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 0,
+      "Signature": "create",
+      "SubjectID": 0,
+      "ObjectID": 1,
+      "Parents": []
+    },
+    {
+      "ID": 1,
+      "Signature": "update",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        0
+      ]
+    },
+    {
+      "ID": 2,
+      "Signature": "fork",
+      "SubjectID": 0,
+      "ObjectID": 3,
+      "Parents": [
+        1
+      ]
+    },
+    {
+      "ID": 3,
+      "Signature": "fork",
+      "SubjectID": 3,
+      "ObjectID": 4,
+      "Parents": [
+        2
+      ]
+    },
+    {
+      "ID": 4,
+      "Signature": "execve",
+      "SubjectID": 4,
+      "ObjectID": 5,
+      "Parents": [
+        3
+      ]
+    },
+    {
+      "ID": 5,
+      "Signature": "connect",
+      "SubjectID": 9,
+      "ObjectID": 10,
+      "Parents": [
+        4
+      ]
+    },
+    {
+      "ID": 6,
+      "Signature": "write",
+      "Frequency": 7,
+      "SubjectID": 9,
+      "ObjectID": 10,
+      "Parents": [
+        5
+      ]
+    },
+    {
+      "ID": 7,
+      "Signature": "read",
+      "SubjectID": 6,
+      "ObjectID": 0,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 8,
+      "Signature": "write",
+      "SubjectID": 7,
+      "ObjectID": 6,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 9,
+      "Signature": "read",
+      "SubjectID": 8,
+      "ObjectID": 7,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 10,
+      "Signature": "write",
+      "SubjectID": 9,
+      "ObjectID": 8,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 11,
+      "Signature": "read",
+      "Frequency": 2,
+      "SubjectID": 10,
+      "ObjectID": 9,
+      "Parents": [
+        6
+      ]
+    }
+  ]
+}

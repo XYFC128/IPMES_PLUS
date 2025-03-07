@@ -1,0 +1,180 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "load#Artifact::file::/bin/sh#Process::sh",
+                    "subject": 22,
+                    "object": 0
+                },
+                {
+                    "id": 1,
+                    "signature": "create#Process::sh#Artifact::file::/home/admin/text.txt",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 2,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 10
+                },
+                {
+                    "id": 3,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 10,
+                    "object": 11
+                },
+                {
+                    "id": 4,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 11
+                },
+                {
+                    "id": 5,
+                    "signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 6,
+                    "signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+                    "subject": 11,
+                    "object": 2
+                },
+                {
+                    "id": 7,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 15
+                },
+                {
+                    "id": 8,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 15,
+                    "object": 16
+                },
+                {
+                    "id": 9,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 16
+                },
+                {
+                    "id": 10,
+                    "signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+                    "subject": 16,
+                    "object": 17
+                },
+                {
+                    "id": 11,
+                    "signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+                    "subject": 21,
+                    "object": 17
+                },
+                {
+                    "id": 12,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 3
+                },
+                {
+                    "id": 13,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 3,
+                    "object": 4
+                },
+                {
+                    "id": 14,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 4
+                },
+                {
+                    "id": 15,
+                    "signature": "write#Process::cat#Artifact::file::/home/admin/text.txt",
+                    "subject": 4,
+                    "object": 5
+                },
+                {
+                    "id": 16,
+                    "signature": "update#Artifact::file::/home/admin/text.txt#Artifact::file::/home/admin/text.txt",
+                    "subject": 20,
+                    "object": 5
+                },
+                {
+                    "id": 17,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 12
+                },
+                {
+                    "id": 18,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 12,
+                    "object": 13
+                },
+                {
+                    "id": 20,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 13
+                },
+                {
+                    "id": 21,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 7
+                },
+                {
+                    "id": 22,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 7,
+                    "object": 8
+                },
+                {
+                    "id": 23,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 8
+                },
+                {
+                    "id": 24,
+                    "signature": "close#Process::cat#Artifact::file::/home/admin/text.txt",
+                    "subject": 8,
+                    "object": 9
+                },
+                {
+                    "id": 25,
+                    "signature": "fork#Process::sh#Process::sh",
+                    "subject": 0,
+                    "object": 18
+                },
+                {
+                    "id": 26,
+                    "signature": "execve#Process::sh#Process::cat",
+                    "subject": 18,
+                    "object": 19
+                },
+                {
+                    "id": 27,
+                    "signature": "load#Artifact::file::/usr/bin/cat#Process::cat",
+                    "subject": 6,
+                    "object": 19
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 19,
+                    "signature": "close#Process::cat#Artifact::file::/home/admin/text.txt",
+                    "subject": 13,
+                    "object": 14
+                }
+            ]
+        }
+    ]

@@ -1,0 +1,104 @@
+    [
+        {
+            "id": 0,
+            "events": [
+                {
+                    "id": 0,
+                    "signature": "create#Process::hello.sh#Artifact::file::/home/admin/ttt.txt",
+                    "subject": 0,
+                    "object": 1
+                },
+                {
+                    "id": 1,
+                    "signature": "update#Artifact::file::/home/admin/ttt.txt#Artifact::file::/home/admin/ttt.txt",
+                    "subject": 1,
+                    "object": 2
+                },
+                {
+                    "id": 2,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 0,
+                    "object": 3
+                },
+                {
+                    "id": 3,
+                    "signature": "fork#Process::hello.sh#Process::hello.sh",
+                    "subject": 3,
+                    "object": 4
+                },
+                {
+                    "id": 4,
+                    "signature": "execve#Process::hello.sh#Process::sshpass",
+                    "subject": 4,
+                    "object": 5
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "events": [
+                {
+                    "id": 5,
+                    "signature": "connect#Process::ssh#Artifact::network socket::192.168.123.10:22",
+                    "subject": 9,
+                    "object": 10
+                },
+                {
+                    "id": 6,
+                    "signature": "write#Process::ssh#Artifact::network socket::192.168.123.10:22",
+                    "subject": 9,
+                    "object": 10
+                },
+                {
+                    "id": 11,
+                    "signature": "read#Artifact::network socket::192.168.123.10:22#Process::ssh",
+                    "subject": 10,
+                    "object": 9
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "events": [
+                {
+                    "id": 7,
+                    "signature": "read#Artifact::unnamed pipe::#Process::hello.sh",
+                    "subject": 6,
+                    "object": 0
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "events": [
+                {
+                    "id": 8,
+                    "signature": "write#Process::awk#Artifact::unnamed pipe::",
+                    "subject": 7,
+                    "object": 6
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "events": [
+                {
+                    "id": 9,
+                    "signature": "read#Artifact::unnamed pipe::#Process::awk",
+                    "subject": 8,
+                    "object": 7
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "events": [
+                {
+                    "id": 10,
+                    "signature": "write#Process::ssh#Artifact::unnamed pipe::",
+                    "subject": 9,
+                    "object": 8
+                }
+            ]
+        }
+    ]

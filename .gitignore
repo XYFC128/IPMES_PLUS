@@ -6,6 +6,10 @@ data/*
 !data/patterns
 !data/darpa_patterns
 !data/universal_patterns
+!data/freq_patterns
+!data/paper
+
+ipmes-java/
 
 /results/
 /siddhi-bin/
