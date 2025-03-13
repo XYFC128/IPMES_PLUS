@@ -15,7 +15,7 @@ Given a **provenance graph** $G$ and a **behaviroal pattern** $EP$, IPMES stream
 
 ```bash
 # clone this repository to IPMES_PLUS/
-cd IPMES_PLUS/ipmes-rust/
+cd IPMES_PLUS/
 cargo build --release
 ```
 
@@ -56,7 +56,9 @@ Options:
 
 - `data/`: Example input data for the program
 - `docs/`: Documentations
-- `ipmes-rust`: Rust implementation of IPMES
+- `scripts/`: Helper scripts to carry out expriment and data preprocessing.
+- `src/`: Source code of IPMES_PLUS.
+- `testcases/`: Test data for the experiments and code tests.
 
 ## Related Repositories
 
