@@ -11,6 +11,7 @@
 	- Matching efficiency (7 compute-days)
 	- Window size (5 compute-minutes)
 - Execution / How to reuse beyond paper (12 human-minutes, 1 compute-minute)
+    - Directory Structure
 	- Command-line Syntax
 	- Input Graph Format
 	- Pattern Format
@@ -55,7 +56,7 @@ rustc -V
 
 ```bash
 # clone this repository to IPMES_PLUS/
-cd IPMES_PLUS/ipmes-rust/
+cd IPMES_PLUS/
 cargo build --release
 ```
 
@@ -230,6 +231,14 @@ The meaning of each output column:
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
 
+### Directory Structure
+
+- `data/`: Example input data for the program
+- `docs/`: Documentations
+- `scripts/`: Helper scripts to carry out expriment and data preprocessing.
+- `src/`: Source code of IPMES_PLUS.
+- `testcases/`: Test data for the experiments and code tests.
+
 ### Command-line Syntax
 
 ```
@@ -283,8 +292,6 @@ The output message means:
 - **Total number of matches**: The number of matched instances of the pattern on the data graph.
 - **CPU time elapsed**: The CPU time spent for pattern matching.
 - **Peak memory usage**: The maximum heap allocation size in kilobytes.
-
-
 
 ## Authors
 
