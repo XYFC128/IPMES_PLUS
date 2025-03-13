@@ -6,7 +6,7 @@ use ipmes_rust::{
     input_event::InputEvent, pattern::{decompose, parser::parse_json, SubPattern}, process_layers::{
         composition_layer::MatchInstance,
         JoinLayer,
-    }, universal_match_event::UniversalMatchEvent
+    }
 };
 use itertools::{enumerate, Itertools};
 use log::debug;
