@@ -198,7 +198,7 @@ if __name__ == '__main__':
         print('The match result is the same as the answer')
         exit(0)
 
-    print('Among {} match results, there are {} results are not in answer, and {} answers not found in the results'
+    print('Among {} match results, there are {} results not in answer, and {} answers not found in the results'
           .format(len(match_results), len(false_positive), len(true_negative)))
     
     if len(false_positive) > 0:
