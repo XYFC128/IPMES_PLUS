@@ -154,15 +154,15 @@ if __name__ == '__main__':
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                 description='Automatic bug finder')
     parser.add_argument('-a', '--ans-folder',
-                        default='../data/answer',
+                        default='data/answer',
                         type=str,
                         help='the path to answer folder')
     parser.add_argument('-d', '--data-folder',
-                        default='../data/preprocessed',
+                        default='data/preprocessed',
                         type=str,
                         help='the path to data graph folder')
     parser.add_argument('-o', '--out-dir',
-                        default='../data/temp',
+                        default='data/temp',
                         type=str,
                         help='the path to output folder')
     parser.add_argument('pattern',
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     print('Indexing data graph...')
     input_events = index_data_graph(os.path.join(data_folder, f'{data}.csv'))
 
-    run_args = ['cargo', 'run', '--release', '--', f'../data/universal_patterns/{pattern}.json', os.path.join(data_folder, f'{data}.csv')]
+    run_args = ['cargo', 'run', '--release', '--', f'data/universal_patterns/{pattern}.json', os.path.join(data_folder, f'{data}.csv')]
     print(run_args)
     run = subprocess.run(run_args, capture_output=True)
 

@@ -31,9 +31,9 @@ darpa_pattern_file = [
     ('DP5', 'TTP4'),
 ]
 
-darpa_dir = '../data/darpa_patterns/'
-spade_dir = '../data/patterns/'
-output_dir = '../data/universal_patterns/'
+darpa_dir = 'data/darpa_patterns/'
+spade_dir = 'data/patterns/'
+output_dir = 'data/universal_patterns/'
 
 def extract_edge_signature(edge_obj: dict, kind: Literal['darpa', 'spade']) -> str:
     if kind == 'spade':

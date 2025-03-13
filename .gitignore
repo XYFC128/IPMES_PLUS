@@ -9,10 +9,10 @@ data/*
 !data/freq_patterns
 !data/paper
 
-ipmes-java/
 
-/results/
-/siddhi-bin/
-project/target/
+results/
 .DS_Store
-.vscode/settings.json
+
+target/
+.vscode/
+.idea/

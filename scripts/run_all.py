@@ -59,15 +59,15 @@ if __name__ == '__main__':
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                 description='Run all pattern on all graph')
     parser.add_argument('-d', '--data-graph',
-                    default='../data/preprocessed/',
+                    default='data/preprocessed/',
                     type=str,
                     help='the folder of data graphs')
     parser.add_argument('-p', '--pattern-dir',
-                    default='../data/universal_patterns/',
+                    default='data/universal_patterns/',
                     type=str,
                     help='the folder of patterns')
     parser.add_argument('-o', '--out-dir',
-                    default='../results/ipmes-rust/',
+                    default='results/ipmes-rust/',
                     type=str,
                     help='the output folder')
     parser.add_argument('-r', '--re-run',

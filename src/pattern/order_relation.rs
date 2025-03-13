@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let ord = OrderRelation::parse("../data/patterns/TTP11_oRels.json")
+        let ord = OrderRelation::parse("data/patterns/TTP11_oRels.json")
             .expect("fail to parse order relation file");
         for neighbor in ord.get_previous(1) {
             println!("{:?}", neighbor);

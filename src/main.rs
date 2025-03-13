@@ -14,7 +14,7 @@ use ipmes_rust::process_layers::{
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// The path to the pattern file in json format, e.g. ../data/universal_patterns/SP12.json
+    /// The path to the pattern file in json format, e.g. data/universal_patterns/SP12.json
     pattern_file: String,
 
     /// The path to the preprocessed data graph (provenance graph) in csv format

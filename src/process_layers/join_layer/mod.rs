@@ -458,7 +458,7 @@ pub mod tests {
     use serde_json::Value;
     #[test]
     fn test_generate_sub_pattern_buffers() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP8_regex.json")
+        let pattern = Pattern::parse("data/universal_patterns/SP8_regex.json")
             .expect("Failed to parse pattern");
 
         let window_size = 1800 * 1000;
@@ -471,7 +471,7 @@ pub mod tests {
 
     #[test_log::test]
     fn test_sub_pattern_buffer_shared_node_relation() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP6_regex.json")
+        let pattern = Pattern::parse("data/universal_patterns/SP6_regex.json")
             .expect("Failed to parse pattern");
 
         let window_size = 1800 * 1000;

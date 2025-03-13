@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_gsp() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP9.json").unwrap();
+        let pattern = Pattern::parse("data/universal_patterns/SP9.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
         let mut parents: Vec<&PatternEvent> = Vec::new();
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_ssp() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP12.json").unwrap();
+        let pattern = Pattern::parse("data/universal_patterns/SP12.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
         let mut parents: Vec<&PatternEvent> = Vec::new();
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_cse() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP12.json").unwrap();
+        let pattern = Pattern::parse("data/universal_patterns/SP12.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
         let mut parents: Vec<&PatternEvent> = Vec::new();
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_decompose() {
-        let pattern = Pattern::parse("../data/universal_patterns/SP9.json").unwrap();
+        let pattern = Pattern::parse("data/universal_patterns/SP9.json").unwrap();
 
         println!("{:#?}", decompose(&pattern));
     }
