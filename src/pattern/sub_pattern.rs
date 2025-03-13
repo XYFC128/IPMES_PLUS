@@ -103,7 +103,7 @@ mod tests {
     use crate::pattern::{Pattern, PatternEntity, PatternEventType};
 
     #[test]
-    fn test_gsp() {
+    fn test_generate_sub_patterns() {
         let pattern = Pattern::parse("data/universal_patterns/SP9.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
@@ -131,7 +131,7 @@ mod tests {
     }
 
     #[test]
-    fn test_hsn() {
+    fn test_has_shared_node() {
         let e1 = &simple_pattern_event("a", 10, 19);
         let e2 = &simple_pattern_event("b", 9, 15);
         let e3 = &simple_pattern_event("c", 11, 13);
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ssp() {
+    fn test_select_sub_patterns() {
         let pattern = Pattern::parse("data/universal_patterns/SP12.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
@@ -170,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cse() {
+    fn test_contains_selected_edge() {
         let pattern = Pattern::parse("data/universal_patterns/SP12.json").unwrap();
 
         let edge: &PatternEvent = &pattern.events[0];
