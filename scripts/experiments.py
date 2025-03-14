@@ -24,7 +24,7 @@ def build_ipmes_plus():
     cwd = os.getcwd()
     os.chdir(IPMES_PLUS)
     subprocess.run(
-        ["cargo", "build", "--release"], check=True, stdout=None, stderr=None
+        ["cargo", "build", "--release"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     os.chdir(cwd)
 
@@ -32,15 +32,15 @@ def build_ipmes_plus():
 def build_timing():
     cwd = os.getcwd()
     os.chdir(TIMING)
-    subprocess.run(["make", "clean"], check=True, stdout=None, stderr=None)
-    subprocess.run(["make", "-j"], check=True, stdout=None, stderr=None)
+    subprocess.run(["make", "clean"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["make", "-j"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.chdir(cwd)
 
 
 def build_ipmes():
     cwd = os.getcwd()
     os.chdir(IPMES)
-    subprocess.run(["mvn", "compile"], check=True, stdout=None, stderr=None)
+    subprocess.run(["mvn", "compile"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.chdir(cwd)
 
 
