@@ -13,6 +13,7 @@ IPMES = "IPMES/"
 
 DATA_GRAPH_DIR = "data_graphs/"
 OLD_DATA_GRAPH_DIR = "old_data_graphs/"
+SYNTH_GRAPH_DIR = "synthesized_graphs/"
 
 PATTERN_DIR = IPMES_PLUS + "data/universal_patterns/"
 OLD_PATTERN_DIR = TIMING + "data/universal_patterns/"
@@ -344,6 +345,62 @@ def exp_matching_efficiency(apps: list[str], args: argparse.Namespace):
     out_file = os.path.join(args.out_dir, "run_result.csv")
     df.to_csv(out_file, index=False)
     print(f"This table is saved to {out_file}")
+
+
+def exp_join_layer_optimization(args: argparse.Namespace, num_instaces: list[int]=[10, 20, 30, 40, 50]):
+    cwd = os.getcwd()
+    os.chdir(IPMES_PLUS + "src/process_layers/join_layer/")
+
+    with open("forward.patch", "r") as f:
+        subprocess.run(
+            ["patch"], check=True, stdout=None, stderr=None, stdin=f
+        )
+    subprocess.run(
+        ["cargo", "build", "--release"], check=True, stdout=None, stderr=None
+    )
+
+    run_result = []
+    for n_ins in num_instaces:
+        pattern = os.path.join(PATTERN_DIR, f"SP6_regex.json")
+        data_graph = os.path.join(SYNTH_GRAPH_DIR, f"DW{n_ins}.csv")
+        res = run_ipmes_plus(
+                pattern, data_graph, 1800, args.pre_run, args.re_run
+            )
+        if not res is None:
+            num_match, cpu_time, peak_mem = res
+            run_result.append([f'DW{n_ins}', num_match, cpu_time, peak_mem / 2**20])
+
+
+    df = pd.DataFrame(data=run_result, columns=['Synthesized Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
+    print('Before optimization:')
+    print(df.to_string(index=False))
+
+
+    with open("backward.patch", "r") as f:
+        subprocess.run(
+            ["patch"], check=True, stdout=None, stderr=None, stdin=f
+        )
+    subprocess.run(
+        ["cargo", "build", "--release"], check=True, stdout=None, stderr=None
+    )
+
+    optimized_run_result = []
+    for n_ins in num_instaces:
+        pattern = os.path.join(PATTERN_DIR, f"SP6_regex.json")
+        data_graph = os.path.join(SYNTH_GRAPH_DIR, f"DW{n_ins}.csv")
+        res = run_ipmes_plus(
+                pattern, data_graph, 1800, args.pre_run, args.re_run
+            )
+        if not res is None:
+            num_match, cpu_time, peak_mem = res
+            optimized_run_result.append([f'DW{n_ins}', num_match, cpu_time, peak_mem / 2**20])
+
+
+    df = pd.DataFrame(data=optimized_run_result, columns=['Synthesized Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
+    print('After optimization:')
+    print(df.to_string(index=False))
+
+    os.chdir(cwd)
 
 
 def main():

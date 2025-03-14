@@ -1,0 +1,134 @@
+--- mod_unoptimized.rs	2025-03-14 14:16:16.795540865 +0800
++++ mod.rs	2025-03-14 14:26:17.043488361 +0800
+@@ -5,8 +5,11 @@
+ use crate::pattern::SubPattern;
+ use crate::pattern_match::PatternMatch;
+ use log::debug;
++use std::cmp::max;
+ use std::cmp::min;
++use std::cmp::Reverse;
+ use std::collections::BinaryHeap;
++use std::collections::HashSet;
+ use std::vec;
+ pub use sub_pattern_buffer::SubPatternBuffer;
+ use sub_pattern_match::EarliestFirst;
+@@ -91,17 +94,69 @@
+             ));
+         }
+ 
+-        let mut id1 = 0;
+-        for id2 in 1..sub_patterns.len() {
+-            let new_buffer_id = sub_pattern_buffers.len();
++        let mut union_find = UnionFind::new(buffer_len);
++
++        // Indicate whether a sub-pattern buffer has been processed or not.
++        let mut merged = vec![false; buffer_len];
++
++        // For `(h, i, j)` in `min_heap`, buffers `i` and `j` have shared-node relation (can be merged).
++        // If they are merged, the resulting buffer height would be `h`.
++        let mut min_heap = BinaryHeap::new();
++        let shared_node_lists = Self::gen_shared_node_lists(sub_patterns);
++        for (i, list) in shared_node_lists.iter().enumerate() {
++            for j in list {
++                // avoid duplicates
++                if *j <= i {
++                    continue;
++                }
++                min_heap.push(Reverse((2u32, i, *j)));
++            }
++        }
++
++        // Each time pop the can-be-merged buffer pair with minimal resulting height.
++        while let Some(Reverse((height, i, j))) = min_heap.pop() {
++            if merged[i] || merged[j] {
++                continue;
++            }
+ 
+-            Self::create_buffer_pair(id1, id2, new_buffer_id, pattern, &mut sub_pattern_buffers);
+-            sibling_id_map[id1] = id2;
+-            sibling_id_map[id2] = id1;
+-            parent_id_map[id1] = new_buffer_id;
+-            parent_id_map[id2] = new_buffer_id;
++            merged[i] = true;
++            merged[j] = true;
+ 
+-            id1 = new_buffer_id;
++            let new_buffer_id = sub_pattern_buffers.len();
++            Self::create_buffer_pair(i, j, new_buffer_id, pattern, &mut sub_pattern_buffers);
++            sibling_id_map[i] = j;
++            sibling_id_map[j] = i;
++            parent_id_map[i] = new_buffer_id;
++            parent_id_map[j] = new_buffer_id;
++
++            debug!(
++                "buffer {} and buffer {} are merged into buffer {}",
++                i, j, new_buffer_id
++            );
++
++            union_find.merge(i, j, new_buffer_id);
++
++            let mut visited = HashSet::new();
++            visited.insert(new_buffer_id);
++
++            // Find all buffers that has shared-node relation with the newly created buffer, for futher merger.
++            for k in 0..sub_patterns.len() {
++                let cur_root = union_find.get_root(k);
++                if visited.contains(&cur_root) {
++                    continue;
++                }
++
++                for id in &shared_node_lists[k] {
++                    // has shared node relation
++                    if union_find.get_root(*id) == new_buffer_id {
++                        let new_height = max(height, union_find.get_height(cur_root)) + 1;
++                        min_heap.push(Reverse((new_height, new_buffer_id, cur_root)));
++
++                        visited.insert(cur_root);
++                        break;
++                    }
++                }
++            }
+         }
+ 
+         Self {
+@@ -115,6 +170,40 @@
+         }
+     }
+ 
++    /// For each sub-pattern, calculate the sub-patterns that have shared-node relation with itself.
++    fn gen_shared_node_lists(sub_patterns: &[SubPattern<'p>]) -> Vec<Vec<usize>> {
++        let mut shared_node_lists = vec![Vec::new(); sub_patterns.len()];
++        for (i, sub_pattern1) in sub_patterns.iter().enumerate() {
++            let entity_ids1: HashSet<usize> = sub_pattern1
++                .events
++                .iter()
++                .flat_map(|e| [e.subject.id, e.object.id])
++                .collect();
++            for (j, sub_pattern2) in sub_patterns.iter().enumerate() {
++                if j <= i {
++                    continue;
++                }
++
++                let entity_ids2: HashSet<usize> = sub_pattern2
++                    .events
++                    .iter()
++                    .flat_map(|e| [e.subject.id, e.object.id])
++                    .collect();
++
++                if Self::has_shared_node(&entity_ids1, &entity_ids2) {
++                    shared_node_lists[i].push(j);
++                    shared_node_lists[j].push(i);
++                }
++            }
++        }
++        shared_node_lists
++    }
++
++    /// Check whether two entity (node) lists have any shared element.
++    fn has_shared_node(entity_ids1: &HashSet<usize>, entity_ids2: &HashSet<usize>) -> bool {
++        return entity_ids1.intersection(&entity_ids2).next() != None;
++    }
++
+     /// Convert `SubPatternMatch to `PatternMatch`.
+     fn pattern_match_conversion(buffer: &mut BinaryHeap<EarliestFirst>) -> Vec<PatternMatch> {
+         buffer
