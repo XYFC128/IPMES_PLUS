@@ -14,7 +14,7 @@ IPMES = "IPMES/"
 DATA_GRAPH_DIR = "data_graphs/"
 OLD_DATA_GRAPH_DIR = "old_data_graphs/"
 SYNTH_GRAPH_DIR = "synthesized_graphs/"
-FLOW_DATA_GRAPH_DIR = 'modified_data_graphs/'
+FLOW_DATA_GRAPH_DIR = "modified_data_graphs/"
 
 PATTERN_DIR = os.path.join(IPMES_PLUS, "data/universal_patterns/")
 OLD_PATTERN_DIR = os.path.join(IPMES, "data/universal_patterns/")
@@ -25,7 +25,10 @@ def build_ipmes_plus():
     cwd = os.getcwd()
     os.chdir(IPMES_PLUS)
     subprocess.run(
-        ["cargo", "build", "--release"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ["cargo", "build", "--release"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     os.chdir(cwd)
 
@@ -33,15 +36,27 @@ def build_ipmes_plus():
 def build_timing():
     cwd = os.getcwd()
     os.chdir(TIMING)
-    subprocess.run(["make", "clean"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["make", "-j"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["make", "clean"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["make", "-j"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
     os.chdir(cwd)
 
 
 def build_ipmes():
     cwd = os.getcwd()
-    os.chdir(IPMES + '/ipmes-java/')
-    subprocess.run(["mvn", "compile"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.chdir(IPMES + "/ipmes-java/")
+    subprocess.run(
+        ["mvn", "compile"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     os.chdir(cwd)
 
 
@@ -103,8 +118,8 @@ def run_timing(
     window_size: int,
     pre_run=0,
     re_run=1,
-    max_thread_num: int=1,
-    runtime_record: str='/dev/null',
+    max_thread_num: int = 1,
+    runtime_record: str = "/dev/null",
 ) -> t.Union[t.Tuple[int, float, int], None]:
     binary = os.path.join(TIMING, "bin/tirdf")
     subpattern_file = os.path.join(OLD_SUBPATTERN_DIR, os.path.basename(pattern_file))
@@ -179,7 +194,7 @@ def run_ipmes(
         sys_time = float(lines[-1].split()[1])
         return user_time + sys_time
 
-    ipmes_pom = os.path.join(IPMES, 'ipmes-java/pom.xml')
+    ipmes_pom = os.path.join(IPMES, "ipmes-java/pom.xml")
     run_cmd = [
         "bash",
         "-c",
@@ -212,6 +227,7 @@ def run_ipmes(
 
     return num_result, total_cpu_time / re_run, total_mem_usage / re_run
 
+
 def run_siddhi(
     pattern_path: str,
     graph_path: str,
@@ -220,10 +236,12 @@ def run_siddhi(
     re_run=1,
 ) -> t.Union[t.Tuple[int, float, int], None]:
     return run_ipmes(
-        pattern_path, graph_path, window_size,
-        options='--cep',
+        pattern_path,
+        graph_path,
+        window_size,
+        options="--cep",
         pre_run=pre_run,
-        re_run=re_run
+        re_run=re_run,
     )
 
 
@@ -267,24 +285,30 @@ def exp_freq_effectivess() -> pd.DataFrame:
 
 
 def exp_flow_effectivess() -> pd.DataFrame:
-    flow_configs = [('SP3', 'attack.csv', 1800), ('DP3', 'dd3.csv', 1000)]
+    flow_configs = [("SP3", "attack.csv", 1800), ("DP3", "dd3.csv", 1000)]
 
     original_result = []
     flow_result = []
 
     for pattern, data_graph, window_size in flow_configs:
         data_graph = os.path.join(FLOW_DATA_GRAPH_DIR, data_graph)
-        original_pattern = os.path.join(IPMES_PLUS, 'data/universal_patterns/', pattern + '.json')
+        original_pattern = os.path.join(
+            IPMES_PLUS, "data/universal_patterns/", pattern + ".json"
+        )
         original_res = run_ipmes_plus(original_pattern, data_graph, window_size)
         if not original_res is None:
             num_match, cpu_time, peak_mem = original_res
             original_result.append([pattern, num_match, cpu_time, peak_mem / 2**20])
 
-        flow_pattern = os.path.join(IPMES_PLUS, 'data/flow_patterns/', pattern + '.json')
+        flow_pattern = os.path.join(
+            IPMES_PLUS, "data/flow_patterns/", pattern + ".json"
+        )
         flow_res = run_ipmes_plus(flow_pattern, data_graph, window_size)
         if not flow_res is None:
             num_match, cpu_time, peak_mem = flow_res
-            flow_result.append([pattern + '_flow', num_match, cpu_time, peak_mem / 2**20])
+            flow_result.append(
+                [pattern + "_flow", num_match, cpu_time, peak_mem / 2**20]
+            )
 
     run_result = original_result + flow_result
     return pd.DataFrame(
@@ -293,21 +317,23 @@ def exp_flow_effectivess() -> pd.DataFrame:
     )
 
 
-def run_all_patterns(app: str, data_graph: str, patterns: list[str], pre_run=0, re_run=1) -> t.Tuple[float, float]:
+def run_all_patterns(
+    app: str, data_graph: str, patterns: list[str], pre_run=0, re_run=1
+) -> t.Tuple[float, float]:
     run_function_map = {
-        'ipmes': run_ipmes,
-        'ipmes+': run_ipmes_plus,
-        'siddhi': run_siddhi,
-        'timing': run_timing,
+        "ipmes": run_ipmes,
+        "ipmes+": run_ipmes_plus,
+        "siddhi": run_siddhi,
+        "timing": run_timing,
     }
 
     data_graph_dir = OLD_DATA_GRAPH_DIR
-    if app == 'ipmes+':
+    if app == "ipmes+":
         data_graph_dir = DATA_GRAPH_DIR
-    data_graph = os.path.join(data_graph_dir, data_graph + '.csv')
+    data_graph = os.path.join(data_graph_dir, data_graph + ".csv")
 
     pattern_dir = OLD_PATTERN_DIR
-    if app == 'ipmes+':
+    if app == "ipmes+":
         pattern_dir = PATTERN_DIR
 
     total_cpu_time = 0.0
@@ -315,12 +341,14 @@ def run_all_patterns(app: str, data_graph: str, patterns: list[str], pre_run=0, 
     success_runs = 0
 
     for pattern in patterns:
-        pattern_file = os.path.join(pattern_dir, pattern + '_regex.json')
-        if app == 'timing' and pattern == 'DP1':
-            continue # a know bug of timing: it failed to run DP1 pattern on all graph
+        pattern_file = os.path.join(pattern_dir, pattern + "_regex.json")
+        if app == "timing" and pattern == "DP1":
+            continue  # a know bug of timing: it failed to run DP1 pattern on all graph
 
-        window_size = 1800 if pattern.startswith('SP') else 1000
-        res = run_function_map[app](pattern_file, data_graph, window_size, pre_run, re_run)
+        window_size = 1800 if pattern.startswith("SP") else 1000
+        res = run_function_map[app](
+            pattern_file, data_graph, window_size, pre_run, re_run
+        )
         if not res is None:
             num_match, cpu_time, peak_mem = res
             total_cpu_time += cpu_time
@@ -332,9 +360,9 @@ def run_all_patterns(app: str, data_graph: str, patterns: list[str], pre_run=0, 
 
 def exp_matching_efficiency(apps: list[str], args: argparse.Namespace):
     spade_graphs = ["attack", "mix", "benign"]
-    spade_patterns = [f'SP{i}' for i in range(1, 13)]
+    spade_patterns = [f"SP{i}" for i in range(1, 13)]
     darpa_graphs = ["dd1", "dd2", "dd3", "dd4"]
-    darpa_patterns = [f'DP{i}' for i in range(1, 6)]
+    darpa_patterns = [f"DP{i}" for i in range(1, 6)]
 
     cpu_result = []
     mem_result = []
@@ -344,96 +372,94 @@ def exp_matching_efficiency(apps: list[str], args: argparse.Namespace):
             cpu_row: list[str | float] = [graph]
             mem_row: list[str | float] = [graph]
             for app in apps:
-                avg_cpu_time, avg_peak_mem = run_all_patterns(app, graph, spade_patterns, args.pre_run, args.re_run)
+                avg_cpu_time, avg_peak_mem = run_all_patterns(
+                    app, graph, spade_patterns, args.pre_run, args.re_run
+                )
                 cpu_row.append(avg_cpu_time)
                 mem_row.append(avg_peak_mem)
 
-            cpu_result.append(cpu_row) 
-            mem_result.append(mem_row) 
+            cpu_result.append(cpu_row)
+            mem_result.append(mem_row)
 
     if not args.no_darpa:
         for graph in darpa_graphs:
             cpu_row: list[str | float] = [graph]
             mem_row: list[str | float] = [graph]
             for app in apps:
-                avg_cpu_time, avg_peak_mem = run_all_patterns(app, graph, darpa_patterns, args.pre_run, args.re_run)
+                avg_cpu_time, avg_peak_mem = run_all_patterns(
+                    app, graph, darpa_patterns, args.pre_run, args.re_run
+                )
                 cpu_row.append(avg_cpu_time)
                 mem_row.append(avg_peak_mem)
 
-            cpu_result.append(cpu_row) 
-            mem_result.append(mem_row) 
+            cpu_result.append(cpu_row)
+            mem_result.append(mem_row)
 
     cpu_df = pd.DataFrame(
         data=cpu_result,
-        columns=[
-            "Dataset",
-            *apps
-        ],
+        columns=["Dataset", *apps],
     )
     mem_df = pd.DataFrame(
         data=mem_result,
-        columns=[
-            "Dataset",
-            *apps
-        ],
+        columns=["Dataset", *apps],
     )
     return cpu_df, mem_df
 
 
-def exp_join_layer_optimization(args: argparse.Namespace, num_instaces: list[int]=[10, 20, 30, 40, 50]):
-    cwd = os.getcwd()
-    os.chdir(IPMES_PLUS + "src/process_layers/join_layer/")
+def exp_join_layer_optimization(
+    args: argparse.Namespace, num_instaces: list[int] = [10, 20, 30, 40, 50]
+):
+    with open("patches/forward.patch", "r") as f:
+        subprocess.run(["patch"], check=True, stdout=None, stderr=None, stdin=f, cwd=IPMES_PLUS + "src/process_layers/join_layer/")
 
-    with open("forward.patch", "r") as f:
-        subprocess.run(
-            ["patch"], check=True, stdout=None, stderr=None, stdin=f
-        )
-    subprocess.run(
-        ["cargo", "build", "--release"], check=True, stdout=None, stderr=None
-    )
+    build_ipmes_plus()
 
     run_result = []
     for n_ins in num_instaces:
         pattern = os.path.join(PATTERN_DIR, f"SP6_regex.json")
         data_graph = os.path.join(SYNTH_GRAPH_DIR, f"DW{n_ins}.csv")
-        res = run_ipmes_plus(
-                pattern, data_graph, 1800, args.pre_run, args.re_run
-            )
+        res = run_ipmes_plus(pattern, data_graph, 1800, args.pre_run, args.re_run)
         if not res is None:
             num_match, cpu_time, peak_mem = res
-            run_result.append([f'DW{n_ins}', num_match, cpu_time, peak_mem / 2**20])
+            run_result.append([f"DW{n_ins}", num_match, cpu_time, peak_mem / 2**20])
 
-
-    df = pd.DataFrame(data=run_result, columns=['Synthesized Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
-    print('Before optimization:')
-    print(df.to_string(index=False))
-
-
-    with open("backward.patch", "r") as f:
-        subprocess.run(
-            ["patch"], check=True, stdout=None, stderr=None, stdin=f
-        )
-    subprocess.run(
-        ["cargo", "build", "--release"], check=True, stdout=None, stderr=None
+    df = pd.DataFrame(
+        data=run_result,
+        columns=[
+            "Synthesized Graph",
+            "Num Results",
+            "CPU Time (sec)",
+            "Peak Memory (MB)",
+        ],
     )
+
+    with open("patches/backward.patch", "r") as f:
+        subprocess.run(["patch"], check=True, stdout=None, stderr=None, stdin=f, cwd=IPMES_PLUS + "src/process_layers/join_layer/")
+
+    build_ipmes_plus()
 
     optimized_run_result = []
     for n_ins in num_instaces:
         pattern = os.path.join(PATTERN_DIR, f"SP6_regex.json")
         data_graph = os.path.join(SYNTH_GRAPH_DIR, f"DW{n_ins}.csv")
-        res = run_ipmes_plus(
-                pattern, data_graph, 1800, args.pre_run, args.re_run
-            )
+        res = run_ipmes_plus(pattern, data_graph, 1800, args.pre_run, args.re_run)
         if not res is None:
             num_match, cpu_time, peak_mem = res
-            optimized_run_result.append([f'DW{n_ins}', num_match, cpu_time, peak_mem / 2**20])
+            optimized_run_result.append(
+                [f"DW{n_ins}", num_match, cpu_time, peak_mem / 2**20]
+            )
 
+    df_optimized = pd.DataFrame(
+        data=optimized_run_result,
+        columns=[
+            "Synthesized Graph",
+            "Num Results",
+            "CPU Time (sec)",
+            "Peak Memory (MB)",
+        ],
+    )
 
-    df = pd.DataFrame(data=optimized_run_result, columns=['Synthesized Graph', 'Num Results', 'CPU Time (sec)', 'Peak Memory (MB)'])
-    print('After optimization:')
-    print(df.to_string(index=False))
-
-    os.chdir(cwd)
+    return df, df_optimized    
 
 
 def main():
@@ -441,34 +467,47 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Run experiments",
     )
-    parser.add_argument('-r', '--re-run',
-                    default=1,
-                    type=int,
-                    help='Number of re-runs to measure CPU time')
-    parser.add_argument('--pre-run',
-                    default=0,
-                    type=int,
-                    help='Number of runs before actual measurement')
-    parser.add_argument('--no-darpa',
-                    default=False,
-                    action='store_true',
-                    help='Do not run on DARPA')
-    parser.add_argument('--no-spade',
-                    default=False,
-                    action='store_true',
-                    help='Do not run on SPADE')
+    parser.add_argument(
+        "-r",
+        "--re-run",
+        default=1,
+        type=int,
+        help="Number of re-runs to measure CPU time",
+    )
+    parser.add_argument(
+        "--pre-run",
+        default=0,
+        type=int,
+        help="Number of runs before actual measurement",
+    )
+    parser.add_argument(
+        "--no-darpa", default=False, action="store_true", help="Do not run on DARPA"
+    )
+    parser.add_argument(
+        "--no-spade", default=False, action="store_true", help="Do not run on SPADE"
+    )
     args = parser.parse_args()
 
     build_ipmes()
     build_ipmes_plus()
     build_timing()
 
-    cpu_df, mem_df = exp_matching_efficiency(['ipmes+', 'ipmes', 'timing', 'siddhi'], args)
-    print('CPU Time (sec)')
+    cpu_df, mem_df = exp_matching_efficiency(
+        ["ipmes+", "ipmes", "timing", "siddhi"], args
+    )
+
+    print("CPU Time (sec)")
     print(cpu_df.to_string(index=False))
-    print('Memory (MB)')
+    print("Memory (MB)")
     print(mem_df.to_string(index=False))
-    # print(exp_freq_effectivess().to_string(index=False))
+    print(exp_freq_effectivess().to_string(index=False))
+
+    df, df_optimized = exp_join_layer_optimization(args)
+
+    print("Before optimization:")
+    print(df.to_string(index=False))
+    print("After optimization:")
+    print(df_optimized.to_string(index=False))
 
 
 if __name__ == "__main__":
