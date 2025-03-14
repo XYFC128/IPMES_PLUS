@@ -303,7 +303,7 @@ def run_all_patterns(app: str, data_graph: str, patterns: list[str], pre_run=0, 
 
     data_graph_dir = OLD_DATA_GRAPH_DIR
     if app == 'ipmes+':
-        data_graph_dir = OLD_DATA_GRAPH_DIR
+        data_graph_dir = DATA_GRAPH_DIR
     data_graph = os.path.join(data_graph_dir, data_graph + '.csv')
 
     pattern_dir = OLD_PATTERN_DIR
