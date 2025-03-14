@@ -7,6 +7,7 @@ data/*
 !data/darpa_patterns
 !data/universal_patterns
 !data/freq_patterns
+!data/flow_patterns
 !data/paper
 
 

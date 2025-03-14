@@ -7,6 +7,7 @@ import pandas as pd
 
 IPMES_PLUS = 'IPMES_PLUS/'
 DATA_GRAPH_DIR = 'data_graphs/'
+FLOW_DATA_GRAPH_DIR = 'modified_data_graphs/'
 
 def build_ipmes_plus():
     cwd = os.getcwd()
@@ -98,29 +99,26 @@ def exp_freq_effectivess() -> pd.DataFrame:
 
 
 def exp_flow_effectivess() -> pd.DataFrame:
-    freq_patterns = os.listdir(os.path.join(IPMES_PLUS, 'data/freq_patterns/'))
-    freq_patterns.sort(key=lambda p: get_pattern_number(p))
+    flow_configs = [('SP3', 'attack.csv', 1800), ('DP3', 'dd3.csv', 1000)]
 
     original_result = []
-    freq_result = []
-    
-    data_graph = os.path.join(DATA_GRAPH_DIR, 'attack_raw.csv')
-    for pattern in freq_patterns:
-        pattern_name = pattern.removesuffix('.json').removesuffix('_regex')
+    flow_result = []
 
-        original_pattern = os.path.join(IPMES_PLUS, 'data/universal_patterns/', pattern)
-        original_res = run_ipmes_plus(original_pattern, data_graph, 1800)
+    for pattern, data_graph, window_size in flow_configs:
+        data_graph = os.path.join(FLOW_DATA_GRAPH_DIR, data_graph)
+        original_pattern = os.path.join(IPMES_PLUS, 'data/universal_patterns/', pattern + '.json')
+        original_res = run_ipmes_plus(original_pattern, data_graph, window_size)
         if not original_res is None:
             num_match, cpu_time, peak_mem = original_res
-            original_result.append([pattern_name, num_match, cpu_time, peak_mem / 2**20])
+            original_result.append([pattern, num_match, cpu_time, peak_mem / 2**20])
 
-        freq_pattern = os.path.join(IPMES_PLUS, 'data/freq_patterns/', pattern)
-        freq_res = run_ipmes_plus(freq_pattern, data_graph, 1800)
-        if not freq_res is None:
-            num_match, cpu_time, peak_mem = freq_res
-            freq_result.append([pattern_name + '_freq', num_match, cpu_time, peak_mem / 2**20])
+        flow_pattern = os.path.join(IPMES_PLUS, 'data/flow_patterns/', pattern + '.json')
+        flow_res = run_ipmes_plus(flow_pattern, data_graph, window_size)
+        if not flow_res is None:
+            num_match, cpu_time, peak_mem = flow_res
+            flow_result.append([pattern + '_flow', num_match, cpu_time, peak_mem / 2**20])
 
-    run_result = original_result + freq_result
+    run_result = original_result + flow_result
     return pd.DataFrame(data=run_result, columns=['Pattern', 'Found Ins.', 'CPU Time (sec)', 'Peak Memory (MB)'])
 
 

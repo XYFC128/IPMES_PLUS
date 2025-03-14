@@ -1,0 +1,427 @@
+{
+  "Version": "0.2.0",
+  "UseRegex": false,
+  "Entities": [
+    {
+      "ID": 0,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 1,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 2,
+      "Signature": "Process::sshpass"
+    },
+    {
+      "ID": 3,
+      "Signature": "Artifact::file::/usr/bin/sshpass"
+    },
+    {
+      "ID": 4,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 5,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 6,
+      "Signature": "Process::sudo"
+    },
+    {
+      "ID": 7,
+      "Signature": "Process::sshpass"
+    },
+    {
+      "ID": 8,
+      "Signature": "Process::scp"
+    },
+    {
+      "ID": 9,
+      "Signature": "Artifact::file::/usr/bin/scp"
+    },
+    {
+      "ID": 10,
+      "Signature": "Artifact::file::/etc/shadow"
+    },
+    {
+      "ID": 11,
+      "Signature": "Process::cp"
+    },
+    {
+      "ID": 12,
+      "Signature": "Artifact::file::/usr/bin/cp"
+    },
+    {
+      "ID": 13,
+      "Signature": "Artifact::file::/etc/passwd"
+    },
+    {
+      "ID": 14,
+      "Signature": "Process::ssh"
+    },
+    {
+      "ID": 15,
+      "Signature": "Artifact::network socket::192.168.99.4:22"
+    },
+    {
+      "ID": 16,
+      "Signature": "Process::sudo"
+    },
+    {
+      "ID": 17,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 18,
+      "Signature": "Process::sh"
+    },
+    {
+      "ID": 19,
+      "Signature": "Process::sudo"
+    },
+    {
+      "ID": 20,
+      "Signature": "Artifact::file::/etc/sudoers"
+    },
+    {
+      "ID": 21,
+      "Signature": "Process::sudo"
+    },
+    {
+      "ID": 22,
+      "Signature": "Process::scp"
+    },
+    {
+      "ID": 23,
+      "Signature": "Artifact::file::/home/admin/shadow"
+    },
+    {
+      "ID": 24,
+      "Signature": "Artifact::file::/home/admin/shadow"
+    },
+    {
+      "ID": 25,
+      "Signature": "Artifact::file::/home/admin/shadow"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 0,
+      "Signature": "fork",
+      "SubjectID": 0,
+      "ObjectID": 4,
+      "Parents": []
+    },
+    {
+      "ID": 1,
+      "Signature": "update",
+      "SubjectID": 4,
+      "ObjectID": 5,
+      "Parents": [
+        0
+      ]
+    },
+    {
+      "ID": 2,
+      "Signature": "execve",
+      "SubjectID": 5,
+      "ObjectID": 6,
+      "Parents": [
+        1
+      ]
+    },
+    {
+      "ID": 3,
+      "Signature": "setgid",
+      "SubjectID": 6,
+      "ObjectID": 6,
+      "Parents": [
+        4,
+        12
+      ]
+    },
+    {
+      "ID": 4,
+      "Signature": "update",
+      "SubjectID": 16,
+      "ObjectID": 6,
+      "Parents": [
+        2
+      ]
+    },
+    {
+      "ID": 5,
+      "Signature": "setuid",
+      "SubjectID": 6,
+      "ObjectID": 16,
+      "Parents": [
+        2
+      ]
+    },
+    {
+      "ID": 6,
+      "Signature": "read",
+      "SubjectID": 20,
+      "ObjectID": 16,
+      "Parents": [
+        5
+      ]
+    },
+    {
+      "ID": 7,
+      "Signature": "setgid",
+      "SubjectID": 16,
+      "ObjectID": 16,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 8,
+      "Signature": "setuid",
+      "SubjectID": 16,
+      "ObjectID": 16,
+      "Parents": [
+        7
+      ]
+    },
+    {
+      "ID": 9,
+      "Signature": "lseek",
+      "SubjectID": 21,
+      "ObjectID": 20,
+      "Parents": [
+        8
+      ]
+    },
+    {
+      "ID": 10,
+      "Signature": "open",
+      "SubjectID": 20,
+      "ObjectID": 21,
+      "Parents": [
+        9
+      ]
+    },
+    {
+      "ID": 11,
+      "Signature": "setuid",
+      "SubjectID": 21,
+      "ObjectID": 16,
+      "Parents": [
+        10
+      ]
+    },
+    {
+      "ID": 12,
+      "Signature": "setuid",
+      "SubjectID": 16,
+      "ObjectID": 21,
+      "Parents": [
+        11
+      ]
+    },
+    {
+      "ID": 13,
+      "Signature": "setuid",
+      "SubjectID": 6,
+      "ObjectID": 6,
+      "Parents": [
+        3
+      ]
+    },
+    {
+      "ID": 14,
+      "Signature": "setuid",
+      "SubjectID": 16,
+      "ObjectID": 6,
+      "Parents": [
+        13
+      ]
+    },
+    {
+      "ID": 15,
+      "Signature": "load",
+      "SubjectID": 12,
+      "ObjectID": 11,
+      "Parents": [
+        14
+      ]
+    },
+    {
+      "ID": 16,
+      "Signature": "open",
+      "SubjectID": 10,
+      "ObjectID": 11,
+      "Parents": [
+        15
+      ]
+    },
+    {
+      "ID": 17,
+      "Signature": "create",
+      "SubjectID": 11,
+      "ObjectID": 23,
+      "Parents": [
+        16
+      ]
+    },
+    {
+      "ID": 18,
+      "Signature": "fork",
+      "SubjectID": 0,
+      "ObjectID": 17,
+      "Parents": [
+        17
+      ]
+    },
+    {
+      "ID": 19,
+      "Signature": "update",
+      "SubjectID": 17,
+      "ObjectID": 18,
+      "Parents": [
+        18
+      ]
+    },
+    {
+      "ID": 20,
+      "Signature": "execve",
+      "SubjectID": 18,
+      "ObjectID": 19,
+      "Parents": [
+        19
+      ]
+    },
+    {
+      "ID": 21,
+      "Signature": "update",
+      "Type": "Flow",
+      "SubjectID": 23,
+      "ObjectID": 25,
+      "Parents": [
+        17
+      ]
+    },
+    {
+      "ID": 22,
+      "Signature": "fork",
+      "SubjectID": 0,
+      "ObjectID": 1,
+      "Parents": [
+        20
+      ]
+    },
+    {
+      "ID": 23,
+      "Signature": "execve",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        22
+      ]
+    },
+    {
+      "ID": 24,
+      "Signature": "load",
+      "SubjectID": 3,
+      "ObjectID": 2,
+      "Parents": [
+        23
+      ]
+    },
+    {
+      "ID": 26,
+      "Signature": "fork",
+      "SubjectID": 2,
+      "ObjectID": 7,
+      "Parents": [
+        24
+      ]
+    },
+    {
+      "ID": 27,
+      "Signature": "execve",
+      "SubjectID": 7,
+      "ObjectID": 8,
+      "Parents": [
+        26
+      ]
+    },
+    {
+      "ID": 28,
+      "Signature": "load",
+      "SubjectID": 9,
+      "ObjectID": 8,
+      "Parents": [
+        27
+      ]
+    },
+    {
+      "ID": 29,
+      "Signature": "fork",
+      "SubjectID": 8,
+      "ObjectID": 22,
+      "Parents": [
+        28
+      ]
+    },
+    {
+      "ID": 30,
+      "Signature": "execve",
+      "SubjectID": 22,
+      "ObjectID": 14,
+      "Parents": [
+        29
+      ]
+    },
+    {
+      "ID": 31,
+      "Signature": "lseek",
+      "SubjectID": 14,
+      "ObjectID": 13,
+      "Parents": [
+        30
+      ]
+    },
+    {
+      "ID": 32,
+      "Signature": "connect",
+      "SubjectID": 14,
+      "ObjectID": 15,
+      "Parents": [
+        31
+      ]
+    },
+    {
+      "ID": 33,
+      "Signature": "read",
+      "SubjectID": 15,
+      "ObjectID": 14,
+      "Parents": [
+        32
+      ]
+    },
+    {
+      "ID": 34,
+      "Signature": "open",
+      "SubjectID": 25,
+      "ObjectID": 8,
+      "Parents": [
+        33
+      ]
+    },
+    {
+      "ID": 35,
+      "Signature": "write",
+      "SubjectID": 14,
+      "ObjectID": 15,
+      "Parents": [
+        34
+      ]
+    }
+  ]
+}
