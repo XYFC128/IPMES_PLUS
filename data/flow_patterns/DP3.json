@@ -1,0 +1,348 @@
+{
+  "Version": "0.2.0",
+  "UseRegex": false,
+  "Entities": [
+    {
+      "ID": 0,
+      "Signature": "FILE_OBJECT_FILE::/etc/firefox/native-messaging-hosts/gtcache"
+    },
+    {
+      "ID": 1,
+      "Signature": "SUBJECT_PROCESS::gtcache"
+    },
+    {
+      "ID": 2,
+      "Signature": "OBJECT_SOCKET::146.153.68.151:80"
+    },
+    {
+      "ID": 3,
+      "Signature": "SUBJECT_UNIT::firefox"
+    },
+    {
+      "ID": 4,
+      "Signature": "SUBJECT_PROCESS::gtcache"
+    },
+    {
+      "ID": 5,
+      "Signature": "FILE_OBJECT_FILE::/tmp/ztmp"
+    },
+    {
+      "ID": 6,
+      "Signature": "SUBJECT_PROCESS::pass_mgr"
+    },
+    {
+      "ID": 7,
+      "Signature": "SUBJECT_PROCESS::DOM Worker"
+    },
+    {
+      "ID": 8,
+      "Signature": "OBJECT_UNNAMEPIPE::"
+    },
+    {
+      "ID": 9,
+      "Signature": "OBJECT_UNNAMEPIPE::"
+    },
+    {
+      "ID": 10,
+      "Signature": "SUBJECT_PROCESS::ztmp"
+    },
+    {
+      "ID": 11,
+      "Signature": "SUBJECT_PROCESS::sh"
+    },
+    {
+      "ID": 12,
+      "Signature": "SUBJECT_PROCESS::sh"
+    },
+    {
+      "ID": 13,
+      "Signature": "FILE_OBJECT_FILE::/tmp/ztmp"
+    },
+    {
+      "ID": 14,
+      "Signature": "SUBJECT_PROCESS::gtcache"
+    },
+    {
+      "ID": 15,
+      "Signature": "SUBJECT_PROCESS::gtcache"
+    },
+    {
+      "ID": 16,
+      "Signature": "OBJECT_SOCKET::162.66.239.75:80"
+    },
+    {
+      "ID": 17,
+      "Signature": "SUBJECT_PROCESS::uname"
+    },
+    {
+      "ID": 18,
+      "Signature": "SUBJECT_PROCESS::ztmp"
+    },
+    {
+      "ID": 19,
+      "Signature": "FILE_OBJECT_FILE::/bin/uname"
+    }
+  ],
+  "Events": [
+    {
+      "ID": 0,
+      "Signature": "EVENT_FORK",
+      "SubjectID": 3,
+      "ObjectID": 7,
+      "Parents": []
+    },
+    {
+      "ID": 1,
+      "Signature": "EVENT_CLOSE",
+      "SubjectID": 3,
+      "ObjectID": 8,
+      "Parents": [
+        0
+      ]
+    },
+    {
+      "ID": 2,
+      "Signature": "EVENT_EXECUTE",
+      "SubjectID": 7,
+      "ObjectID": 6,
+      "Parents": [
+        1
+      ]
+    },
+    {
+      "ID": 3,
+      "Signature": "EVENT_READ",
+      "SubjectID": 8,
+      "ObjectID": 6,
+      "Parents": [
+        2
+      ]
+    },
+    {
+      "ID": 4,
+      "Signature": "EVENT_WRITE",
+      "SubjectID": 3,
+      "ObjectID": 8,
+      "Parents": [
+        3
+      ]
+    },
+    {
+      "ID": 5,
+      "Signature": "EVENT_WRITE",
+      "SubjectID": 6,
+      "ObjectID": 0,
+      "Parents": [
+        4
+      ]
+    },
+    {
+      "ID": 6,
+      "Signature": "EVENT_LOADLIBRARY",
+      "SubjectID": 0,
+      "ObjectID": 1,
+      "Parents": [
+        5
+      ]
+    },
+    {
+      "ID": 7,
+      "Signature": "EVENT_CONNECT",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        6
+      ]
+    },
+    {
+      "ID": 8,
+      "Signature": "EVENT_WRITE",
+      "SubjectID": 6,
+      "ObjectID": 9,
+      "Parents": [
+        7
+      ]
+    },
+    {
+      "ID": 9,
+      "Signature": "EVENT_EXECUTE",
+      "SubjectID": 11,
+      "ObjectID": 1,
+      "Parents": [
+        8
+      ]
+    },
+    {
+      "ID": 10,
+      "Signature": "EVENT_FORK",
+      "SubjectID": 12,
+      "ObjectID": 11,
+      "Parents": [
+        9
+      ]
+    },
+    {
+      "ID": 11,
+      "Signature": "EVENT_SENDMSG",
+      "SubjectID": 1,
+      "ObjectID": 2,
+      "Parents": [
+        10
+      ]
+    },
+    {
+      "ID": 12,
+      "Signature": "EVENT_READ",
+      "SubjectID": 9,
+      "ObjectID": 3,
+      "Parents": [
+        11
+      ]
+    },
+    {
+      "ID": 13,
+      "Signature": "EVENT_RECVMSG",
+      "SubjectID": 2,
+      "ObjectID": 1,
+      "Parents": [
+        12
+      ]
+    },
+    {
+      "ID": 14,
+      "Signature": "EVENT_CLONE",
+      "SubjectID": 1,
+      "ObjectID": 4,
+      "Parents": [
+        13
+      ]
+    },
+    {
+      "ID": 15,
+      "Signature": "EVENT_WRITE",
+      "SubjectID": 4,
+      "ObjectID": 5,
+      "Parents": [
+        14
+      ]
+    },
+    {
+      "ID": 16,
+      "Signature": "EVENT_CREATE_OBJECT",
+      "SubjectID": 4,
+      "ObjectID": 5,
+      "Parents": [
+        15
+      ]
+    },
+    {
+      "ID": 17,
+      "Signature": "EVENT_MODIFY_FILE_ATTRIBUTES",
+      "SubjectID": 4,
+      "ObjectID": 13,
+      "Parents": [
+        16
+      ]
+    },
+    {
+      "ID": 18,
+      "Signature": "EVENT_LOADLIBRARY",
+      "SubjectID": 13,
+      "ObjectID": 10,
+      "Parents": [
+        17
+      ]
+    },
+    {
+      "ID": 19,
+      "Signature": "EVENT_CLONE",
+      "Type": "Flow",
+      "SubjectID": 1,
+      "ObjectID": 15,
+      "Parents": [
+        18
+      ]
+    },
+    {
+      "ID": 21,
+      "Signature": "EVENT_EXECUTE",
+      "SubjectID": 15,
+      "ObjectID": 10,
+      "Parents": [
+        19
+      ]
+    },
+    {
+      "ID": 22,
+      "Signature": "EVENT_CONNECT",
+      "SubjectID": 10,
+      "ObjectID": 16,
+      "Parents": [
+        21
+      ]
+    },
+    {
+      "ID": 23,
+      "Signature": "EVENT_SENDMSG",
+      "SubjectID": 10,
+      "ObjectID": 16,
+      "Parents": [
+        22
+      ]
+    },
+    {
+      "ID": 24,
+      "Signature": "EVENT_RECVMSG",
+      "SubjectID": 16,
+      "ObjectID": 10,
+      "Parents": [
+        23
+      ]
+    },
+    {
+      "ID": 25,
+      "Signature": "EVENT_LOADLIBRARY",
+      "SubjectID": 19,
+      "ObjectID": 17,
+      "Parents": [
+        24
+      ]
+    },
+    {
+      "ID": 26,
+      "Signature": "EVENT_EXECUTE",
+      "SubjectID": 18,
+      "ObjectID": 17,
+      "Parents": [
+        25
+      ]
+    },
+    {
+      "ID": 27,
+      "Signature": "EVENT_FORK",
+      "SubjectID": 10,
+      "ObjectID": 18,
+      "Parents": [
+        26
+      ]
+    },
+    {
+      "ID": 28,
+      "Signature": "EVENT_WRITE",
+      "SubjectID": 10,
+      "ObjectID": 9,
+      "Parents": [
+        27
+      ]
+    },
+    {
+      "ID": 29,
+      "Signature": "EVENT_CLOSE",
+      "SubjectID": 10,
+      "ObjectID": 16,
+      "Parents": [
+        28
+      ]
+    }
+  ]
+}
