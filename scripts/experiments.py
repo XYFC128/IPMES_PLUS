@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import json
 import argparse
+import asyncio
 
 IPMES_PLUS = "IPMES_PLUS/"
 TIMING = "timingsubg/rdf/"
@@ -303,8 +304,8 @@ def exp_flow_effectivess() -> pd.DataFrame:
     )
 
 
-def run_all_patterns(
-    app: str, data_graph: str, patterns: list[str], pre_run=0, re_run=1
+async def run_all_patterns(
+    app: str, data_graph: str, patterns: list[str], job_sem: asyncio.BoundedSemaphore, pre_run=0, re_run=1
 ) -> t.Tuple[float, float]:
     run_function_map = {
         "ipmes": run_ipmes,
@@ -322,19 +323,23 @@ def run_all_patterns(
     if app == "ipmes+":
         pattern_dir = PATTERN_DIR
 
+    async def run(pattern):
+        async with job_sem:
+            pattern_file = os.path.join(pattern_dir, pattern + "_regex.json")
+            window_size = 1800 if pattern.startswith("SP") else 1000
+            thread = asyncio.to_thread(run_function_map[app], pattern_file, data_graph, window_size, pre_run, re_run)
+            return await thread
+
+    results = []
+    for pattern in patterns:
+        if app == "timing" and pattern == "DP1":
+            continue  # a know bug of timing: it failed to run DP1 pattern on all graph
+        results.append(run(pattern))
+
     total_cpu_time = 0.0
     total_mem_usage = 0.0
     success_runs = 0
-
-    for pattern in patterns:
-        pattern_file = os.path.join(pattern_dir, pattern + "_regex.json")
-        if app == "timing" and pattern == "DP1":
-            continue  # a know bug of timing: it failed to run DP1 pattern on all graph
-
-        window_size = 1800 if pattern.startswith("SP") else 1000
-        res = run_function_map[app](
-            pattern_file, data_graph, window_size, pre_run, re_run
-        )
+    for res in await asyncio.gather(*results):
         if not res is None:
             num_match, cpu_time, peak_mem = res
             total_cpu_time += cpu_time
@@ -344,42 +349,40 @@ def run_all_patterns(
     return total_cpu_time / success_runs, total_mem_usage / success_runs
 
 
-def exp_matching_efficiency(apps: list[str], args: argparse.Namespace):
+def exp_matching_efficiency(apps: list[str], args: argparse.Namespace, parallel_jobs=1):
     spade_graphs = ["attack", "mix", "benign"]
     spade_patterns = [f"SP{i}" for i in range(1, 13)]
     darpa_graphs = ["dd1", "dd2", "dd3", "dd4"]
     darpa_patterns = [f"DP{i}" for i in range(1, 6)]
 
-    cpu_result = []
-    mem_result = []
+    job_sem = asyncio.BoundedSemaphore(parallel_jobs)
+
+    all_results = []
+    def run_dataset(dataset, patterns):
+        for graph in dataset:
+            for app in apps:
+                all_results.append(run_all_patterns(
+                    app, graph, patterns, job_sem, args.pre_run, args.re_run
+                ))
+    async def await_results():
+        return await asyncio.gather(*all_results)
 
     if not args.no_spade:
-        for graph in spade_graphs:
-            cpu_row: list[str | float] = [graph]
-            mem_row: list[str | float] = [graph]
-            for app in apps:
-                avg_cpu_time, avg_peak_mem = run_all_patterns(
-                    app, graph, spade_patterns, args.pre_run, args.re_run
-                )
-                cpu_row.append(avg_cpu_time)
-                mem_row.append(avg_peak_mem)
-
-            cpu_result.append(cpu_row)
-            mem_result.append(mem_row)
+        run_dataset(spade_graphs, spade_patterns)
 
     if not args.no_darpa:
-        for graph in darpa_graphs:
-            cpu_row: list[str | float] = [graph]
-            mem_row: list[str | float] = [graph]
-            for app in apps:
-                avg_cpu_time, avg_peak_mem = run_all_patterns(
-                    app, graph, darpa_patterns, args.pre_run, args.re_run
-                )
-                cpu_row.append(avg_cpu_time)
-                mem_row.append(avg_peak_mem)
+        run_dataset(darpa_graphs, darpa_patterns)
 
-            cpu_result.append(cpu_row)
-            mem_result.append(mem_row)
+    datasets = spade_graphs + darpa_graphs
+    cpu_result = []
+    mem_result = []
+    for i, (cpu_time, peak_mem) in enumerate(asyncio.run(await_results())):
+        if i % len(apps) == 0:
+            dataset_id = i // len(apps)
+            cpu_result.append([datasets[dataset_id]])
+            mem_result.append([datasets[dataset_id]])
+        cpu_result[-1].append(cpu_time)
+        mem_result[-1].append(peak_mem)
 
     cpu_df = pd.DataFrame(
         data=cpu_result,
@@ -479,7 +482,7 @@ def main():
     build_timing()
 
     cpu_df, mem_df = exp_matching_efficiency(
-        ["ipmes+", "ipmes", "timing", "siddhi"], args
+        ["ipmes+", "ipmes", "timing", "siddhi"], args, 4
     )
 
     print("CPU Time (sec)")
