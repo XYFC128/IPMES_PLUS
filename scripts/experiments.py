@@ -34,7 +34,7 @@ def build_ipmes_plus():
     os.chdir(cwd)
 
 
-def build_timing():
+def build_timing(clean=False):
     cwd = os.getcwd()
     os.chdir(TIMING)
     subprocess.run(
