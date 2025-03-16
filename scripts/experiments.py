@@ -60,9 +60,28 @@ def build_ipmes():
     os.chdir(cwd)
 
 
+def parse_peak_mem_result(peak_mem_result: re.Match[str] | None) -> int:
+    if peak_mem_result is not None:
+        peak_mem = peak_mem_result.group(1)
+        peak_mem_unit = peak_mem_result.group(2)
+
+        multiplier = 1
+        if peak_mem_unit == "k":
+            multiplier = 2**10
+        elif peak_mem_unit == "M":
+            multiplier = 2**20
+        elif peak_mem_unit == "G":
+            multiplier = 2**30
+        else:
+            print(f"Encounter unknown memory unit: {peak_mem_unit}")
+
+        return int(peak_mem) * multiplier
+    else:
+        return 0
+
 def run_ipmes_plus(
     pattern_file: str, data_graph: str, window_size: int, pre_run=0, re_run=1
-) -> t.Union[t.Tuple[int, float, int], None]:
+) -> t.Union[t.Tuple[int, float, float], None]:
     binary = os.path.join(IPMES_PLUS, "target/release/ipmes-rust")
     run_cmd = [binary, pattern_file, data_graph, "-w", str(window_size), "--silent"]
     print("Running: `{}`".format(" ".join(run_cmd)))
@@ -91,24 +110,7 @@ def run_ipmes_plus(
 
     avg_cpu_time = total_cpu_time / re_run
     num_match = int(num_match)
-    if peak_mem_result is not None:
-        peak_mem = peak_mem_result.group(1)
-        peak_mem_unit = peak_mem_result.group(2)
-
-        multiplier = 1
-        if peak_mem_unit == "k":
-            multiplier = 2**10
-        elif peak_mem_unit == "M":
-            multiplier = 2**20
-        elif peak_mem_unit == "G":
-            multiplier = 2**30
-        else:
-            print(f"Encounter unknown memory unit: {peak_mem_unit}")
-
-        peak_mem = int(peak_mem) * multiplier
-    else:
-        peak_mem = 0
-
+    peak_mem = parse_peak_mem_result(peak_mem_result)
     return num_match, avg_cpu_time, peak_mem
 
 
@@ -120,7 +122,7 @@ def run_timing(
     re_run=1,
     max_thread_num: int = 1,
     runtime_record: str = "/dev/null",
-) -> t.Union[t.Tuple[int, float, int], None]:
+) -> t.Union[t.Tuple[int, float, float], None]:
     binary = os.path.join(TIMING, "bin/tirdf")
     subpattern_file = os.path.join(OLD_SUBPATTERN_DIR, os.path.basename(pattern_file))
     run_cmd = [
@@ -158,24 +160,7 @@ def run_timing(
 
     avg_cpu_time = total_cpu_time / re_run
     num_match = int(num_match)
-    if peak_mem_result is not None:
-        peak_mem = peak_mem_result.group(1)
-        peak_mem_unit = peak_mem_result.group(2)
-
-        multiplier = 1
-        if peak_mem_unit == "k":
-            multiplier = 2**10
-        elif peak_mem_unit == "M":
-            multiplier = 2**20
-        elif peak_mem_unit == "G":
-            multiplier = 2**30
-        else:
-            print(f"Encounter unknown memory unit: {peak_mem_unit}")
-
-        peak_mem = int(peak_mem) * multiplier
-    else:
-        peak_mem = 0
-
+    peak_mem = parse_peak_mem_result(peak_mem_result)
     return num_match, avg_cpu_time, peak_mem
 
 
@@ -186,7 +171,7 @@ def run_ipmes(
     pre_run=0,
     re_run=1,
     options: str = "",
-) -> t.Union[t.Tuple[int, float, int], None]:
+) -> t.Union[t.Tuple[int, float, float], None]:
 
     def parse_cpu_time(stderr: str) -> float:
         lines = stderr.strip().split("\n")
@@ -211,6 +196,7 @@ def run_ipmes(
         proc = Popen(run_cmd, stdout=None, stderr=None, encoding="utf-8")
         proc.wait()
 
+    num_result = 0
     total_cpu_time = 0
     total_mem_usage = 0
     for _ in range(re_run):
@@ -219,8 +205,8 @@ def run_ipmes(
 
         cpu_time = parse_cpu_time(errs)
         output = json.loads(outs)
-        mem_usage = float(output["PeakHeapSize"]) / 2**20  # convert to MB
-        num_result = output["NumResults"]
+        mem_usage = int(output["PeakHeapSize"])
+        num_result = int(output["NumResults"])
 
         total_cpu_time += cpu_time
         total_mem_usage += mem_usage
@@ -234,7 +220,7 @@ def run_siddhi(
     window_size: int,
     pre_run=0,
     re_run=1,
-) -> t.Union[t.Tuple[int, float, int], None]:
+) -> t.Union[t.Tuple[int, float, float], None]:
     return run_ipmes(
         pattern_path,
         graph_path,
