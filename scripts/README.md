@@ -70,10 +70,6 @@ options:
   -s SEED, --seed SEED  Random seed
 ```
 
-## `pattern_generator.py`
-
-To be documented.
-
 ## `pattern_upgrader.py`
 
 Upgrade a pattern from an old version to the newest version (or the specified version). Since the new pattern format may not be backward compatible with the old formats, this script is added to help migrating between versions.
@@ -119,10 +115,6 @@ The fields in the output csv:
 
 Similar to [`preprocessed.py`](#preprocesspy), but for data graphs in DARPA dataset.
 
-## `profile.sh`
-
-To be documented.
-
 ## `run_all.py`
 
 Run IPMES+ on all compatible combinations of the provided patterns and data graphs. It will collect the number of match results, the elapsed CPU-time and peak memory usage into a table. The table is beauty printed in stdout and saved as a csv file on the disk.
@@ -167,10 +159,6 @@ Pattern Data Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
 ...(skipped)
 This table is saved to results/ipmes-rust/run_result.csv
 ```
-
-## `run_attack.sh`
-
-To be documented.
 
 ## `to_universal_patterns.py`
 
