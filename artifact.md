@@ -70,20 +70,19 @@ This section describes how to reproduce the experiment results in our paper.
 
 #### Experiment environment
 
-We use Python scripts to automate the experiment. The experiment environment requires:
+We use a single Python script `experiments.py` to automate all the experiments. The experiment environment requires:
 
-- RAM >= 100 GB
-    - Running experiment on SPADE require 32 ~ 48 GB
-    - Running on DARPA require 100 GB
+- RAM >= 75 GB
+    - Running experiments on SPADE requires <= 10 GB.
+    - Running experiments on DARPA requires <= 75 GB.
 - Unix-like environment (tested on Ubuntu 18.04 and 22.04)
     - GNU bash >= 4.4.20
-- Python >= 3.6.9
-    - with pip installed
-- The Python packages listed in `ipmes-rust/requirements.txt`
+- Python >= 3.6.9 (with pip installed)
+    - The Python packages listed in `./requirements.txt`.
 
 For Ubuntu/Debian:
 
-```
+```shell
 sudo apt-get update
 sudo apt-get install python3 python3-pip
 cd ipmes-rust
@@ -92,151 +91,153 @@ pip3 install -r requirements.txt
 
 It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
 
-The RAM requirement is high because the experiment involves running **IPMES+** with and without optimizations for comparison. The unoptimized version may need a significant amount of memory to achieve results comparable to the optimized one. However, the optimized **IPMES+** should be runnable on a personal computer with 32 GB of memory.
+To conduct experiments involving **IPMES** and **Siddhi**, it additionally requires:
 
-#### Data Graph
+- Java (JDK) >= 11
+- Apache Maven >= 3.6.0
 
-Our experiments use the preprocessed data graph as the input to **IPMES+**. You can download the preprocessed provenance graph for our experiment at [link](https://figshare.com/articles/dataset/IPMES_Preprocessed_Data_Graph/25329568).
+To conduct experiments involving **Timing**, it additionally requires:
+- GNU Make >= 4.3
+- `g++` >= 11.4.0
 
-Extract the file to a location of your choice. In the following example, we assume that the location of preprocessed data graph is located at `<root of source files>/data/preprocessed/`.
+The RAM requirement is high because when matching the behavioral pattern `DP5` on the data graph `dd4`, there would be an exploding number of matched instances. Except that particular combination of behavioral pattern and data graph, the other experiments should be runnable on a personal computer with 32 GB of memory.
 
-```
- unzip preprocessed.zip -d <root of source files>/data/
-```
+#### Source codes and data
 
-<!-- ### Effectiveness of Frequency-type Event Patterns (Sec. IV.A, Table IV, Table V) (7 compute-days)
+All the source codes and data (including data graphs and behavioral patterns) needed for the experiments are contained in the zip file `IPMES_PLUS_EXP.zip`. Before starting the experiments, please run
 
-This experiment demonstrate the necessity of frequency-based event patterns across different patterns on different data graphs.
-
-The following command uses a python script to automate the experiment. The script will output the tables similar to Table IV and Table V in the paper and save the tables to CSV files in `../results/ipmes-java/` (the save path can be changed with `-o` option). For convenience, the script will also print out the command it is currently running.
-
-```shell 
-cd ipmes-java
-python3 run.py -D all \
-    -d ../data/preprocessed/ \
-    -o ../results/ipmes-java/
+```shell
+unzip IPMES_PLUS_EXP.zip
+cd IPMES_PLUS_EXP
 ```
 
-example output:
+### Effectiveness of frequency-type event patterns (Sec. IV.B, Table III) (3 compute-minutes)
+
+This experiment demonstrate the necessity of **frequency-based** event patterns across different patterns on different data graphs.
+
+The following command conducts the experiment automatically. The script will output a table similar to **Table III** in the paper. For convenience, the script will also print out the command it is currently running.
+
+```shell
+python experiments.py --freq
+```
+
+Example output:
 
 ```
-Running: bash -c time -p -- mvn -q exec:java -Dexec.args="-w 1800 ../data/universal_patterns/SP1_regex.json ../data/preprocessed/attack.csv "
+*** Building applications... ***
+*** Building finished. ***
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP2_regex.json data_graphs/attack_raw.csv -w 1800 --silent`
+Run 1 / 1 ...
+Total number of matches: 1058
+CPU time elapsed: 0.932406222 secs
+Peak memory usage: 68608 kB
+
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/freq_patterns/SP2_regex.json data_graphs/attack_raw.csv -w 1800 --silent`
+Run 1 / 1 ...
 ...
-SPADE CPU Time (sec)
-             attack  attack-naive  attack-cep        mix    mix-naive    mix-cep    benign  benign-naive  benign-cep
-pattern
-SP1_regex    8.3500      8.260000   16.260000   9.980000     9.640000  18.950000  6.650000      7.390000     11.4600
-SP2_regex    8.4600      9.440000   12.840000   9.240000     9.250000  12.700000  7.060000      6.660000      9.8900
-SP3_regex    9.7200     86.960000   18.510000  10.440000    93.010000  20.970000  7.180000      7.470000     12.8400
-SP4_regex    9.1200      9.040000   12.760000   9.100000     9.860000  14.530000  7.060000      6.690000      9.8600
-SP5_regex    9.1600      9.120000   17.460000  10.480000    10.540000  38.590000  7.730000      7.550000    181.7600
-SP6_regex    9.0700      9.430000   14.250000   9.630000    10.570000  17.060000  7.500000      7.220000     11.8400
-SP7_regex    8.7700    268.510000   13.810000  11.350000  2827.390000  19.860000  7.610000      7.840000     12.6600
-SP8_regex   11.5000     16.460000   15.460000  11.410000    44.070000  16.970000  7.370000     44.110000     15.5700
-SP9_regex   10.7300     10.900000   14.740000  11.690000    11.630000  29.160000  7.810000      7.370000     11.9600
-SP10_regex  10.1400      9.610000   13.090000  10.400000    10.720000  15.670000  7.460000      7.300000     11.3900
-SP11_regex   9.8400     10.810000   13.440000  10.870000    10.420000  16.310000  7.430000      7.620000     11.8500
-SP12_regex   8.6300      9.120000   11.790000   9.570000     8.930000  11.810000  7.480000      6.910000      9.8700
-Average      9.4575     38.138333   14.534167  10.346667   254.669167  19.381667  7.361667     10.344167     25.9125
-This table is saved to ../results/ipmes-java/spade_cpu_time.csv
+  Pattern  Found Ins.  CPU Time (sec)  Peak Memory (MB)
+      SP2        1058        0.932406         67.000000
+      SP3      195000       77.508169      59713.730469
+      SP4           0        1.212346        155.000000
+      SP6           9        0.954729         67.000000
+      SP7       53218        2.302216         67.000000
+     SP10         993        0.969664         67.000000
+     SP11          36        0.936476         67.000000
+ SP2_freq          25        0.886327         67.000000
+ SP3_freq           1        1.037059         67.000000
+ SP4_freq           0        0.979137         67.000000
+ SP6_freq           4        0.953199         67.000000
+ SP7_freq         419        1.043491         67.000000
+SP10_freq           9        0.932143         67.000000
+SP11_freq           9        0.935679         67.000000
+```
 
-SPADE Memory Usage (MB)
-            attack  attack-naive   attack-cep          mix     mix-naive      mix-cep       benign  benign-naive   benign-cep
-pattern
-SP1_regex    944.0         768.0  1424.000000  1144.000000   1056.000000  1384.000000   792.000000    776.000000  1536.000000
-SP2_regex    968.0        1192.0  1848.000000  1416.000000   1064.000000  1632.000000   792.000000    768.000000  1080.000000
-SP3_regex    760.0        4424.0  4816.000000  1520.000000   5360.000000  2336.000000  1016.000000    784.000000  2288.000000
-SP4_regex   1032.0        1032.0  1960.000000  1064.000000   1280.000000  2424.000000   744.000000    752.000000  1288.000000
-SP5_regex    800.0        1192.0  2032.000000  1232.000000   1360.000000  2448.000000  1536.000000   1504.000000  4696.000000
-SP6_regex    752.0        1016.0  2224.000000   768.000000   1192.000000  2096.000000   752.000000   1136.000000  1520.000000
-SP7_regex   1192.0       15888.0  1984.000000  1248.000000  22488.000000  2184.000000   808.000000   1104.000000  1528.000000
-SP8_regex   1560.0        1552.0  2208.000000  1024.000000   3720.000000  2368.000000   848.000000   1232.000000  1432.000000
-SP9_regex   1304.0        1280.0  2416.000000  1424.000000   1784.000000  2272.000000   800.000000    792.000000  2208.000000
-SP10_regex  1432.0        1144.0  1696.000000  1056.000000   1176.000000  4688.000000   768.000000    872.000000  1488.000000
-SP11_regex  1216.0        1824.0  1576.000000  1152.000000   1104.000000  2288.000000   752.000000    752.000000  2232.000000
-SP12_regex  1264.0        1256.0   976.000000  1192.000000   1224.000000  1344.000000   800.000000    792.000000   848.000000
-Average     1102.0        2714.0  2096.666667  1186.666667   3567.333333  2288.666667   867.333333    938.666667  1845.333333
-This table is saved to ../results/ipmes-java/spade_mem_usage.csv
+### Effectiveness of flow-type event patterns (Sec. IV.C, Table IV) (1 compute-minutes)
 
-Running: bash -c time -p -- mvn -q exec:java -Dexec.args="-w 1000 ../data/universal_patterns/DP1_regex.json ../data/preprocessed/dd1.csv "
+This experiment demonstrate the necessity of **flow-based** event patterns across different patterns on different data graphs.
+
+The following command conducts the experiment automatically. The script will output a table similar to **Table IV** in the paper. For convenience, the script will also print out the command it is currently running.
+
+```shell
+python experiments.py --flow
+```
+
+Example output:
+
+```
+*** Building applications... ***
+*** Building finished. ***
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP3.json modified_data_graphs/attack.csv -w 1800 --silent`
+Run 1 / 1 ...
+Total number of matches: 0
+CPU time elapsed: 0.837500926 secs
+Peak memory usage: 68608 kB
+
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/flow_patterns/SP3.json modified_data_graphs/attack.csv -w 1800 --silent`
+Run 1 / 1 ...
+Total number of matches: 2
+CPU time elapsed: 2.37848033 secs
+Peak memory usage: 72004 kB
+
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/DP3.json modified_data_graphs/dd3.csv -w 1000 --silent`
+Run 1 / 1 ...
+Total number of matches: 0
+CPU time elapsed: 3.822604907 secs
+Peak memory usage: 68608 kB
+
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/flow_patterns/DP3.json modified_data_graphs/dd3.csv -w 1000 --silent`
+Run 1 / 1 ...
+Total number of matches: 4
+CPU time elapsed: 10.012387877 secs
+Peak memory usage: 249008 kB
+
+ Pattern  Found Ins.  CPU Time (sec)  Peak Memory (MB)
+     SP3           0        0.837501         67.000000
+     DP3           0        3.822605         67.000000
+SP3_flow           2        2.378480         70.316406
+DP3_flow           4       10.012388        243.171875
+```
+
+### Efficiency of matching low-level attack patterns (Sec. IV.D, Figure 8, Figure 9) (6 compute-days)
+
+This experiment demonstrate the necessity of **flow-based** event patterns across different patterns on different data graphs.
+
+The following command conducts the experiment automatically. The script will output a table similar to **Table IV** in the paper. For convenience, the script will also print out the command it is currently running.
+
+```shell
+python experiments.py
+```
+
+Example output:
+
+```
+*** Building applications... ***
+*** Building finished. ***
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP1_regex.json data_graphs/attack.csv -w 1800 --silent`
+Run 1 / 1 ...
 ...
+CPU Time (sec)
+Dataset   ipmes+     ipmes      timing    siddhi
+ attack 0.827590  9.579167   55.618900 15.400833
+    mix 1.169838 10.596667 1403.702995 21.330000
+ benign 0.305944  6.814167   98.533342 33.084167
+Memory (MB)
+Dataset  ipmes+       ipmes     timing  siddhi
+ attack    89.0 2064.000000 560.333333  1620.0
+    mix    89.0 2064.000000 771.416667  1756.0
+ benign    89.0 2194.666667 205.750000  1580.0
+ ...
 ```
 
-The meaning of each output column: `<Dataset Name>[-<IPMES Setting>]`. Available settings:
-
-- When no setting is specified, the default setting is the purposed method in out paper.
-- `naive`: naive implementation in the Join layer.
-- `cep`: Use CEP tool to implement composition layer.
-
-Note that collecting all the data points may be time-consuming. You can utilize `-D` option of the runner script to specify the dataset (`spade` or `darpa`). The SPADE dataset takes less time to run compared to the DARPA dataset. The following command only runs on the SPADE dataset, and it will output the result similar to Table IV in our paper:
-
-```shell 
-python3 run.py -D spade \
-    -d ../data/preprocessed/ \
-    -o ../results/ipmes-java/
-```
-
-If your computer memory is not enough, you can try to apply the `-M` option to set the memory limit of JVM (the script set it to 100 GB by default):
-
-```shell 
-python3 run.py -D all\
-    -d ../data/preprocessed/ \
-    -o ../results/ipmes-java/ \
-    -M 48
-```
-
-However, this could result in OOM error reported by JVM causing IPMES to exit and may reduce the performance.
-
-### Window size (Sec. IV.B, Fig.6, Fig 7) (5 compute-minutes)
-
-The following command reproduces Fig.6 and Fig.7 in section IV.B of our paper. It will run IPMES to match SP7 on the graph `mix` with different window size options.
-
-```shell 
-python3 age_limit_experiment.py \
-    -l '2,4,6,8,9,20,40,80,200,400,800,1600,3200,6400,12800,25600,51200' \
-    -p ../data/universal_patterns/SP7_regex.json \
-    -d ../data/preprocessed/mix.csv
-```
-
-example output:
-
-```
-WindowSize, AvgCpuTime, PoolSize, NumResults, NumClusters
-2        8.62    6981    0       0
-4        8.44    2665    5       5
-6        8.94    3079    24      12
-8        9.57    4100    35      12
-9        8.98    4439    38      13
-20       9.23    5930    197     13
-40       8.85    7034    415     13
-80       11.00   13488   1690    13
-200      11.33   13932   1690    13
-400      12.46   15257   1690    13
-800      11.75   16346   1690    13
-1600     11.31   16958   1690    13
-3200     11.42   29256   1690    13
-6400     14.21   40663   1690    13
-12800    22.07   64812   1690    13
-25600    37.50   130907  1690    13
-51200    51.34   235111  1690    13
-```
-
-The meaning of each output column:
-
-- `WindowSize`: the window size in seconds.
-- `AvgCpuTime`: the CPU Time (in seconds) it took to run on the given configuration.
-- `PoolSize`: the maximum number of instances in the pool during matching.
-- `NumResults`: the number of match results.
-- `NumClusters`: the number of attack cluster. Each cluster represent a single attack behavior. -->
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
 
 ### Directory Structure
 
-- `data/`: Example input data for the program
-- `docs/`: Documentations
+- `data/`: Example input data for the program.
+- `docs/`: Documentations.
 - `scripts/`: Helper scripts to carry out expriment and data preprocessing.
-- `src/`: Source code of IPMES_PLUS.
+- `src/`: Source codes of **IPMES+**.
 - `testcases/`: Test data for the experiments and code tests.
 
 ### Command-line Syntax
