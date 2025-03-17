@@ -566,7 +566,7 @@ def main():
     args = parser.parse_args()
 
     print("*** Building applications... ***")
-    # build_ipmes()
+    build_ipmes()
     build_ipmes_plus()
     build_timing()
     print("*** Building finished. ***")
