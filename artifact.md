@@ -12,7 +12,7 @@
     + [Effectiveness of flow-type event patterns (1 compute-minutes)](#effectiveness-of-flow-type-event-patterns-sec-ivc-table-iv-1-compute-minutes)
     + [Efficiency of matching low-level attack patterns (6 compute-days)](#efficiency-of-matching-low-level-attack-patterns-sec-ivd-figure-8-figure-9-6-compute-days)
     + [Join layer optimization (1 compute-minutes)](#join-layer-optimization-sec-ive-table-v-1-compute-minutes)
-* [Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)](#execution-how-to-reuse-beyond-paper-10-human-minutes-1-compute-minute)
+* [Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)](#execution--how-to-reuse-beyond-paper-10-human-minutes-1-compute-minute)
 
 * [Authors (1 human-minute)](#authors-1-human-minute)
 
