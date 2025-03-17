@@ -111,6 +111,15 @@ unzip IPMES_PLUS_EXP.zip
 cd IPMES_PLUS_EXP
 ```
 
+#### Regarding `experiments.py`
+
+The script `experiments.py` supports running an experiment multiple times, and also supports pre-run experiments for CPU warm-up. For more information, please refer to
+
+```
+python experiments.py -h
+```
+
+
 ### Effectiveness of frequency-type event patterns (Sec. IV.B, Table III) (3 compute-minutes)
 
 This experiment demonstrate the necessity of **frequency-based** event patterns across different patterns on different data graphs.
@@ -200,9 +209,9 @@ DP3_flow           4       10.012388        243.171875
 
 ### Efficiency of matching low-level attack patterns (Sec. IV.D, Figure 8, Figure 9) (6 compute-days)
 
-This experiment demonstrate the necessity of **flow-based** event patterns across different patterns on different data graphs.
+This experiment compares the efficiency of matching patterns without flow and frequency semantics across **IPMES+**, **IPMES**, **Timing**, and **Siddhi**.
 
-The following command conducts the experiment automatically. The script will output a table similar to **Table IV** in the paper. For convenience, the script will also print out the command it is currently running.
+The following command conducts the experiment automatically. The script will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For convenience, the script will also print out the command it is currently running.
 
 ```shell
 python experiments.py
@@ -221,6 +230,7 @@ Dataset   ipmes+     ipmes      timing    siddhi
  attack 0.827590  9.579167   55.618900 15.400833
     mix 1.169838 10.596667 1403.702995 21.330000
  benign 0.305944  6.814167   98.533342 33.084167
+ ...
 Memory (MB)
 Dataset  ipmes+       ipmes     timing  siddhi
  attack    89.0 2064.000000 560.333333  1620.0
@@ -229,6 +239,38 @@ Dataset  ipmes+       ipmes     timing  siddhi
  ...
 ```
 
+To closely inspect the performance of some particular applications, you can apply the `-a` option with a list of application ids as the parameter. Similarly, to specify only a subset of data graphs, you can apply the `-g` option with a list of data graphs as the parameter. For example, the following command runs **IPMES+** and **Timing** with data graphs **attack** and **dd2**:
+
+```
+python experiments.py -a "0,2" -g "attack,dd2"
+```
+
+which outputs:
+
+```
+```
+
+For more information regarding the options, please refer to
+
+```
+python experiments.py -h
+```
+
+### Join layer optimization (Sec. IV.E, Table V)
+
+This experiment highlights the effectiveness of **sibling entity
+sharing enforcement** for **IPMES+**. We have synthesized worst-case provenance graphs exclusively containing pattern instances for this experiment.
+
+The following command conducts the experiment automatically. The script will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For convenience, the script will also print out the command it is currently running.
+
+```shell
+python experiments.py
+```
+
+Example output:
+
+```
+```
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
 
