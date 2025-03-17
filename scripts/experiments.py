@@ -80,6 +80,7 @@ def parse_peak_mem_result(peak_mem_result: re.Match[str] | None) -> int:
     else:
         return 0
 
+
 def run_ipmes_plus(
     pattern_file: str, data_graph: str, window_size: int, pre_run=0, re_run=1
 ) -> t.Union[t.Tuple[int, float, float], None]:
@@ -305,7 +306,12 @@ def exp_flow_effectivess() -> pd.DataFrame:
 
 
 async def run_all_patterns(
-    app: str, data_graph: str, patterns: list[str], job_sem: asyncio.BoundedSemaphore, pre_run=0, re_run=1
+    app: str,
+    data_graph: str,
+    patterns: list[str],
+    job_sem: asyncio.BoundedSemaphore,
+    pre_run=0,
+    re_run=1,
 ) -> t.Tuple[float, float]:
     run_function_map = {
         "ipmes": run_ipmes,
@@ -327,7 +333,14 @@ async def run_all_patterns(
         async with job_sem:
             pattern_file = os.path.join(pattern_dir, pattern + "_regex.json")
             window_size = 1800 if pattern.startswith("SP") else 1000
-            thread = asyncio.to_thread(run_function_map[app], pattern_file, data_graph, window_size, pre_run, re_run)
+            thread = asyncio.to_thread(
+                run_function_map[app],
+                pattern_file,
+                data_graph,
+                window_size,
+                pre_run,
+                re_run,
+            )
             return await thread
 
     results = []
@@ -349,21 +362,53 @@ async def run_all_patterns(
     return total_cpu_time / success_runs, total_mem_usage / success_runs
 
 
-def exp_matching_efficiency(apps: list[str], args: argparse.Namespace, parallel_jobs=1):
+def select_app_graph(
+    args: argparse.Namespace,
+) -> t.Tuple[t.List[str], t.List[str], t.List[str]]:
+    apps_table = {"0": "ipmes+", "1": "ipmes", "2": "timing", "3": "siddhi"}
+    apps = []
+    apps_id = args.match_app_list.split(",")
+
+    for id in apps_id:
+        if id in apps_table:
+            apps.append(apps_table[id])
+
     spade_graphs = ["attack", "mix", "benign"]
-    spade_patterns = [f"SP{i}" for i in range(1, 13)]
     darpa_graphs = ["dd1", "dd2", "dd3", "dd4"]
+    spade = []
+    darpa = []
+    graphs_id = args.match_graph_list.split(",")
+
+    for graph in graphs_id:
+        if graph in spade_graphs:
+            spade.append(graph)
+        elif graph in darpa_graphs:
+            darpa.append(graph)
+
+    return apps, spade, darpa
+
+
+def exp_matching_efficiency(
+    args: argparse.Namespace, parallel_jobs=1
+) -> t.Tuple[pd.DataFrame, pd.DataFrame]:
+    spade_patterns = [f"SP{i}" for i in range(1, 13)]
     darpa_patterns = [f"DP{i}" for i in range(1, 6)]
+
+    apps, spade_graphs, darpa_graphs = select_app_graph(args)
 
     job_sem = asyncio.BoundedSemaphore(parallel_jobs)
 
     all_results = []
+
     def run_dataset(dataset, patterns):
         for graph in dataset:
             for app in apps:
-                all_results.append(run_all_patterns(
-                    app, graph, patterns, job_sem, args.pre_run, args.re_run
-                ))
+                all_results.append(
+                    run_all_patterns(
+                        app, graph, patterns, job_sem, args.pre_run, args.re_run
+                    )
+                )
+
     async def await_results():
         return await asyncio.gather(*all_results)
 
@@ -448,7 +493,7 @@ def exp_join_layer_optimization(
         ],
     )
 
-    return df, df_optimized    
+    return df, df_optimized
 
 
 def main():
@@ -461,42 +506,94 @@ def main():
         "--re-run",
         default=1,
         type=int,
-        help="Number of re-runs to measure CPU time",
+        help="Number of re-runs to measure CPU time.",
     )
     parser.add_argument(
         "--pre-run",
         default=0,
         type=int,
-        help="Number of runs before actual measurement",
+        help="Number of runs before actual measurement.",
     )
     parser.add_argument(
-        "--no-darpa", default=False, action="store_true", help="Do not run on DARPA"
+        "--no-darpa",
+        default=False,
+        action="store_true",
+        help="Do not run on DARPA data graphs (for the Matching Efficiency experiment).",
     )
     parser.add_argument(
-        "--no-spade", default=False, action="store_true", help="Do not run on SPADE"
+        "--no-spade",
+        default=False,
+        action="store_true",
+        help="Do not run on SPADE data graphs (for the Matching Efficiency experiment).",
+    )
+    parser.add_argument(
+        "--freq",
+        default=False,
+        action="store_true",
+        help='Run experiment: "Effectiveness of Frequency-type Event Patterns".',
+    )
+    parser.add_argument(
+        "--flow",
+        default=False,
+        action="store_true",
+        help='Run experiment: "Effectiveness of Flow-type Event Patterns".',
+    )
+    parser.add_argument(
+        "--join",
+        default=False,
+        action="store_true",
+        help='Run experiment: "Join Layer Optimization".',
+    )
+    parser.add_argument(
+        "-a",
+        "--match-app-list",
+        default="0,1,2,3",
+        type=str,
+        help="""Comma separated list of application(s) to run, where
+            [0: IPMES+, 1: IPMES, 2: Timing, 3: Siddhi].
+            For example, ``-a 0,2'' means running the Mathcing Efficiency experiment with IPMES+ and Timing.
+            """,
+    )
+    parser.add_argument(
+        "-g",
+        "--match-graph-list",
+        default="attack,mix,benign,dd1,dd2,dd3,dd4",
+        type=str,
+        help="""Comma separated list of graph to run on.
+            For example, "-g attack,dd3" means running the Mathcing Efficiency experiment on data graphs "attack" and "dd3".
+            """,
     )
     args = parser.parse_args()
 
-    build_ipmes()
+    print("*** Building applications... ***")
+    # build_ipmes()
     build_ipmes_plus()
     build_timing()
+    print("*** Building finished. ***")
 
-    cpu_df, mem_df = exp_matching_efficiency(
-        ["ipmes+", "ipmes", "timing", "siddhi"], args, 4
-    )
+    if args.freq:
+        print(exp_freq_effectivess().to_string(index=False))
 
-    print("CPU Time (sec)")
-    print(cpu_df.to_string(index=False))
-    print("Memory (MB)")
-    print(mem_df.to_string(index=False))
-    print(exp_freq_effectivess().to_string(index=False))
+    if args.flow:
+        print(exp_flow_effectivess().to_string(index=False))
 
-    df, df_optimized = exp_join_layer_optimization(args)
+    if args.join:
+        df, df_optimized = exp_join_layer_optimization(args)
 
-    print("Before optimization:")
-    print(df.to_string(index=False))
-    print("After optimization:")
-    print(df_optimized.to_string(index=False))
+        print("Before optimization:")
+        print(df.to_string(index=False))
+        print("After optimization:")
+        print(df_optimized.to_string(index=False))
+
+    if not (args.freq or args.flow or args.join):
+        # The experiment "Efficiency of Matching Low-level Attack Patterns" is run by default,
+        # if no other experiments have been conducted.
+        cpu_df, mem_df = exp_matching_efficiency(args, 4)
+
+        print("CPU Time (sec)")
+        print(cpu_df.to_string(index=False))
+        print("Memory (MB)")
+        print(mem_df.to_string(index=False))
 
 
 if __name__ == "__main__":
