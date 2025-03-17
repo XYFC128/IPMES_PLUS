@@ -2,21 +2,19 @@
 
 ## Overview
 
-- Introduction (2 human-minute)
-- Configuration and Installation (1 human-minute, 6 compute-minutes)
-	- Dependency (3 compute-minutes)
-	- Build IPMES (3 compute-minutes)
-- Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
-	- Preparation (5 compute-minutes)
-	- Matching efficiency (7 compute-days)
-	- Window size (5 compute-minutes)
-- Execution / How to reuse beyond paper (12 human-minutes, 1 compute-minute)
-    - Directory Structure
-	- Command-line Syntax
-	- Input Graph Format
-	- Pattern Format
-	- Output and Side Effects
-- Authors (1 human-minute)
+* [Introduction (2 human-minute)](#introduction-2-human-minute)
+* [Configuration and Installation (1 human-minute, 6 compute-minutes)](#configuration-and-installation-1-human-minute-6-compute-minutes)
+    + [Dependency (3 compute-minutes)](#dependency-3-compute-minutes)
+    + [Build IPMES+ (3 compute-minutes)](#build-ipmes-3-compute-minutes)
+* [Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)](#reproduce-and-validate-experiment-results-15-human-minutes-7-compute-days)
+    + [Preparation (5 compute-minutes)](#preparation-5-compute-minutes)
+    + [Effectiveness of frequency-type event patterns (3 compute-minutes)](#effectiveness-of-frequency-type-event-patterns-sec-ivb-table-iii-3-compute-minutes)
+    + [Effectiveness of flow-type event patterns (1 compute-minutes)](#effectiveness-of-flow-type-event-patterns-sec-ivc-table-iv-1-compute-minutes)
+    + [Efficiency of matching low-level attack patterns (6 compute-days)](#efficiency-of-matching-low-level-attack-patterns-sec-ivd-figure-8-figure-9-6-compute-days)
+    + [Join layer optimization (1 compute-minutes)](#join-layer-optimization-sec-ive-table-v-1-compute-minutes)
+* [Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)](#execution-how-to-reuse-beyond-paper-10-human-minutes-1-compute-minute)
+
+* [Authors (1 human-minute)](#authors-1-human-minute)
 
 ## Introduction (2 human-minute)
 
@@ -113,7 +111,7 @@ cd IPMES_PLUS_EXP
 
 #### Regarding `experiments.py`
 
-The script `experiments.py` supports running an experiment multiple times, and also supports pre-run experiments for CPU warm-up. For more information, please refer to
+The script `experiments.py` supports to run an experiment multiple times, and also supports pre-run experiments for CPU warm-up. For more information, please refer to
 
 ```
 python experiments.py -h
@@ -248,6 +246,22 @@ python experiments.py -a "0,2" -g "attack,dd2"
 which outputs:
 
 ```
+*** Building applications... ***
+*** Building finished. ***
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP1_regex.json data_graphs/attack.csv -w 1800 --silent`
+Run 1 / 1 ...
+...
+Running: `timingsubg/rdf/bin/tirdf old_data_graphs/dd2.csv IPMES/data/universal_patterns/DP5_regex.json 1000 1 /dev/null timingsubg/rdf/data/universal_patterns/subpatterns/DP5_regex.json`
+Run 1 / 1 ...
+...
+CPU Time (sec)
+Dataset   ipmes+      timing
+ attack 0.805636   55.572467
+    dd2 3.956605 1420.066625
+Memory (MB)
+Dataset     ipmes+      timing
+ attack  67.000000  560.333333
+    dd2 176.110938 2031.250000
 ```
 
 For more information regarding the options, please refer to
@@ -256,7 +270,7 @@ For more information regarding the options, please refer to
 python experiments.py -h
 ```
 
-### Join layer optimization (Sec. IV.E, Table V)
+### Join layer optimization (Sec. IV.E, Table V) (1 compute-minutes)
 
 This experiment highlights the effectiveness of **sibling entity
 sharing enforcement** for **IPMES+**. We have synthesized worst-case provenance graphs exclusively containing pattern instances for this experiment.
@@ -270,6 +284,32 @@ python experiments.py
 Example output:
 
 ```
+*** Building applications... ***
+*** Building finished. ***
+patching file mod.rs
+Running: `./target/release/ipmes-rust ./data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW10.csv -w 1800 --silent`
+Run 1 / 1 ...
+...
+Running: `./target/release/ipmes-rust ./data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW50.csv -w 1800 --silent`
+Run 1 / 1 ...
+Total number of matches: 50
+CPU time elapsed: 0.005099256 secs
+Peak memory usage: 68608 kB
+
+Before optimization:
+Synthesized Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
+             DW10           10        0.001232              67.0
+             DW20           20        0.004339              67.0
+             DW30           30        0.012072              67.0
+             DW40           40        0.027526              67.0
+             DW50           50        0.046382              67.0
+After optimization:
+Synthesized Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
+             DW10           10        0.000789              67.0
+             DW20           20        0.001508              67.0
+             DW30           30        0.002457              67.0
+             DW40           40        0.003806              67.0
+             DW50           50        0.005099              67.0
 ```
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
@@ -336,7 +376,7 @@ The output message means:
 - **CPU time elapsed**: The CPU time spent for pattern matching.
 - **Peak memory usage**: The maximum heap allocation size in kilobytes.
 
-## Authors
+## Authors (1 human-minute)
 
 - Hong-Wei Li (Research Center for Information Technology Innovation, Academia Sinica, Taiwan) <g6_7893000@hotmail.com>
 - Ping-Ting Liu (Department of Computer Science, National Yang Ming Chiao Tung University, Taiwan) <xyfc128@gmail.com>
