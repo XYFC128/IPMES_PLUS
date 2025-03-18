@@ -148,7 +148,7 @@ Resource usage of this experiment:
 
 - Peak Memory Usage: 76 GB
 - Estimated CPU Time: 340 hours (some data points runs significantly slower than others, see the description below)
--
+
 Some data points requires significantly more time or memory to collect. These data points are:
 
 - timing on DARPA dataset (dd1-dd4) runs for 140 hours in total
