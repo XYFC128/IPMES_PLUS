@@ -37,12 +37,13 @@ def build_ipmes_plus():
 def build_timing(clean=False):
     cwd = os.getcwd()
     os.chdir(TIMING)
-    subprocess.run(
-        ["make", "clean"],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if clean:
+        subprocess.run(
+            ["make", "clean"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
     subprocess.run(
         ["make", "-j"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -204,6 +205,11 @@ def run_ipmes(
     for _ in range(re_run):
         proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding="utf-8")
         outs, errs = proc.communicate()
+        if proc.wait() != 0:
+            print(f"Run failed:\n{errs}")
+            return None
+
+        print(outs)
 
         cpu_time = parse_cpu_time(errs)
         output = json.loads(outs)
