@@ -206,7 +206,7 @@ Dataset  ipmes+       ipmes     timing  siddhi
 This table is saved to results/efficiency_memory.csv
 ```
 
-Additionally, to speedup to experiment process, you can spwan multiple process to collect multiple data points simultaneously by the `-j` argument:
+Additionally, to speedup the experiment process, you can spwan multiple process to collect multiple data points simultaneously by the `-j` argument:
 
 ```sh
 python3 experiment.py efficiency -j 4
