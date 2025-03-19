@@ -82,7 +82,7 @@ IPMES implemented in rust
 Usage: ipmes-rust [OPTIONS] <PATTERN_FILE> <DATA_GRAPH>
 
 Arguments:
-  <PATTERN_FILE>  The path to the pattern file in json format, e.g. ../data/universal_patterns/SP12.json
+  <PATTERN_FILE>  The path to the pattern file in json format, e.g. data/universal_patterns/SP12.json
   <DATA_GRAPH>    The path to the preprocessed data graph (provenance graph) in csv format
 
 Options:
@@ -93,29 +93,25 @@ Options:
 ```
 
 #### Example
-- `./target/release/ipmes-rust -w 3600 ../data/universal_patterns/SP12.json ../data/preprocessed/attack.csv`
-  - `-w 3600`: Set the window size to be `3600` seconds.
-  - `SP12.json`: A pattern for the SPADE dataset. See [data/README.md](data/README.md) for more information.
-  - `preprocessed/attack.csv`: Input data graph which is either generated from real-world log data, or is manually synthesized. See [data/README.md](data/README.md) for more information.
+
+- `./target/release/ipmes-rust -w 1800 data/paper/behavioral_pattern.json data/paper/data_graph.csv`
+  - `-w 1800`: Set the time window size to be `1800` seconds.
+  - `data/paper/behavioral_pattern.json`: An example pattern used in our paper. See [data/README.md](data/README.md) for more information.
+  - `data/paper/data_graph.csv`: Input data graph to search for pattern. See [data/README.md](data/README.md) for its format.
 
 ### Input Format
+
 See [data/README.md](data/README.md) for more information.
 
 ### Output Format
+
 The program output for the [above example](#example) is shown below:
 
-```bash
-Pattern Match: <1637229824.000, 1637229824.000>[7109945, 7106314, 7119497, 5109127]
-Pattern Match: <1637226496.000, 1637226496.000>[7109521, 7106121, 7119501, 5109128]
-Pattern Match: <1637233280.000, 1637233280.000>[7110213, 7106605, 7119505, 5109124]
-Pattern Match: <1637244160.000, 1637244160.000>[7111035, 7107489, 7119499, 5109126]
-Pattern Match: <1637254912.000, 1637254912.000>[7111777, 7108182, 7119498, 5109122]
-Pattern Match: <1637251328.000, 1637251328.000>[7111529, 7107938, 7119500, 5109129]
-Pattern Match: <1637262208.000, 1637262208.000>[7112244, 7108669, 7119496, 5109123]
-Pattern Match: <1637258496.000, 1637258496.000>[7112003, 7108470, 7119503, 5109121]
-Total number of matches: 8
-CPU time elapsed: 0.728816059 secs
-Peak memory usage: 4096 kB
+```
+Pattern Match: <5.000, 11.000>[(1 -> 3), (3, 5), (4, 6)]
+Total number of matches: 1
+CPU time elapsed: 0.000108047 secs
+Peak memory usage: 8604 kB
 ```
 
 The output message means:
@@ -123,10 +119,13 @@ The output message means:
 - **Pattern Match**: Each entry of `Pattern Match` denotes a matched instance of the pattern such that they are in the following format: `<StartTime, EndTime>[list of MatchIDs]`, where
     - **StartTime**: The timestamp of the earliest event of this match instance.
     - **EndTime**: The timestamp of the latest event of this match instance.
-    - **MatchIDs**: The IDs of the matched input events, whose index in this array corresponds to the pattern event they are matched to. In this example, the first `Pattern Match` entry contains an input event `7109945`, which is located at index 0, and hence it matches the pattern event with ID 0.
+    - **MatchIDs**: The IDs of the matched input events, whose index in this array corresponds to the pattern event they are matched to.
+        - If the corresponding pattern event is a **flow event**, it will in the format `(StartNodeID -> EndNodeID)`. In this example, the pattern event 0 is a flow pattern, and IPMES+ found the flow from node 1 to node 3 that matches the pattern event.
+        - If the corresponding pattern is a **frequency event**, the match id format is `(EventID, ...)`. The numbers in the parentheses is a list of mathed input event IDs for that frequency pattern event. In this example, the pattern event 1 is a frequency event, and input event 3 and 5 both match that frequency event.
+        - If the corresponding pattern is a normal regex pattern, the match id is simply the ID of the matched input event.
 - **Total number of matches**: The number of matched instances of the pattern on the data graph.
 - **CPU time elapsed**: The CPU time spent for pattern matching.
-- **Peak memory usage**: The maximum heap allocation size in kilobytes.
+- **Peak memory usage**: The maximum total system memory usage in kilobytes.
 
 ## Authors (1 human-minute)
 
