@@ -120,8 +120,8 @@ The output message means:
     - **StartTime**: The timestamp of the earliest event of this match instance.
     - **EndTime**: The timestamp of the latest event of this match instance.
     - **MatchIDs**: The IDs of the matched input events, whose index in this array corresponds to the pattern event they are matched to.
-        - If the corresponding pattern event is a **flow event**, it will in the format `(StartNodeID -> EndNodeID)`. In this example, the pattern event 0 is a flow pattern, and IPMES+ found the flow from node 1 to node 3 that matches the pattern event.
-        - If the corresponding pattern is a **frequency event**, the match id format is `(EventID, ...)`. The numbers in the parentheses is a list of mathed input event IDs for that frequency pattern event. In this example, the pattern event 1 is a frequency event, and input event 3 and 5 both match that frequency event.
+        - If the corresponding pattern event is a **flow event**, it will be in the format `(StartEntityID -> EndEntityID)`. In this example, the pattern event 0 is a flow pattern, and IPMES+ found the flow from entity 1 to entity 3 that matches the pattern event.
+        - If the corresponding pattern is a **frequency event**, the match id format is `(EventID, ...)`. The numbers in the parentheses is a list of matched input event IDs for that frequency pattern event. In this example, the pattern event 1 is a frequency event, and input event 3 and 5 both match that frequency event.
         - If the corresponding pattern is a normal regex pattern, the match id is simply the ID of the matched input event.
 - **Total number of matches**: The number of matched instances of the pattern on the data graph.
 - **CPU time elapsed**: The CPU time spent for pattern matching.
