@@ -33,7 +33,7 @@ The experiment environment requires:
 
 - Unix-like environment (tested on Ubuntu 24.04)
 - 15 GB of disk storage: to store experiment data.
-- Rust >= 1.71.1: To run IPMES+.
+- Rust >= 1.85.1: To run IPMES+.
 - Python >= 3.6.9: To run experiment automation script.
     - with pip installed
 - Java (JDK) >= 11: To run IPMES and Siddhi.
@@ -68,7 +68,7 @@ This experiment demonstrate the necessity of **frequency-based** event patterns 
 
 Resource usage of this experiment:
 
-- Peak Memory Usage: 60 GB
+- Peak Memory Usage: 50 GB
 - Estimated CPU Time: 100 seconds
 
 The following command conducts the experiment automatically. The script will output a table similar to **Table III** in the paper. For transparency, the script will also print out the command it is currently running.
@@ -250,7 +250,7 @@ sharing enforcement** for **IPMES+**. We have synthesized worst-case provenance 
 Resource usage of this experiment:
 
 - Peak Memory Usage: 70 MB
-- Estimated CPU Time: 1 seconds
+- Estimated CPU Time: 45 seconds
 
 The following command conducts the experiment automatically. The script will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For transparency, the script will also print out the command it is currently running.
 
