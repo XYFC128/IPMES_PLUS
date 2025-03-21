@@ -1,9 +1,0 @@
-0,10,1,read,2,File::path::/var/log/journal/system.journal,1,Process::name::systemd-journald
-5,15,2,write,1,Process::name::systemd-journald,2,File::path::/var/log/journal/system.journal
-7,7,3,fork,3,Process::name::virus,4,Process::name::vim
-8,8,4,read,5,File::path::/var/spool/cron/crontabs/root,4,Process::name::vim
-9,9,5,write,4,Process::name::vim,5,File::path::/var/spool/cron/crontabs/root
-11,11,6,read,5,File::path::/var/spool/cron/crontabs/root,4,Process::name::vim
-11,11,7,write,4,Process::name::vim,5,File::path::/var/spool/cron/crontabs/root
-12,12,8,fork,3,Process::name::virus,6,Process::name::journalctr
-12,12,9,unlink,6,Process::name::journalctr,2,File::path::/var/log/journal/system.journal
