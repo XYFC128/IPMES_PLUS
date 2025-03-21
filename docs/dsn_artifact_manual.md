@@ -94,20 +94,20 @@ Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/freq_patterns/SP2
 Run 1 / 1 ...
 ...
   Pattern  Found Ins.  CPU Time (sec)  Peak Memory (MB)
-      SP2        1058        0.932406         67.000000
-      SP3      195000       77.508169      59713.730469
-      SP4           0        1.212346        155.000000
-      SP6           9        0.954729         67.000000
-      SP7       53218        2.302216         67.000000
-     SP10         993        0.969664         67.000000
-     SP11          36        0.936476         67.000000
- SP2_freq          25        0.886327         67.000000
- SP3_freq           1        1.037059         67.000000
- SP4_freq           0        0.979137         67.000000
- SP6_freq           4        0.953199         67.000000
- SP7_freq         419        1.043491         67.000000
-SP10_freq           9        0.932143         67.000000
-SP11_freq          18        0.935679         67.000000
+      SP2        1058        0.979761          67.00000
+      SP3      195000       74.673155       48068.34375
+      SP4           0        1.199713         149.00000
+      SP6           9        0.986092          67.00000
+      SP7       53218        2.315620          67.00000
+     SP10         993        1.009373          67.00000
+     SP11          36        0.940848          67.00000
+ SP2_freq          25        0.962850          67.00000
+ SP3_freq           1        1.072686          67.00000
+ SP4_freq           0        1.005105          67.00000
+ SP6_freq           4        0.984637          67.00000
+ SP7_freq         419        1.070710          67.00000
+SP10_freq           9        0.978941          67.00000
+SP11_freq          18        0.967783          67.00000
 This table is saved to results/freq_result.csv
 ```
 
@@ -263,33 +263,35 @@ Example output:
 ```
 *** Building applications... ***
 *** Building finished. ***
-patching file mod.rs
-Running: `./target/release/ipmes-rust ./data/universal_patterns/SP6_regex.json
- data/synthesized_graphs/DW10.csv -w 1800 --silent`
+patching file ./join_layer/sub_pattern_buffer.rs
+patching file ./join_layer.rs
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW10.csv -w 1800`
 Run 1 / 1 ...
+Total number of matches: 10
+CPU time elapsed: 0.012617745 secs
+Peak memory usage: 68608 kB
 ...
-Running: `./target/release/ipmes-rust ./data/universal_patterns/SP6_regex.json
- data/synthesized_graphs/DW50.csv -w 1800 --silent`
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW50.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 50
-CPU time elapsed: 0.005099256 secs
+CPU time elapsed: 0.00499456 secs
 Peak memory usage: 68608 kB
 
 Before optimization:
-Synthesized Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
-             DW10           10        0.001232              67.0
-             DW20           20        0.004339              67.0
-             DW30           30        0.012072              67.0
-             DW40           40        0.027526              67.0
-             DW50           50        0.046382              67.0
+Synthesized Graph  Num Results Num States  CPU Time (sec)  Peak Memory (MB)
+             DW10           10       1396        0.012618              67.0
+             DW20           20       9289        0.277663              67.0
+             DW30           30      29732        2.067948              67.0
+             DW40           40      68881       10.057189              67.0
+             DW50           50     132130       26.302930              67.0
 This table is saved to results/join_optim_before.csv
 After optimization:
-Synthesized Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
-             DW10           10        0.000789              67.0
-             DW20           20        0.001508              67.0
-             DW30           30        0.002457              67.0
-             DW40           40        0.003806              67.0
-             DW50           50        0.005099              67.0
+Synthesized Graph  Num Results Num States  CPU Time (sec)  Peak Memory (MB)
+             DW10           10        137        0.000776              67.0
+             DW20           20        266        0.001488              67.0
+             DW30           30        402        0.002556              67.0
+             DW40           40        547        0.003691              67.0
+             DW50           50        672        0.004995              67.0
 This table is saved to results/join_optim_after.csv
 ```
 
