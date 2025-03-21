@@ -26,7 +26,7 @@ struct Args {
 
     /// Enable silent mode will not print individual pattern matches.
     #[arg(short, long, default_value_t = false)]
-    print: bool,
+    print_instances: bool,
 }
 
 fn main() {
@@ -56,11 +56,12 @@ fn main() {
 
     let mut num_result = 0u32;
     for pattern_match in uniqueness_layer {
-        if !args.print {
+        if args.print_instances {
             println!("Pattern Match: {}", pattern_match);
         }
         num_result += 1;
     }
+    
     println!("Total number of matches: {num_result}");
 
     println!(

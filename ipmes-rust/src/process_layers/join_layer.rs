@@ -42,6 +42,8 @@ pub struct JoinLayer<'p, P> {
 
     sibling_id_map: Vec<usize>,
     parent_id_map: Vec<usize>,
+
+    num_states: u64,
 }
 
 impl<'p, P> JoinLayer<'p, P> {
@@ -156,6 +158,7 @@ impl<'p, P> JoinLayer<'p, P> {
             full_match: Vec::new(),
             sibling_id_map,
             parent_id_map,
+            num_states: 0,
         }
     }
 
@@ -279,6 +282,8 @@ impl<'p, P> JoinLayer<'p, P> {
                     &sub_pattern_match2.0,
                 ) {
                     matches_to_parent.push(EarliestFirst(merged));
+                    self.num_states += 1;
+
                 } else {
                     debug!(
                         "merge {} and {} failed",
@@ -385,7 +390,17 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let num_pat_event = self.pattern.events.len();
         while self.full_match.is_empty() {
-            let (sub_pattern_id, match_instance) = self.prev_layer.next()?;
+            let items = self.prev_layer.next();
+            
+            let (sub_pattern_id, match_instance) = 
+            match items {
+                None => {
+                    log::info!("Total number of states: {}", self.num_states);
+                    break;
+                }
+                Some((x, y)) => (x, y)
+            };
+            // let (sub_pattern_id, match_instance) = self.prev_layer.next()?;
 
             if let Some(sub_match) =
                 SubPatternMatch::build(sub_pattern_id, match_instance, num_pat_event)
@@ -397,6 +412,8 @@ where
                 self.sub_pattern_buffers[buffer_id]
                     .new_match_buffer
                     .push(EarliestFirst(sub_match));
+                
+                self.num_states += 1;
 
                 self.join(current_time, buffer_id);
             }
