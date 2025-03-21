@@ -27,7 +27,7 @@ The simplified flow chart of **IPMES+** is illustrated in the below figure.
 
 ## Configuration and Installation (2 human-minutes, 6 compute-minutes)
 
-### Experiment Experiment Requirements
+### Experiment Environment Requirements
 
 The experiment environment requires:
 
