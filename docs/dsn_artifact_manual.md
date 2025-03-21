@@ -1,8 +1,6 @@
 # IPMES+ Artifact Manual
 
-## Overview
-
-## Introduction (1 human-minute)
+## Overview (1 human-minute)
 
 **IPMES+** is a system that performs incremental pattern matching over audit event streams (provenance graph). It is the successor of the original [IPMES](https://github.com/littleponywork/IPMES).
 
