@@ -25,7 +25,7 @@ The simplified flow chart of **IPMES+** is illustrated in the below figure.
 - `experiments.py`: The script to conduct experiments in our paper.
 - `requirements.txt`
 
-## Configuration and Installation (2 human-minutes, 6 compute-minutes)
+## Configuration and Installation (2 human-minutes, 10 compute-minutes)
 
 ### Experiment Experiment Requirements
 
@@ -35,24 +35,23 @@ The experiment environment requires:
 - 15 GB of disk storage: to store experiment data.
 - Rust >= 1.71.1: To run IPMES+.
 - Python >= 3.6.9: To run experiment automation script.
-    - with pip installed
+    - with `pandas` package installed to handle experiment tables
 - Java (JDK) >= 11: To run IPMES and Siddhi.
 - Apache Maven >= 3.6.0: To build IPMES and Siddhi.
 - GNU Make >= 4.3: To build timingsubg
 - `g++` >= 11.4.0: To build timingsubg
+- patchutils: To patch the source code to compare diffent optimizations.
 
-### Experiment Environment Setup
+### Experiment Environment Setup (10 compute-minutes)
 
 Ensure the required packages are installed on your system. For Ubuntu/Debian:
 
 ```sh
 sudo apt-get update
-sudo apt-get install patchutils openjdk-11-jdk maven build-essential g++ python3 python3-pip curl
+sudo apt-get install -y patchutils openjdk-11-jdk maven build-essential g++ python3 python3-pandas curl
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
-# Install required python packages
-pip3 install -r requirements.txt
 ```
 
 It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
