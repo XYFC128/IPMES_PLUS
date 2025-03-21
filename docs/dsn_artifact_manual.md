@@ -83,14 +83,14 @@ Example output:
 *** Building applications... ***
 *** Building finished. ***
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP2_regex.json
- data_graphs/attack_raw.csv -w 1800 --silent`
+ data_graphs/attack_raw.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 1058
 CPU time elapsed: 0.932406222 secs
 Peak memory usage: 68608 kB
 
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/freq_patterns/SP2_regex.json
- data_graphs/attack_raw.csv -w 1800 --silent`
+ data_graphs/attack_raw.csv -w 1800`
 Run 1 / 1 ...
 ...
   Pattern  Found Ins.  CPU Time (sec)  Peak Memory (MB)
@@ -132,28 +132,28 @@ Example output:
 *** Building applications... ***
 *** Building finished. ***
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP3.json
- modified_data_graphs/attack.csv -w 1800 --silent`
+ modified_data_graphs/attack.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 0
 CPU time elapsed: 0.837500926 secs
 Peak memory usage: 68608 kB
 
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/flow_patterns/SP3.json
- modified_data_graphs/attack.csv -w 1800 --silent`
+ modified_data_graphs/attack.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 2
 CPU time elapsed: 2.37848033 secs
 Peak memory usage: 72004 kB
 
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/DP3.json
- modified_data_graphs/dd3.csv -w 1000 --silent`
+ modified_data_graphs/dd3.csv -w 1000`
 Run 1 / 1 ...
 Total number of matches: 0
 CPU time elapsed: 3.822604907 secs
 Peak memory usage: 68608 kB
 
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/flow_patterns/DP3.json
- modified_data_graphs/dd3.csv -w 1000 --silent`
+ modified_data_graphs/dd3.csv -w 1000`
 Run 1 / 1 ...
 Total number of matches: 4
 CPU time elapsed: 10.012387877 secs
@@ -214,7 +214,7 @@ Datasets:
 Select datasets to run (eg: "1 2 3", "1 2-4", default: "1-7"):
 
 Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP1_regex.json
- data_graphs/attack.csv -w 1800 --silent`
+ data_graphs/attack.csv -w 1800`
 Run 1 / 1 ...
 ...
 Average CPU Time (sec)
@@ -265,13 +265,15 @@ Example output:
 *** Building finished. ***
 patching file ./join_layer/sub_pattern_buffer.rs
 patching file ./join_layer.rs
-Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW10.csv -w 1800`
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json
+ data/synthesized_graphs/DW10.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 10
 CPU time elapsed: 0.012617745 secs
 Peak memory usage: 68608 kB
 ...
-Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json data/synthesized_graphs/DW50.csv -w 1800`
+Running: `IPMES_PLUS/target/release/ipmes-rust IPMES_PLUS/data/universal_patterns/SP6_regex.json
+ data/synthesized_graphs/DW50.csv -w 1800`
 Run 1 / 1 ...
 Total number of matches: 50
 CPU time elapsed: 0.00499456 secs
