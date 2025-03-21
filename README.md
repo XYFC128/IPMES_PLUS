@@ -30,7 +30,7 @@ The core concept of the original IPMES involves decomposing a target behavioral 
 
 An overview of **IPMES+** is illustrated in the below figure.
 
-![IPMES Flow Chart](images/flowchart-IPMES+.png)
+![IPMES Flow Chart](docs/images/flowchart-IPMES+.png)
 
 ## Configuration and Installation (1 human-minute, 6 compute-minutes)
 
