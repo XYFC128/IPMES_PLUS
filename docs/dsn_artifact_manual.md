@@ -58,7 +58,7 @@ pip3 install -r requirements.txt
 It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
 
 
-## Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
+## Reproduce and Validate Experiment Results (15 human-minutes, 14 compute-days)
 
 This section describes how to reproduce the experiment results in our paper.
 
@@ -293,7 +293,7 @@ Synthesized Graph  Num Results  CPU Time (sec)  Peak Memory (MB)
 This table is saved to results/join_optim_after.csv
 ```
 
-## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
+## Execution / How to reuse beyond paper (10 human-minutes, 3 compute-minute)
 
 ### Build IPMES+ (3 compute-minutes)
 
