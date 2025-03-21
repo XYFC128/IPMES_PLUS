@@ -63,7 +63,7 @@ The first build will take longer due to downloading the dependencies.
 
 ## Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
 
-Please refer to [paper_experiments.md](docs/paper_experiments.md).
+Please refer to [dsn_artifact_manual.md](docs/dsn_artifact_manual.md).
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
 
