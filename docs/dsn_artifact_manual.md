@@ -1,8 +1,8 @@
-# IPMES+
+# IPMES+ Artifact Manual
 
 ## Overview
 
-## Introduction (2 human-minute)
+## Introduction (1 human-minute)
 
 **IPMES+** is the successor of the original [IPMES](https://github.com/littleponywork/IPMES), which was developed in 2023. The original IPMES was published in IEEE/IFIP International Conference on Dependable Systems and Networks (DSN) 2024, titled **IPMES: A Tool for Incremental TTP Detection over the System Audit Event Stream (Tool)**.
 
@@ -14,47 +14,27 @@ The core concept of the original IPMES involves decomposing a target behavioral 
 - Enhancing event matching and state management through Shared Entity Filtration, Flow Contraction, and Sibling Entity Sharing Enforcement to reduce search space and state explosion.
 - Port the prototype from Java to Rust for better memory control and locality.
 
-An overview of **IPMES+** is illustrated in the below figure.
+The simplified flow chart of **IPMES+** is illustrated in the below figure.
 
 ![IPMES Flow Chart](images/flowchart-IPMES+.png)
 
-## Configuration and Installation (1 human-minute, 6 compute-minutes)
+### Directory Structure of This Artifact
 
-### Dependency (3 compute-minutes)
+- `data/`: The input data for our experiment.
+- `IPMES_PLUS/`: Source code of **IPMES+**.
+- `IPMES/`: Source code of **IPMES** and **IPMES with Siddhi**.
+- `timingsubg/`: Modified source code of [Timing](https://github.com/pkumod/timingsubg).
+- `experiments.py`: The script to conduct experiments in our paper.
+- `requirements.txt`
 
-- Rust (rustc) >= 1.75.0
+## Configuration and Installation (2 human-minutes, 6 compute-minutes)
 
-Install on Ubuntu/Debian:
+### Experiment Experiment Requirements
 
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
+The experiment environment requires:
 
-# vefify installation
-rustc -V
-```
-
-### Build IPMES+ (3 compute-minutes)
-
-**IPMES+** can be built with a simple command:
-
-```bash
-# clone this repository to IPMES_PLUS/
-cd IPMES_PLUS/
-cargo build --release
-```
-
-The first build will take longer due to downloading the dependencies.
-
-## Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
-
-This section describes how to reproduce the experiment results in our paper.
-
-### Experiment Setup
-
-We use Python scripts to automate the experiments. The experiment environment requires:
-
-- Unix-like environment (tested on Ubuntu 18.04 and 22.04)
+- Unix-like environment (tested on Ubuntu 24.04)
+- 15 GB of disk storage: to store experiment data.
 - Latest stable release of rust: To run IPMES+.
 - Python >= 3.6.9: To run experiment automation script.
     - with pip installed
@@ -63,43 +43,40 @@ We use Python scripts to automate the experiments. The experiment environment re
 - GNU Make >= 4.3: To build timingsubg
 - `g++` >= 11.4.0: To build timingsubg
 
-#### Data Preparation
+### Experiment Environment Setup
 
-You can download the all the source codes and data (including souce code of compared tools, data graphs and behavioral patterns) needed for the experiments at TODO.
+Ensure the required packages are installed on your system. For Ubuntu/Debian:
 
-Extract the experiment data:
-
-```shell
-unzip IPMES_PLUS_EXP.zip
-cd IPMES_PLUS_EXP
-```
-
-#### Install Reqired Packages
-
-Install the python packages listed in `requirements.txt` in the provided archive. For Ubuntu/Debian:
-
-```
+```sh
 sudo apt-get update
-sudo apt-get install python3 python3-pip
+sudo apt-get install patchutils openjdk-11-jdk maven build-essential g++ python3 python3-pip curl
+# Install rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+# Install required python packages
 pip3 install -r requirements.txt
 ```
 
 It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
 
 
+## Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)
+
+This section describes how to reproduce the experiment results in our paper.
+
 ### Experiment 1: Effectiveness of Frequency-type Event Patterns
 
-This experiment demonstrate the necessity of **frequency-based** event patterns across different patterns on different data graphs.
+This experiment demonstrate the necessity of **frequency-based** event patterns across different patterns on the unaggregated dataset `attack_raw`.
 
 Resource usage of this experiment:
 
 - Peak Memory Usage: 60 GB
 - Estimated CPU Time: 100 seconds
 
-The following command conducts the experiment automatically. The script will output a table similar to **Table III** in the paper. For convenience, the script will also print out the command it is currently running.
+The following command conducts the experiment automatically. The script will output a table similar to **Table III** in the paper. For transparency, the script will also print out the command it is currently running.
 
-```shell
-python experiments.py freq
+```sh
+python3 experiments.py freq
 ```
 
 Example output:
@@ -132,23 +109,23 @@ Run 1 / 1 ...
  SP6_freq           4        0.953199         67.000000
  SP7_freq         419        1.043491         67.000000
 SP10_freq           9        0.932143         67.000000
-SP11_freq           9        0.935679         67.000000
+SP11_freq          18        0.935679         67.000000
 This table is saved to results/freq_result.csv
 ```
 
 ### Experiment 2: Effectiveness of Flow-type Event Patterns
 
-This experiment demonstrate the necessity of **flow-based** event patterns across different patterns on different data graphs.
+This experiment demonstrate the necessity of **flow-based** event patterns across different patterns on our manually modified `attack` and `dd3` datasets to simulate attack path shift.
 
 Resource usage of this experiment:
 
 - Peak Memory Usage: 250 MB
 - Estimated CPU Time: 15 seconds
 
-The following command conducts the experiment automatically. The script will output a table similar to **Table IV** in the paper. For convenience, the script will also print out the command it is currently running.
+The following command conducts the experiment automatically. The script will output a table similar to **Table IV** in the paper. For transparency, the script will also print out the command it is currently running.
 
-```shell
-python experiments.py flow
+```sh
+python3 experiments.py flow
 ```
 
 Example output:
@@ -194,7 +171,7 @@ This table is saved to results/flow_result.csv
 
 ### Experiment 3: Efficiency of Matching Low-level Attack Patterns
 
-This experiment compares the efficiency of matching patterns without flow and frequency semantics across **IPMES+**, **IPMES**, **Timing**, and **Siddhi**.
+This experiment compares the efficiency of matching low-level event patterns across **IPMES+**, **IPMES**, **Timing**, and **Siddhi**.
 
 Resource usage of this experiment:
 
@@ -205,14 +182,14 @@ Some data points requires significantly more time or memory to collect. These da
 
 - timing on DARPA dataset (dd1-dd4) runs for 140 hours in total
 - siddhi on DARPA dataset (dd1-dd4) runs for 192 hours in total
-- dd4 dataset requires 76 GB of memory for timing to run
+- dd4 dataset requires 76 GB of memory for timing to run and requires few days for **Timing** and **Siddhi** to complete.
 
-The following command conducts the experiment automatically. The script will ask you for the apps and datasets to run so you can avoid running those resource intensive data points. Hit enter to select all apps and datasets or select the item with the example syntax printed by the script.
+The following command conducts the experiment automatically. The script will ask you for apps and datasets to run so you can avoid running those resource intensive data points. Hit enter to select all apps and datasets or select the item with the example syntax printed by the script.
 
-It will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For convenience, the script will also print out the command it is currently running.
+It will output a table that corresponds to **Figure 8** and **Figure 9** in our paper. For transparency, the script will also print out the command it is currently running.
 
-```shell
-python experiments.py efficiency
+```sh
+python3 experiments.py efficiency
 ```
 
 Example output:
@@ -277,10 +254,10 @@ Resource usage of this experiment:
 - Peak Memory Usage: 70 MB
 - Estimated CPU Time: 1 seconds
 
-The following command conducts the experiment automatically. The script will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For convenience, the script will also print out the command it is currently running.
+The following command conducts the experiment automatically. The script will output a table that corresponds to **Figure 8** and **Figure 9** in the paper. For transparency, the script will also print out the command it is currently running.
 
-```shell
-python experiments.py join
+```sh
+python3 experiments.py join
 ```
 
 Example output:
@@ -320,7 +297,27 @@ This table is saved to results/join_optim_after.csv
 
 ## Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)
 
-This section describes the input and output format of **IPMES+**.
+### Build IPMES+ (3 compute-minutes)
+
+The only build dependencies of **IPMES+** is rust compiler and `cargo`, which can be install with the following commands on linux:
+
+```shell
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+
+# vefify installation
+rustc -V
+```
+
+Get the latest version of **IPMES+** and build it:
+
+```bash
+git clone https://github.com/XYFC128/IPMES_PLUS.git
+cd IPMES_PLUS/
+cargo build --release
+```
+
+The output binary is located in `target/release/ipmes-rust`. The first build will take longer due to downloading the dependencies.
 
 ### Command-line Syntax
 
@@ -340,33 +337,60 @@ Options:
   -V, --version                    Print version
 ```
 
-#### Example
+#### Minimal Running Example
 
 - `./target/release/ipmes-rust -w 1800 data/paper/behavioral_pattern.json data/paper/data_graph.csv`
-  - `-w 1800`: Set the time window size to be `1800` seconds.
-  - `data/paper/behavioral_pattern.json`: An example pattern used in our paper. See the section below for more information.
-  - `data/paper/data_graph.csv`: Input data graph to search for pattern. See the section below for its format.
+    - `-w 1800`: Set the time window size to be `1800` seconds.
+    - `data/paper/behavioral_pattern.json`: An example pattern used in our paper. See the section below for more information.
+    - `data/paper/data_graph.csv`: Input data graph to search for pattern. See the section below for its format.
+    - Make sure the current working directory is the cloned soruce code of **IPMES+** (`IPMES_PLUS/`).
+
+### Output Format
+
+The program output for the [above example](#minimal-running-example) is shown below:
+
+```
+Pattern Match: <5.000, 11.000>[(1 -> 3), (3, 5), (4, 6)]
+Total number of matches: 1
+CPU time elapsed: 0.000108047 secs
+Peak memory usage: 8604 kB
+```
+
+The output message contains:
+
+- Zero or multiple lines of **Pattern Match**: Each entry of `Pattern Match` denotes a matched instance of the pattern such that they are in the following format: `<StartTime, EndTime>[MatchEventList...]`, where
+    - **StartTime**: The timestamp of the earliest event of this match instance.
+    - **EndTime**: The timestamp of the latest event of this match instance.
+    - **MatchEventList**: A comma seperated list of the matched input events, whose index in this array corresponds to the pattern event they are matched to.
+        - If the corresponding pattern event is a **flow event**, it will be in the format `(StartEntityID -> EndEntityID)`. In this example, the pattern event 0 is a flow pattern, and IPMES+ found the flow from entity 1 to entity 3 that matches the pattern event.
+        - If the corresponding pattern is a **frequency event**, the match id format is `(EventID, ...)`. The numbers in the parentheses is a list of matched input event IDs for that frequency pattern event. In this example, the pattern event 1 is a frequency event, and input event 3 and 5 both match that frequency event.
+        - If the corresponding pattern is a normal regex pattern, the match id is simply the ID of the matched input event.
+- **Total number of matches**: The number of matched instances of the pattern on the data graph.
+- **CPU time elapsed**: The CPU time spent for pattern matching.
+- **Peak memory usage**: The maximum total system memory usage in kilobytes.
 
 ### Input Format
 
-**IPMES+** takes 2 files as input: The pattern description file and the data graph. **IPMES+** will search for pattern in the data graph.
+**IPMES+** takes 2 files as input: The **pattern description file** and the **data graph file**. **IPMES+** will search for pattern in the data graph.
 
-#### Data Graph Format
+#### Data Graph File Format
 
 The data graph is a streaming provenance graph where each line is an audit event. We use normal file in our experiments, but it can also be an UNIX PIPE to support ture streaming input. An event in provenance graph is associated with 2 entities: the subject that initiates the event and the object affected by the event.
 
 An event is given by a CSV format in each line of the input data graph. The columns in this CSV format are: [`start_time`, `end_time`, `event_id`, `event_sig`, `subject_id`, `subject_sig`, `object_id`, `object_sig`], which represents:
 
-- `start_time`: the event start time
-- `end_time`:   the event end time
-- `event_id`:   the event id
-- `event_sig`: the event signature
-- `subject_id`: the subject entity id
-- `subject_sig`: the subject signature
-- `object_id`:  the object id
-- `object_sig`: the object signature
+- `start_time`: the event start time in seconds. e.g. `5.000`
+- `end_time`:   the event end time in seconds. e.g. `10.000`
+- `event_id`:   the numerical event id
+- `event_sig`: the event signature string
+- `subject_id`: the subject entity numerical id
+- `subject_sig`: the subject signature string
+- `object_id`:  the object numerical id
+- `object_sig`: the object signature string
 
-#### Pattern Format
+See `data/paper/data_graph.csv` for example.
+
+#### Pattern File Format
 
 A pattern describes a subgraph of the data graph by specifying the signature of events and entities of the subgraph. **IPMES+** additionally support flow and frequency event pattern to match high-level event patterns. The format of pattern description file is in this [JSON](https://www.json.org) scheme:
 
@@ -442,31 +466,9 @@ A pattern describes a subgraph of the data graph by specifying the signature of 
 - `ObjectID`: the object of this event. If 2 events act on the same object, they share the object id.
 - `Parents`: an array of pattern event id. This determins the dependency of a pattern event. The pattern event should be matched after all of its parents are matched.
 
-### Output Format
-
-The program output for the [above example](#example) is shown below:
-
-```
-Pattern Match: <5.000, 11.000>[(1 -> 3), (3, 5), (4, 6)]
-Total number of matches: 1
-CPU time elapsed: 0.000108047 secs
-Peak memory usage: 8604 kB
-```
-
-The output message means:
-
-- **Pattern Match**: Each entry of `Pattern Match` denotes a matched instance of the pattern such that they are in the following format: `<StartTime, EndTime>[list of MatchIDs]`, where
-    - **StartTime**: The timestamp of the earliest event of this match instance.
-    - **EndTime**: The timestamp of the latest event of this match instance.
-    - **MatchIDs**: The IDs of the matched input events, whose index in this array corresponds to the pattern event they are matched to.
-        - If the corresponding pattern event is a **flow event**, it will be in the format `(StartEntityID -> EndEntityID)`. In this example, the pattern event 0 is a flow pattern, and IPMES+ found the flow from entity 1 to entity 3 that matches the pattern event.
-        - If the corresponding pattern is a **frequency event**, the match id format is `(EventID, ...)`. The numbers in the parentheses is a list of matched input event IDs for that frequency pattern event. In this example, the pattern event 1 is a frequency event, and input event 3 and 5 both match that frequency event.
-        - If the corresponding pattern is a normal regex pattern, the match id is simply the ID of the matched input event.
-- **Total number of matches**: The number of matched instances of the pattern on the data graph.
-- **CPU time elapsed**: The CPU time spent for pattern matching.
-- **Peak memory usage**: The maximum total system memory usage in kilobytes.
-
 ### Directory Structure of Our Source Code
+
+The directory structure of `IPMES_PLUS/`:
 
 - `data/`: Example input data for the program.
 - `docs/`: Documentations.
