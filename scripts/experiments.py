@@ -106,13 +106,13 @@ def run_ipmes_plus(
         proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding="utf-8")
         outs, errs = proc.communicate()
         if proc.wait() != 0:
-            print(f"Run failed:\n{errs}")
+            print("Failed to run `{}`:\n{}".format(" ".join(run_cmd), errs))
             return None
 
         print(outs)
 
         num_match = re.search(r"Total number of matches: (\d+)", outs).group(1)
-        cpu_time = re.search(r"CPU time elapsed: (\d+\.\d+) secs", outs).group(1)
+        cpu_time = re.search(r"CPU time elapsed: (\d+\.?\d+) secs", outs).group(1)
         total_cpu_time += float(cpu_time)
         peak_mem_result = re.search(r"Peak memory usage: (\d+) (.)B", outs)
 
@@ -163,13 +163,13 @@ def run_timing(
         proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding="utf-8")
         outs, errs = proc.communicate()
         if proc.wait() != 0:
-            print(f"Run failed:\n{errs}")
+            print("Failed to run `{}`:\n{}".format(" ".join(run_cmd), errs))
             return None
 
         print(outs)
 
         num_match = re.search(r"Total number of matches: (\d+)", outs).group(1)
-        cpu_time = re.search(r"CPU time elapsed: (\d+\.\d+) secs", outs).group(1)
+        cpu_time = re.search(r"CPU time elapsed: (\d+\.?\d+) secs", outs).group(1)
         total_cpu_time += float(cpu_time)
         peak_mem_result = re.search(r"Peak memory usage: (\d+) (.)B", outs)
 
@@ -218,7 +218,7 @@ def run_ipmes(
         proc = Popen(run_cmd, stdout=PIPE, stderr=PIPE, encoding="utf-8")
         outs, errs = proc.communicate()
         if proc.wait() != 0:
-            print(f"Run failed:\n{errs}")
+            print("Failed to run `{}`:\n{}".format(" ".join(run_cmd), errs))
             return None
 
         print(outs)
