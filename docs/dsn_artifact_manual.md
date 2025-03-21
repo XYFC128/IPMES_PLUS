@@ -4,9 +4,7 @@
 
 ## Introduction (1 human-minute)
 
-**IPMES+** is the successor of the original [IPMES](https://github.com/littleponywork/IPMES), which was developed in 2023. The original IPMES was published in IEEE/IFIP International Conference on Dependable Systems and Networks (DSN) 2024, titled **IPMES: A Tool for Incremental TTP Detection over the System Audit Event Stream (Tool)**.
-
-**IPMES+** is a system that performs incremental pattern matching over event streams.
+**IPMES+** is a system that performs incremental pattern matching over audit event streams (provenance graph). It is the successor of the original [IPMES](https://github.com/littleponywork/IPMES).
 
 The core concept of the original IPMES involves decomposing a target behavioral pattern into multiple total-ordered subpatterns (**Preprocessing**), matching and reordering events (**Matching Layer**), composing events against these subpatterns (**Composition Layer**), and then combining subpattern matches into complete instances (**Join Layer**). **IPMES+** retains a similar architecture with key differences:
 
@@ -20,7 +18,7 @@ The simplified flow chart of **IPMES+** is illustrated in the below figure.
 
 ### Directory Structure of This Artifact
 
-- `data/`: The input data for our experiment.
+- `data/`: The input data for our experiments.
 - `IPMES_PLUS/`: Source code of **IPMES+**.
 - `IPMES/`: Source code of **IPMES** and **IPMES with Siddhi**.
 - `timingsubg/`: Modified source code of [Timing](https://github.com/pkumod/timingsubg).
@@ -35,7 +33,7 @@ The experiment environment requires:
 
 - Unix-like environment (tested on Ubuntu 24.04)
 - 15 GB of disk storage: to store experiment data.
-- Latest stable release of rust: To run IPMES+.
+- Rust >= 1.71.1: To run IPMES+.
 - Python >= 3.6.9: To run experiment automation script.
     - with pip installed
 - Java (JDK) >= 11: To run IPMES and Siddhi.
@@ -470,10 +468,10 @@ A pattern describes a subgraph of the data graph by specifying the signature of 
 
 The directory structure of `IPMES_PLUS/`:
 
-- `data/`: Example input data for the program.
+- `data/`: Example input data for the program. Check `data/README.md` for more information.
 - `docs/`: Documentations.
-- `scripts/`: Helper scripts to carry out expriment and data preprocessing.
-- `src/`: Source codes of **IPMES+**.
+- `scripts/`: Helper scripts to carry out expriment and data preprocessing. Check `scripts/README.md` for more information.
+- `src/`: Source codes of **IPMES+**. Document are written as code comments.
 - `testcases/`: Test data for the experiments and code tests.
 
 
