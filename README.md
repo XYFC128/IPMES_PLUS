@@ -1,14 +1,17 @@
 # IPMES
 
-## Overview
-
-* [Introduction (2 human-minute)](#introduction-2-human-minute)
-* [Configuration and Installation (1 human-minute, 6 compute-minutes)](#configuration-and-installation-1-human-minute-6-compute-minutes)
-    + [Dependency (3 compute-minutes)](#dependency-3-compute-minutes)
-    + [Build IPMES+ (3 compute-minutes)](#build-ipmes-3-compute-minutes)
-* [Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)](#reproduce-and-validate-experiment-results-15-human-minutes-7-compute-days)
-* [Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)](#execution--how-to-reuse-beyond-paper-10-human-minutes-1-compute-minute)
-* [Authors (1 human-minute)](#authors-1-human-minute)
+- [Introduction (2 human-minute)](#introduction-2-human-minute)
+- [Configuration and Installation (1 human-minute, 6 compute-minutes)](#configuration-and-installation-1-human-minute-6-compute-minutes)
+  - [Dependency (3 compute-minutes)](#dependency-3-compute-minutes)
+  - [Build IPMES+ (3 compute-minutes)](#build-ipmes-3-compute-minutes)
+- [Reproduce and Validate Experiment Results (15 human-minutes, 7 compute-days)](#reproduce-and-validate-experiment-results-15-human-minutes-7-compute-days)
+- [Execution / How to reuse beyond paper (10 human-minutes, 1 compute-minute)](#execution--how-to-reuse-beyond-paper-10-human-minutes-1-compute-minute)
+  - [Directory Structure](#directory-structure)
+  - [Command-line Syntax](#command-line-syntax)
+    - [Example](#example)
+  - [Input Format](#input-format)
+  - [Output Format](#output-format)
+- [Authors (1 human-minute)](#authors-1-human-minute)
 
 ## Introduction (2 human-minute)
 
