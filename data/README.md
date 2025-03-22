@@ -88,3 +88,9 @@ A preprocessed provanence graph can be downloaded at [link](https://drive.google
 - `flow_patterns`: Patterns that support flow semantic.
 - `freq_patterns`: Patterns that support frequency semantic.
 - `paper`: The example data graph and the behavioral pattern shown in the published paper.
+
+## License
+
+IPMES+ data © 2025 by Hong-Wei Li, Ping-Ting Liu, Bo-Wei Lin, Yennun Huang is licensed under CC BY-NC 4.0
+
+See [LICENSE](LICENSE) for more details.
