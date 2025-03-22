@@ -460,7 +460,7 @@ A pattern describes a subgraph of the data graph by specifying the signature of 
 - `Type`: `Default`, `Frequency` or `Flow`.
     - `Default`: The default event pattern that matches the input event with the signature specified in `Signature`. If `UseRegex` is set to `true`, the signature will be treated as a regex expression to match the signatures of input events in the data graph. Can ignore `Type` for default event pattern.
     - `Frequency`: Similar to the default event pattern except it must be matched $f$ times to count as a frequency pattern match (i.e. there must be at least $f$ events in data graph that matches the signature of this pattern event). The parameter $f$ is specifed by the `Frequency` attribute of this event.
-    - `Floe`: This pattern event has no signature. It finds a flow from the entity matches its subject pattern to the entity matches its object pattern.
+    - `Flow`: This pattern event has no signature. It finds a flow from the entity matches its subject pattern to the entity matches its object pattern.
 - `SubjectID`: the subject of this event. If 2 events are arise from the same subject, they share the subject id.
 - `ObjectID`: the object of this event. If 2 events act on the same object, they share the object id.
 - `Parents`: an array of pattern event id. This determins the dependency of a pattern event. The pattern event should be matched after all of its parents are matched.
