@@ -20,8 +20,8 @@ The simplified flow chart of **IPMES+** is illustrated in the below figure.
 - `IPMES_PLUS/`: Source code of **IPMES+**.
 - `IPMES/`: Source code of **IPMES** and **IPMES with Siddhi**.
 - `timingsubg/`: Modified source code of [Timing](https://github.com/pkumod/timingsubg).
+- `patches/`: Patch files for **Experiment 4** for **IPMES+**.
 - `experiments.py`: The script to conduct experiments in our paper.
-- `requirements.txt`
 
 ## Configuration and Installation (2 human-minutes, 10 compute-minutes)
 
@@ -51,9 +51,6 @@ sudo apt-get install -y patchutils openjdk-11-jdk maven build-essential g++ pyth
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
-
-It is recommended to install packages in python virtual environments like [conda](https://docs.anaconda.com/free/miniconda/index.html), [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/) to avoid package collisions.
-
 
 ## Reproduce and Validate Experiment Results (15 human-minutes, 14 compute-days)
 
