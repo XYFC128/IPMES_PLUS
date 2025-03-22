@@ -12,7 +12,7 @@ The core concept of the original IPMES involves decomposing a target behavioral 
 
 The simplified flow chart of **IPMES+** is illustrated in the below figure.
 
-![IPMES Flow Chart](images/flowchart-IPMES+.png)
+![IPMES+ Flow Chart](images/flowchart-IPMES+.png)
 
 ### Directory Structure of This Artifact
 
@@ -51,6 +51,8 @@ sudo apt-get install -y patchutils openjdk-11-jdk maven build-essential g++ pyth
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
+
+If you encounter any JAVA problem building **IPMSE**, make sure your `JAVA_HOME` environment variable is set to a valid JDK location (e.g. `/usr/lib/jvm/java-11-openjdk-amd64/` for Ubuntu).
 
 ## Reproduce and Validate Experiment Results (15 human-minutes, 14 compute-days)
 
