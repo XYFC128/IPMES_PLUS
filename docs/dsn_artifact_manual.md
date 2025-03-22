@@ -31,6 +31,7 @@ The experiment environment requires:
 
 - Unix-like environment (tested on Ubuntu 24.04)
 - 15 GB of disk storage: to store experiment data.
+- Network connection: To automatically download Rust and Java package dependencies durning building.
 - Rust >= 1.85.1: To run IPMES+.
 - Python >= 3.6.9: To run experiment automation script.
     - with `pandas` package installed to handle experiment tables
