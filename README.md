@@ -1,4 +1,4 @@
-# IPMES
+# IPMES+
 
 - [Introduction (2 human-minute)](#introduction-2-human-minute)
 - [Configuration and Installation (1 human-minute, 6 compute-minutes)](#configuration-and-installation-1-human-minute-6-compute-minutes)
