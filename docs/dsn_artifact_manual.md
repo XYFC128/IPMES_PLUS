@@ -479,7 +479,7 @@ The directory structure of `IPMES_PLUS/`:
 
 - All the files in `data/` and `IPMES_PLUS/data/` are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
 - The license for the source code of **IPMES+** is stated in `IPMES_PLUS/LICENSE`.
-- THe license for the source code of **IPMES** is stated in `IPMES/LICENSE`.
+- The license for the source code of **IPMES** is stated in `IPMES/LICENSE`.
 - We have included our modified version of [**timingsubg**](https://github.com/pkumod/timingsubg) in the `timingsubg/` directory of this artifact. As of the submission of this artifact, the authors of **timingsubg** have not provided a license for their code. Our use of this code is solely for the purpose of experimental comparison. All copyright remains with the original authors.
 
 ## Authors (1 human-minute)
