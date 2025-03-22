@@ -53,7 +53,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
 
-If you encounter any JAVA problem building **IPMSE**, make sure your `JAVA_HOME` environment variable is set to a valid JDK location (e.g. `/usr/lib/jvm/java-11-openjdk-amd64/` for Ubuntu).
+If you encounter any JAVA problem building **IPMES**, make sure your `JAVA_HOME` environment variable is set to a valid JDK location (e.g. `/usr/lib/jvm/java-11-openjdk-amd64/` for Ubuntu).
 
 ## Reproduce and Validate Experiment Results (15 human-minutes, 14 compute-days)
 
