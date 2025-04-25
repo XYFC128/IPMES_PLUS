@@ -32,7 +32,7 @@ The experiment environment requires:
 - Unix-like environment (tested on Ubuntu 24.04)
 - 15 GB of disk storage: to store experiment data.
 - Rust >= 1.71.1: To run IPMES+.
-- Python >= 3.6.9: To run experiment automation script.
+- Python >= 3.10.16: To run experiment automation script.
     - with `pandas` package installed to handle experiment tables
 - Java (JDK) >= 11: To run IPMES and Siddhi.
 - Apache Maven >= 3.6.0: To build IPMES and Siddhi.
